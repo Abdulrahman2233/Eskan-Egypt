@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Area, Property, PropertyImage, PropertyVideo
+from .models import Area, Property, PropertyImage, PropertyVideo, Offer
 
 
 class PropertyImageInline(admin.TabularInline):
@@ -160,5 +160,74 @@ class AreaAdmin(admin.ModelAdmin):
     def property_count(self, obj):
         return obj.properties.count()
     property_count.short_description = "عدد العقارات"
+
+
+@admin.register(Offer)
+class OfferAdmin(admin.ModelAdmin):
+    list_display = (
+        'title',
+        'discount_percentage',
+        'target_audience',
+        'status_badge',
+        'start_date',
+        'end_date',
+        'created_at',
+    )
+    search_fields = ('title', 'description')
+    list_filter = (
+        'is_active',
+        'target_audience',
+        'icon_type',
+        'created_at',
+        'start_date',
+        'end_date',
+    )
+    readonly_fields = ('created_at', 'updated_at', 'status_badge')
+    
+    fieldsets = (
+        ('معلومات العرض', {
+            'fields': ('title', 'description', 'discount_percentage', 'terms')
+        }),
+        ('الجمهور المستهدف', {
+            'fields': ('target_audience', 'icon_type')
+        }),
+        ('التواريخ والحالة', {
+            'fields': ('start_date', 'end_date', 'is_active', 'status_badge')
+        }),
+        ('المعلومات الإضافية', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def status_badge(self, obj):
+        """عرض حالة العرض"""
+        from django.utils import timezone
+        now = timezone.now()
+        
+        # فحص إذا كانت البداية موجودة
+        if not obj.start_date:
+            return format_html(
+                '<span style="background-color: #ffc107; color: black; padding: 5px 10px; border-radius: 3px; font-weight: bold;">غير محدد</span>'
+            )
+        
+        if not obj.is_active:
+            return format_html(
+                '<span style="background-color: #999; color: white; padding: 5px 10px; border-radius: 3px; font-weight: bold;">معطل</span>'
+            )
+        elif obj.start_date > now:
+            return format_html(
+                '<span style="background-color: #ffc107; color: black; padding: 5px 10px; border-radius: 3px; font-weight: bold;">قريباً</span>'
+            )
+        elif obj.end_date and obj.end_date < now:
+            return format_html(
+                '<span style="background-color: #dc3545; color: white; padding: 5px 10px; border-radius: 3px; font-weight: bold;">انتهى</span>'
+            )
+        else:
+            return format_html(
+                '<span style="background-color: #28a745; color: white; padding: 5px 10px; border-radius: 3px; font-weight: bold;">نشط</span>'
+            )
+    
+    status_badge.short_description = "الحالة"
 
 

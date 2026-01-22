@@ -1,6 +1,6 @@
 import uuid
 from django.db import models
-from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator
+from django.core.validators import MinLengthValidator, MaxLengthValidator, RegexValidator, MinValueValidator, MaxValueValidator
 
 
 def generate_uuid():
@@ -83,3 +83,47 @@ class PropertyVideo(models.Model):
 
     def __str__(self):
         return f"Video for {self.property_id} (order={self.order})"
+
+
+class Offer(models.Model):
+    """نموذج العروض الخاصة والترويجية"""
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    discount_percentage = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(100)])
+    target_audience = models.CharField(
+        max_length=50,
+        choices=[
+            ('students', 'طلاب'),
+            ('families', 'عائلات'),
+            ('studio', 'استوديو'),
+            ('daily', 'حجز يومي'),
+            ('rooms', 'غرف'),
+            ('all', 'الجميع'),
+        ],
+        default='all'
+    )
+    is_active = models.BooleanField(default=True)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField(null=True, blank=True, help_text="اتركه فارغاً للعرض الدائم")
+    icon_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('graduation', 'تخرج'),
+            ('gift', 'هدية'),
+            ('star', 'نجمة'),
+            ('sparkles', 'براق'),
+        ],
+        default='sparkles'
+    )
+    terms = models.TextField(blank=True, help_text="شروط العرض")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.title} - {self.discount_percentage}%"
+    
+    class Meta:
+        verbose_name = "عرض"
+        verbose_name_plural = "العروض"
+        ordering = ['-created_at']

@@ -23,6 +23,7 @@ import Settings from "./pages/dashboard/Settings";
 import AdminApprovalPanel from "./pages/dashboard/AdminApprovalPanel";
 import MyRejectedProperties from "./pages/dashboard/MyRejectedProperties";
 import PropertyApprovals from "./pages/dashboard/PropertyApprovals";
+import Notes from "./pages/dashboard/Notes";
 
 /* ===== Protection ===== */
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -79,6 +80,10 @@ const App = () => (
           <Route
             path="/dashboard/property-approvals"
             element={<ProtectedRoute element={<PropertyApprovals />} />}
+          />
+          <Route
+            path="/dashboard/notes"
+            element={<ProtectedRoute element={<Notes />} />}
           />
 
           {/* 404 */}
