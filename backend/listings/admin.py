@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Area, Property, PropertyImage, PropertyVideo, Offer
+from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage
 
 
 class PropertyImageInline(admin.TabularInline):
@@ -53,6 +53,11 @@ class PropertyAdmin(admin.ModelAdmin):
                 'id', 'name', 'area', 'address',
                 'price', 'rooms', 'beds', 'bathrooms', 'size', 'floor',
                 'furnished', 'usage_type'
+            )
+        }),
+        ('الموقع الجغرافي', {
+            'fields': (
+                'latitude', 'longitude'
             )
         }),
         ('الوصف والتفاصيل', {
@@ -231,3 +236,27 @@ class OfferAdmin(admin.ModelAdmin):
     status_badge.short_description = "الحالة"
 
 
+@admin.register(ContactMessage)
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display = (
+        'name',
+        'email',
+        'subject',
+        'created_at',
+    )
+    list_filter = ('created_at',)
+    search_fields = ('name', 'email', 'subject', 'message')
+    readonly_fields = ('created_at',)
+    fieldsets = (
+        ('معلومات المرسل', {
+            'fields': ('name', 'email')
+        }),
+        ('الرسالة', {
+            'fields': ('subject', 'message')
+        }),
+        ('التواريخ', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
+        }),
+    )
+    ordering = ('-created_at',)

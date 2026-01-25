@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
+import LocationPicker from "@/components/LocationPicker";
 import { fetchAreas, createProperty } from "@/api";
 
 const AddProperty = () => {
@@ -66,6 +67,8 @@ const AddProperty = () => {
     usage_type: "students",
     description_ar: "",
     contact: "",
+    latitude: "",
+    longitude: "",
   });
 
   /* جلب المناطق من الـ API */
@@ -96,15 +99,63 @@ const AddProperty = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleLocationSelect = (latitude: number, longitude: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      latitude: latitude.toString(),
+      longitude: longitude.toString(),
+    }));
+  };
+
+  /* التحقق من أبعاد الصورة */
+  const getImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          resolve({ width: img.width, height: img.height });
+        };
+        img.onerror = () => {
+          reject(new Error("فشل في قراءة الصورة"));
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => {
+        reject(new Error("خطأ في قراءة الملف"));
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   /* الصور */
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
 
     Array.from(files).forEach((file) => {
+      // Check image dimensions (max 20 megapixels)
       const reader = new FileReader();
-      reader.onload = () => {
-        setImages((prev) => [...prev, reader.result as string]);
+      reader.onload = async (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const megapixels = (img.width * img.height) / 1000000;
+          
+          if (megapixels > 20) {
+            toast.error(`الصورة ${file.name} تتجاوز 20 ميجا بكسل (${megapixels.toFixed(2)} ميجا بكسل)`);
+            return;
+          }
+          
+          setImages((prev) => [...prev, event.target?.result as string]);
+          toast.success(`تم تحميل الصورة بنجاح (${megapixels.toFixed(2)} ميجا بكسل)`);
+        };
+        img.onerror = () => {
+          toast.error(`فشل في قراءة الصورة: ${file.name}`);
+        };
+        img.src = event.target?.result as string;
+      };
+      reader.onerror = () => {
+        toast.error(`خطأ في قراءة الملف: ${file.name}`);
       };
       reader.readAsDataURL(file);
     });
@@ -120,7 +171,30 @@ const AddProperty = () => {
     if (!files) return;
 
     Array.from(files).forEach((file) => {
-      setVideos((prev) => [...prev, file]);
+      // Check video file size - get video dimensions through metadata
+      const video = document.createElement('video');
+      const fileUrl = URL.createObjectURL(file);
+      
+      video.onloadedmetadata = () => {
+        const megapixels = (video.videoWidth * video.videoHeight) / 1000000;
+        
+        if (megapixels > 50) {
+          toast.error(`الفيديو ${file.name} يتجاوز 50 ميجا بكسل (${megapixels.toFixed(2)} ميجا بكسل)`);
+          URL.revokeObjectURL(fileUrl);
+          return;
+        }
+        
+        setVideos((prev) => [...prev, file]);
+        toast.success(`تم تحميل الفيديو بنجاح (${megapixels.toFixed(2)} ميجا بكسل)`);
+        URL.revokeObjectURL(fileUrl);
+      };
+      
+      video.onerror = () => {
+        toast.error(`فشل في قراءة الفيديو: ${file.name}`);
+        URL.revokeObjectURL(fileUrl);
+      };
+      
+      video.src = fileUrl;
     });
   };
 
@@ -138,6 +212,12 @@ const AddProperty = () => {
       return;
     }
 
+    if (!formData.latitude || !formData.longitude) {
+      toast.error("يرجى اختيار الموقع على الخريطة");
+      setLoading(false);
+      return;
+    }
+
     if (images.length === 0) {
       toast.error("يرجى إضافة صور للعقار");
       setLoading(false);
@@ -149,6 +229,35 @@ const AddProperty = () => {
       setLoading(false);
       return;
     }
+
+    // التحقق من أن جميع الصور والفيديوهات تحقق المتطلبات
+    let hasInvalidFiles = false;
+    
+    // Verify images by reloading them to check megapixels
+    for (let i = 0; i < images.length; i++) {
+      const imageBase64 = images[i];
+      await new Promise<void>((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const megapixels = (img.width * img.height) / 1000000;
+          if (megapixels > 20) {
+            toast.error(`الصورة رقم ${i + 1} تتجاوز 20 ميجا بكسل`);
+            hasInvalidFiles = true;
+          }
+          resolve();
+        };
+        img.onerror = () => {
+          resolve();
+        };
+        img.src = imageBase64;
+      });
+    }
+
+    if (hasInvalidFiles) {
+      setLoading(false);
+      return;
+    }
+
     try {
       const token = localStorage.getItem("access_token") || localStorage.getItem("auth_token");
       if (!token) {
@@ -169,19 +278,23 @@ const AddProperty = () => {
         rooms: parseInt(formData.bedrooms) || 1,
         beds: parseInt(formData.beds) || 1,
         bathrooms: parseInt(formData.bathrooms) || 1,
-        size: formData.area ? parseInt(formData.area) : null,
-        floor: formData.floor ? parseInt(formData.floor) : null,
+        size: formData.area ? parseInt(formData.area) : 0,
+        floor: formData.floor ? parseInt(formData.floor) : 0,
         furnished: formData.furnished === true,
         usage_type: formData.usage_type || "families",
         description: formData.description_ar || "",
         contact: formData.contact || "",
+        latitude: formData.latitude && formData.latitude.trim() ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude && formData.longitude.trim() ? parseFloat(formData.longitude) : null,
       };
 
-      // حذف القيم الفارغة والـ null والـ undefined
+      // حذف القيم الفارغة والـ null والـ undefined فقط (ليس 0)
       const cleanData = {};
       Object.keys(propertyData).forEach(key => {
-        if (propertyData[key] !== "" && propertyData[key] !== null && propertyData[key] !== undefined) {
-          cleanData[key] = propertyData[key];
+        const value = propertyData[key];
+        // عدم إرسال null أو undefined أو strings فارغة (لكن 0 مقبول)
+        if (value !== "" && value !== null && value !== undefined) {
+          cleanData[key] = value;
         }
       });
 
@@ -191,9 +304,13 @@ const AddProperty = () => {
       // Create FormData to send images and videos along with property data
       const formDataMultipart = new FormData();
       
-      // Add property fields
+      // Add property fields - تحويل جميع القيم إلى strings
       Object.keys(cleanData).forEach(key => {
-        formDataMultipart.append(key, cleanData[key]);
+        const value = cleanData[key];
+        // تحويل الأرقام والقيم الأخرى إلى strings
+        if (value !== null && value !== undefined) {
+          formDataMultipart.append(key, String(value));
+        }
       });
       
       // Add images
@@ -215,10 +332,22 @@ const AddProperty = () => {
         formDataMultipart.append(`videos`, videoFile, `video-${index}.mp4`);
       });
       
+      console.log("=== DEBUG INFO ===");
       console.log("Sending to:", `${apiUrl}/properties/`);
       console.log("With images:", images.length);
       console.log("With videos:", videos.length);
+      console.log("Latitude:", formData.latitude);
+      console.log("Longitude:", formData.longitude);
       console.log("Token:", token);
+      console.log("FormData entries:");
+      for (let [key, value] of formDataMultipart.entries()) {
+        if (typeof value === 'string') {
+          console.log(`  ${key}: ${value}`);
+        } else {
+          console.log(`  ${key}: [File]`);
+        }
+      }
+      console.log("=== END DEBUG ===");
       
       const response = await fetch(`${apiUrl}/properties/`, {
         method: "POST",
@@ -230,6 +359,15 @@ const AddProperty = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("Backend Error Response:", errorData);
+        
+        // معالجة الأخطاء المفصلة
+        if (errorData.errors) {
+          const errorMessages = Object.entries(errorData.errors)
+            .map(([key, value]: any) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+            .join('\n');
+          throw new Error(errorMessages);
+        }
         throw new Error(errorData.detail || "خطأ في إضافة العقار");
       }
 
@@ -309,65 +447,121 @@ const AddProperty = () => {
             </CardContent>
           </Card>
 
-          {/* الموقع */}
+          {/* الموقع والموقع الجغرافي (مدمجة) */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-primary" />
-                الموقع
+                الموقع والإحداثيات الجغرافية
               </CardTitle>
+              <CardDescription>حدد المنطقة والعنوان والموقع على الخريطة</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label
-                  htmlFor="location"
-                  className="text-sm font-medium text-foreground"
-                >
-                  المنطقة <span className="text-red-500">*</span>
-                </label>
-                <Select
-                  value={formData.location}
-                  onValueChange={(v) => handleSelectChange("location", v)}
-                >
-                  <SelectTrigger id="location">
-                    <SelectValue placeholder="اختر المنطقة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {loadingData ? (
-                      <div className="p-2 text-center text-sm text-gray-500">
-                        جاري التحميل...
-                      </div>
-                    ) : areas.length > 0 ? (
-                      areas.map((area) => (
-                        <SelectItem key={area.id} value={area.name}>
-                          {area.name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="p-2 text-center text-sm text-gray-500">
-                        لا توجد مناطق
-                      </div>
-                    )}
-                  </SelectContent>
-                </Select>
+            <CardContent className="space-y-6">
+              {/* المنطقة والعنوان */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label
+                    htmlFor="location"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    المنطقة <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    value={formData.location}
+                    onValueChange={(v) => handleSelectChange("location", v)}
+                  >
+                    <SelectTrigger id="location">
+                      <SelectValue placeholder="اختر المنطقة" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {loadingData ? (
+                        <div className="p-2 text-center text-sm text-gray-500">
+                          جاري التحميل...
+                        </div>
+                      ) : areas.length > 0 ? (
+                        areas.map((area) => (
+                          <SelectItem key={area.id} value={area.name}>
+                            {area.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="p-2 text-center text-sm text-gray-500">
+                          لا توجد مناطق
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <label
+                    htmlFor="address"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    العنوان التفصيلي <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    id="address"
+                    name="address"
+                    placeholder="العنوان التفصيلي"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <label
-                  htmlFor="address"
-                  className="text-sm font-medium text-foreground"
-                >
-                  العنوان التفصيلي <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  id="address"
-                  name="address"
-                  placeholder="العنوان التفصيلي"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  required
+              {/* الفاصل */}
+              <div className="border-t border-border/30"></div>
+
+              {/* الخريطة الجغرافية */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-foreground">
+                    اختر الموقع على الخريطة <span className="text-red-500">*</span>
+                  </label>
+                  {formData.latitude && formData.longitude && (
+                    <span className="text-xs text-green-600 bg-green-50 dark:bg-green-950 px-2 py-1 rounded border border-green-200 dark:border-green-800">
+                      ✓ تم تحديد الموقع
+                    </span>
+                  )}
+                  {(!formData.latitude || !formData.longitude) && (
+                    <span className="text-xs text-red-600 bg-red-50 dark:bg-red-950 px-2 py-1 rounded border border-red-200 dark:border-red-800">
+                      ⚠ مطلوب
+                    </span>
+                  )}
+                </div>
+                <LocationPicker 
+                  onLocationSelect={handleLocationSelect}
+                  latitude={formData.latitude}
+                  longitude={formData.longitude}
+                  height="450px"
                 />
+                {!formData.latitude || !formData.longitude ? (
+                  <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+                    <span>⚠</span> يرجى اختيار موقع على الخريطة
+                  </p>
+                ) : (
+                  <p className="text-xs text-green-500 mt-2 flex items-center gap-1">
+                    <span>✓</span> تم اختيار الموقع بنجاح
+                  </p>
+                )}
               </div>
+
+              {/* الإحداثيات المعروضة */}
+              {(formData.latitude || formData.longitude) && (
+                <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3 space-y-2 border border-green-200 dark:border-green-800">
+                  <p className="text-xs font-medium text-foreground">الإحداثيات المحددة:</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                    <div>
+                      <span className="font-medium">الخط الاستوائي:</span> {formData.latitude || '-'}
+                    </div>
+                    <div>
+                      <span className="font-medium">خط الطول:</span> {formData.longitude || '-'}
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -576,6 +770,8 @@ const AddProperty = () => {
               </div>
             </CardContent>
           </Card>
+
+
 
           {/* الصور */}
           <Card className="border-border/50">

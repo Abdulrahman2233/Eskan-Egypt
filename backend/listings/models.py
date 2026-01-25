@@ -46,12 +46,16 @@ class Property(models.Model):
     contact = models.CharField(
         max_length=15,
         validators=[
-            MinLengthValidator(11),
+            MinLengthValidator(10),
             MaxLengthValidator(15),
             RegexValidator(r'^[0-9]+$', 'رقم التواصل يجب أن يحتوي على أرقام فقط')
         ]
     )
     featured = models.BooleanField(default=False)
+    
+    # الإحداثيات الجغرافية
+    latitude = models.FloatField(null=True, blank=True, verbose_name='خط العرض')
+    longitude = models.FloatField(null=True, blank=True, verbose_name='خط الطول')
     
     # Approval Fields
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
@@ -126,4 +130,20 @@ class Offer(models.Model):
     class Meta:
         verbose_name = "عرض"
         verbose_name_plural = "العروض"
+        ordering = ['-created_at']
+
+class ContactMessage(models.Model):
+    """نموذج رسائل التواصل"""
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.subject} - {self.name}"
+    
+    class Meta:
+        verbose_name = "رسالة تواصل"
+        verbose_name_plural = "رسائل التواصل"
         ordering = ['-created_at']

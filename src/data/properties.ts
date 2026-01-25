@@ -6,6 +6,7 @@ export interface Property {
   address: string;
   price: number;
   rooms: number;
+  beds: number;
   bathrooms: number;
   size: number;
   floor: number;
@@ -13,10 +14,13 @@ export interface Property {
   type: string;
   typeEn: string;
   images: { image_url: string }[];
+  videos?: { video_url: string }[];
   description: string;
   descriptionEn: string;
   contact: string;
   featured?: boolean;
+  latitude?: number | string;
+  longitude?: number | string;
 }
 
 export const alexandriaAreas = [

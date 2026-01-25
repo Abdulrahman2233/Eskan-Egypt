@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Area, Property, PropertyImage, PropertyVideo, Offer
+from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage
 
 class PropertyImageSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
@@ -41,6 +41,8 @@ class PropertySerializer(serializers.ModelSerializer):
         allow_null=False,
         required=True
     )
+    latitude = serializers.FloatField(allow_null=True, required=False)
+    longitude = serializers.FloatField(allow_null=True, required=False)
     usage_type_ar = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     owner_name = serializers.SerializerMethodField()
@@ -76,11 +78,17 @@ class PropertySerializer(serializers.ModelSerializer):
         return None
     
     def validate_contact(self, value):
-        """التحقق من أن رقم التواصل أرقام فقط وبين 11 و 15"""
+        """التحقق من أن رقم التواصل أرقام فقط وبين 10 و 15"""
+        # تحويل إلى string وإزالة المسافات والشرطات
+        value = str(value).strip().replace(" ", "").replace("-", "")
+        
         if not value.isdigit():
             raise serializers.ValidationError("رقم التواصل يجب أن يحتوي على أرقام فقط")
-        if len(value) < 11 or len(value) > 15:
-            raise serializers.ValidationError("رقم التواصل يجب أن يكون بين 11 و 15 رقم")
+        
+        # قبول أرقام مصرية بصيغ مختلفة
+        # 01234567890 (11)، 00201234567890 (12+)، +201234567890 (11+)
+        if len(value) < 10 or len(value) > 15:
+            raise serializers.ValidationError(f"رقم التواصل يجب أن يكون بين 10 و 15 رقم (طول الرقم الحالي: {len(value)})")
         return value
     
     class Meta:
@@ -89,6 +97,7 @@ class PropertySerializer(serializers.ModelSerializer):
             'id', 'name', 'area', 'area_data', 'address', 'price', 'rooms', 'beds', 'bathrooms',
             'size', 'floor', 'furnished', 'usage_type', 'usage_type_ar',
             'description', 'contact', 'featured',
+            'latitude', 'longitude',
             'images', 'videos', 'created_at', 'updated_at',
             # حقول الموافقات
             'owner', 'owner_name', 'status', 'status_display', 'submitted_at',
@@ -108,6 +117,8 @@ class PropertySerializer(serializers.ModelSerializer):
             'floor': {'required': True},
             'contact': {'required': True},
             'usage_type': {'required': False},
+            'latitude': {'required': False, 'allow_null': True},
+            'longitude': {'required': False, 'allow_null': True},
         }
 
 
@@ -127,3 +138,19 @@ class OfferSerializer(serializers.ModelSerializer):
             'terms',
         )
         read_only_fields = ('id', 'created_at', 'updated_at')
+
+
+class ContactMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactMessage
+        fields = (
+            'id',
+            'name',
+            'email',
+            'subject',
+            'message',
+            'created_at',
+        )
+        read_only_fields = ('id', 'created_at')
+
+

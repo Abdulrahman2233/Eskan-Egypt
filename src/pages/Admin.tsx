@@ -159,7 +159,10 @@ const Admin = () => {
           {/* Statistics Cards */}
           {loading ? (
             <div className="flex justify-center items-center py-12">
-              <Loader className="h-8 w-8 animate-spin text-primary" />
+              <div className="inline-flex flex-col items-center gap-2">
+                <Loader className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm text-slate-500">جاري تحميل البيانات...</p>
+              </div>
             </div>
           ) : statistics ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
