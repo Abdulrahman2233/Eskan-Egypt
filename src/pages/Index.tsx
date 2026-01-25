@@ -108,29 +108,6 @@ const Index = () => {
     loadAreas();
   }, []);
 
-  const faqs = [
-    {
-      question: "هل المنصة مخصصة فقط لسكن الطلاب؟",
-      answer:
-        "لا، المنصة توفر سكن للطلاب، العائلات، والسكن اليومي أو الأسبوعي حسب احتياجك.",
-    },
-    {
-      question: "كيف يمكنني حجز سكن طلاب؟",
-      answer:
-        "تستطيع تصفح المناطق والسكن المتاح، ثم التواصل مباشرة مع المالك أو الوسيط من خلال بيانات الاتصال في صفحة العقار.",
-    },
-    {
-      question: "هل الأسعار ثابتة أم قابلة للتفاوض؟",
-      answer:
-        "الأغلب قابل للتفاوض حسب المالك أو الوسيط، يمكنك التواصل معه والاتفاق على السعر النهائي.",
-    },
-    {
-      question: "هل توجد رسوم على استخدام الموقع؟",
-      answer:
-        "البحث والتصفح مجاني بالكامل للمستخدمين، قد يتم احتساب رسوم خدمة على بعض الإعلانات المدفوعة.",
-    },
-  ];
-
   // بطاقتين فقط
   const stats = [
     { value: "1000+", label: "عميل سعيد" },
@@ -508,73 +485,7 @@ const Index = () => {
       </section>
 
 
-      {/* FAQ Section */}
-      <section className="py-12 md:py-20 bg-background">
-        <div className="container mx-auto px-4">
-          <motion.div
-            className="text-center mb-10 md:mb-12"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-          >
-            <span className="inline-flex items-center gap-2 text-primary text-sm font-medium mb-3">
-              <MessageSquare className="h-4 w-4" />
-              الأسئلة الشائعة
-            </span>
-            <h2 className="text-2xl md:4xl font-bold mb-3">
-              هل لديك سؤال؟
-            </h2>
-            <p className="text-muted-foreground">
-              إليك إجابات لأكثر الأسئلة شيوعاً حول السكن في منصتنا
-            </p>
-          </motion.div>
 
-          <motion.div
-            className="max-w-3xl mx-auto"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeInUp}
-          >
-            <Accordion type="single" collapsible className="space-y-3">
-              {faqs.map((faq, index) => (
-                <AccordionItem
-                  key={index}
-                  value={`item-${index}`}
-                  className="bg-accent/20 rounded-xl px-6 border-0 shadow-sm"
-                >
-                  <AccordionTrigger className="text-right hover:no-underline py-5">
-                    <span className="font-semibold text-base">
-                      {faq.question}
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground pb-5">
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </motion.div>
-
-          <motion.div
-            className="text-center mt-8"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-          >
-            <p className="text-muted-foreground mb-4">
-              لم تجد إجابة لسؤالك؟
-            </p>
-            <Button asChild variant="outline" className="gap-2">
-              <Link to="/contact">
-                <PhoneIcon className="h-4 w-4" />
-                تواصل معنا
-              </Link>
-            </Button>
-          </motion.div>
-        </div>
-      </section>
 
 
       <Footer />

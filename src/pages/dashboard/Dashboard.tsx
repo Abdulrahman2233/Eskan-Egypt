@@ -10,6 +10,7 @@ import {
   ArrowUpRight,
   Plus,
   AlertCircle,
+  MessageCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -177,21 +178,32 @@ const Dashboard = () => {
         </motion.div>
 
 
-        {/* Quick Action */}
+        {/* Quick Actions */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="mb-8"
+          className="mb-8 flex flex-col sm:flex-row gap-3"
         >
           <Button
             size="lg"
-            className="w-full sm:w-auto shadow-lg shadow-primary/20 gap-2"
+            className="shadow-lg shadow-primary/20 gap-2"
             asChild
           >
             <Link to="/dashboard/add-property">
               <Plus className="h-5 w-5" />
               إضافة عقار جديد
+            </Link>
+          </Button>
+          <Button
+            size="lg"
+            variant="outline"
+            className="gap-2"
+            asChild
+          >
+            <Link to="/contact">
+              <MessageCircle className="h-5 w-5" />
+              تواصل معنا
             </Link>
           </Button>
         </motion.div>

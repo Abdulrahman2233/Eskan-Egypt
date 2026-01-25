@@ -10,7 +10,7 @@ export const logger = {
   /**
    * Debug level - Most detailed information, typically only of interest when diagnosing problems.
    */
-  debug: (message: string, data?: any) => {
+  debug: (message: string, data?: unknown): void => {
     if (isDev) {
       console.debug(`[DEBUG] ${message}`, data);
     }
@@ -19,7 +19,7 @@ export const logger = {
   /**
    * Info level - Confirmation that things are working as expected.
    */
-  info: (message: string, data?: any) => {
+  info: (message: string, data?: unknown): void => {
     if (isDev) {
       console.info(`[INFO] ${message}`, data);
     }
@@ -28,7 +28,7 @@ export const logger = {
   /**
    * Warning level - Something unexpected happened, or indicative of some problem in the future.
    */
-  warn: (message: string, data?: any) => {
+  warn: (message: string, data?: unknown): void => {
     if (isDev) {
       console.warn(`[WARN] ${message}`, data);
     }
@@ -41,7 +41,7 @@ export const logger = {
   /**
    * Error level - Serious problem, something must be done immediately.
    */
-  error: (message: string, error?: Error | unknown) => {
+  error: (message: string, error?: Error | unknown): void => {
     if (isDev) {
       console.error(`[ERROR] ${message}`, error);
     }
@@ -81,7 +81,7 @@ const captureError = (message: string, error: unknown) => {
 /**
  * Send warning to tracking service
  */
-const captureWarning = (message: string, data: any) => {
+const captureWarning = (message: string, data?: unknown): void => {
   try {
     if (window.Sentry) {
       window.Sentry.captureMessage(message, {
@@ -95,7 +95,7 @@ const captureWarning = (message: string, data: any) => {
       message,
       data,
     });
-  } catch (e) {
+  } catch (_e) {
     // Silent fail
   }
 };
@@ -107,8 +107,8 @@ const sendToBackend = async (payload: {
   level: string;
   message: string;
   error?: string;
-  data?: any;
-}) => {
+  data?: unknown;
+}): Promise<void> => {
   try {
     const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
     await fetch(`${apiUrl}/logs/`, {
@@ -123,7 +123,7 @@ const sendToBackend = async (payload: {
         url: window.location.href,
       }),
     });
-  } catch (e) {
+  } catch (_e) {
     // Silent fail - don't break app if logging fails
   }
 };

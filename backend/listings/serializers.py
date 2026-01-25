@@ -1,5 +1,9 @@
 from rest_framework import serializers
 from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage
+from decimal import Decimal, InvalidOperation
+import logging
+
+logger = logging.getLogger(__name__)
 
 class PropertyImageSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
@@ -41,8 +45,6 @@ class PropertySerializer(serializers.ModelSerializer):
         allow_null=False,
         required=True
     )
-    latitude = serializers.FloatField(allow_null=True, required=False)
-    longitude = serializers.FloatField(allow_null=True, required=False)
     usage_type_ar = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     owner_name = serializers.SerializerMethodField()
@@ -78,23 +80,79 @@ class PropertySerializer(serializers.ModelSerializer):
         return None
     
     def validate_contact(self, value):
-        """التحقق من أن رقم التواصل أرقام فقط وبين 10 و 15"""
-        # تحويل إلى string وإزالة المسافات والشرطات
-        value = str(value).strip().replace(" ", "").replace("-", "")
-        
+        """التحقق من أن رقم التواصل أرقام فقط وبين 11 و 15"""
         if not value.isdigit():
             raise serializers.ValidationError("رقم التواصل يجب أن يحتوي على أرقام فقط")
-        
-        # قبول أرقام مصرية بصيغ مختلفة
-        # 01234567890 (11)، 00201234567890 (12+)، +201234567890 (11+)
-        if len(value) < 10 or len(value) > 15:
-            raise serializers.ValidationError(f"رقم التواصل يجب أن يكون بين 10 و 15 رقم (طول الرقم الحالي: {len(value)})")
+        if len(value) < 11 or len(value) > 15:
+            raise serializers.ValidationError("رقم التواصل يجب أن يكون بين 11 و 15 رقم")
         return value
+    
+    @staticmethod
+    def _parse_coordinate(value, coord_type='latitude'):
+        """
+        دالة شاملة لتحويل الإحداثيات بشكل آمن وموثوق
+        تتعامل مع: strings، floats، ints، Decimals، وأي نوع بيانات
+        """
+        # معالجة القيم الفارغة والـ None
+        if value is None or value == '' or value == 'null' or value == 'undefined':
+            return None
+        
+        try:
+            # التحويل إلى string أولاً ثم تنظيفه
+            str_value = str(value).strip()
+            
+            # تجاهل القيم الفارغة بعد التنظيف
+            if not str_value or str_value.lower() in ['none', 'null', 'undefined', 'nan']:
+                return None
+            
+            # التحويل إلى Decimal (أدق من float)
+            try:
+                decimal_value = Decimal(str_value)
+            except (InvalidOperation, ValueError):
+                # محاولة تحويل float إذا فشل Decimal
+                float_value = float(str_value)
+                if not (-180 <= float_value <= 180 if coord_type == 'longitude' else -90 <= float_value <= 90):
+                    return None
+                decimal_value = Decimal(str(float_value))
+            
+            # التحقق من النطاق المسموح
+            if coord_type == 'latitude':
+                if decimal_value < Decimal('-90') or decimal_value > Decimal('90'):
+                    logger.warning(f"Latitude خارج النطاق: {decimal_value}")
+                    return None
+            else:  # longitude
+                if decimal_value < Decimal('-180') or decimal_value > Decimal('180'):
+                    logger.warning(f"Longitude خارج النطاق: {decimal_value}")
+                    return None
+            
+            # التقريب إلى 8 أرقام عشرية بأمان
+            quantized = decimal_value.quantize(Decimal('0.00000001'))
+            
+            logger.info(f"تم تحويل {coord_type}: {value} → {quantized}")
+            return quantized
+            
+        except Exception as e:
+            logger.error(f"خطأ في تحويل {coord_type}: {value} - {str(e)}")
+            return None
+    
+    def validate_latitude(self, value):
+        """التحقق من صحة latitude مع معالجة شاملة للأخطاء"""
+        result = self._parse_coordinate(value, 'latitude')
+        # إذا لم نتمكن من التحويل، نرجع None بدلاً من رفع خطأ
+        # لأن حقل latitude اختياري (null=True, blank=True)
+        return result
+    
+    def validate_longitude(self, value):
+        """التحقق من صحة longitude مع معالجة شاملة للأخطاء"""
+        result = self._parse_coordinate(value, 'longitude')
+        # إذا لم نتمكن من التحويل، نرجع None بدلاً من رفع خطأ
+        # لأن حقل longitude اختياري (null=True, blank=True)
+        return result
     
     class Meta:
         model = Property
         fields = (
-            'id', 'name', 'area', 'area_data', 'address', 'price', 'rooms', 'beds', 'bathrooms',
+            'id', 'name', 'area', 'area_data', 'address', 'price', 'original_price', 'discount', 'rooms', 'beds', 'bathrooms',
             'size', 'floor', 'furnished', 'usage_type', 'usage_type_ar',
             'description', 'contact', 'featured',
             'latitude', 'longitude',
@@ -117,8 +175,6 @@ class PropertySerializer(serializers.ModelSerializer):
             'floor': {'required': True},
             'contact': {'required': True},
             'usage_type': {'required': False},
-            'latitude': {'required': False, 'allow_null': True},
-            'longitude': {'required': False, 'allow_null': True},
         }
 
 

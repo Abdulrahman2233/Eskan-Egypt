@@ -22,6 +22,7 @@ class PropertyAdmin(admin.ModelAdmin):
         'get_owner_info',
         'area',
         'price',
+        'discount',
         'rooms',
         'beds',
         'status_badge',
@@ -51,7 +52,7 @@ class PropertyAdmin(admin.ModelAdmin):
         ('معلومات العقار الأساسية', {
             'fields': (
                 'id', 'name', 'area', 'address',
-                'price', 'rooms', 'beds', 'bathrooms', 'size', 'floor',
+                'price', 'original_price', 'discount', 'rooms', 'beds', 'bathrooms', 'size', 'floor',
                 'furnished', 'usage_type'
             )
         }),

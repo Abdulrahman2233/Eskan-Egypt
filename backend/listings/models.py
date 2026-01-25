@@ -35,6 +35,8 @@ class Property(models.Model):
     area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name='properties')
     address = models.CharField(max_length=300)
     price = models.DecimalField(max_digits=12, decimal_places=2)
+    original_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='السعر الأصلي')
+    discount = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], verbose_name='نسبة الخصم (%)')
     rooms = models.IntegerField(default=1)
     beds = models.IntegerField(default=1)
     bathrooms = models.IntegerField(default=1)
@@ -46,7 +48,7 @@ class Property(models.Model):
     contact = models.CharField(
         max_length=15,
         validators=[
-            MinLengthValidator(10),
+            MinLengthValidator(11),
             MaxLengthValidator(15),
             RegexValidator(r'^[0-9]+$', 'رقم التواصل يجب أن يحتوي على أرقام فقط')
         ]
@@ -54,8 +56,8 @@ class Property(models.Model):
     featured = models.BooleanField(default=False)
     
     # الإحداثيات الجغرافية
-    latitude = models.FloatField(null=True, blank=True, verbose_name='خط العرض')
-    longitude = models.FloatField(null=True, blank=True, verbose_name='خط الطول')
+    latitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True, verbose_name='خط العرض')
+    longitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True, verbose_name='خط الطول')
     
     # Approval Fields
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')

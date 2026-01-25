@@ -270,6 +270,42 @@ const AddProperty = () => {
       // العثور على Area ID من الاسم
       const selectedArea = areas.find(a => a.name === formData.location);
       
+      // دالة متقدمة لتنسيق الإحداثيات - تتعامل مع أي حالة
+      const formatCoordinate = (value: any): string | null => {
+        try {
+          // معالجة القيم الفارغة والـ null
+          if (value === null || value === undefined || value === '' || value === 'null' || value === 'undefined') {
+            return null;
+          }
+
+          // تحويل إلى string وتنظيفه
+          let strValue = String(value).trim();
+          
+          // تجاهل القيم الفارغة بعد التنظيف
+          if (!strValue || ['none', 'null', 'undefined', 'nan'].includes(strValue.toLowerCase())) {
+            return null;
+          }
+
+          // تحويل آمن إلى رقم
+          const num = parseFloat(strValue);
+          
+          // التحقق من صحة الرقم
+          if (isNaN(num) || !isFinite(num)) {
+            console.warn(`تحذير: قيمة غير صحيحة: ${value}`);
+            return null;
+          }
+
+          // تقريب إلى 8 أرقام عشرية كحد أقصى
+          const rounded = parseFloat(num.toFixed(8));
+          
+          // إعادة التحويل إلى string بدون أصفار غير ضرورية
+          return rounded.toString();
+        } catch (error) {
+          console.error(`خطأ في تحويل الإحداثيات: ${value}`, error);
+          return null;
+        }
+      };
+      
       const propertyData = {
         name: formData.title_ar,
         area: selectedArea?.id || null,
@@ -284,8 +320,8 @@ const AddProperty = () => {
         usage_type: formData.usage_type || "families",
         description: formData.description_ar || "",
         contact: formData.contact || "",
-        latitude: formData.latitude && formData.latitude.trim() ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude && formData.longitude.trim() ? parseFloat(formData.longitude) : null,
+        latitude: formatCoordinate(formData.latitude),
+        longitude: formatCoordinate(formData.longitude),
       };
 
       // حذف القيم الفارغة والـ null والـ undefined فقط (ليس 0)
@@ -340,7 +376,7 @@ const AddProperty = () => {
       console.log("Longitude:", formData.longitude);
       console.log("Token:", token);
       console.log("FormData entries:");
-      for (let [key, value] of formDataMultipart.entries()) {
+      for (const [key, value] of formDataMultipart.entries()) {
         if (typeof value === 'string') {
           console.log(`  ${key}: ${value}`);
         } else {

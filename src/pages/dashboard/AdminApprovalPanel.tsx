@@ -68,7 +68,7 @@ const AdminApprovalPanel = () => {
       setLoading(true);
       
       // جلب العقارات بناءً على الحالة
-      let endpoint = `/listings/properties/${activeTab}/`;
+      const endpoint = `/listings/properties/${activeTab}/`;
       const response = await API.get(endpoint);
       setProperties(response.data);
 

@@ -178,7 +178,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
                 {/* Navigation */}
                 <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-                  {menuItems.map((item: any) => {
+                  {menuItems.map((item: typeof menuItems[0]) => {
                     // التحقق من الصلاحيات
                     if (item.adminOnly && !user?.is_staff && !user?.is_superuser) {
                       return null;
@@ -280,7 +280,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
           {/* Navigation */}
           <nav className="flex-1 p-3 space-y-1">
-            {menuItems.map((item: any) => {
+            {menuItems.map((item: typeof menuItems[0]) => {
               // التحقق من الصلاحيات
               if (item.adminOnly && !user?.is_staff && !user?.is_superuser) {
                 return null;

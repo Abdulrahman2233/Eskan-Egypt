@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { PropertyCard } from "@/components/PropertyCard";
 import { SearchFilters } from "@/components/SearchFilters";
+import { QuickFilters } from "@/components/QuickFilters";
 import { useSearchParams, Link } from "react-router-dom";
 import { API_URL } from "@/config";
 import { fetchProperties } from "@/api";
@@ -112,6 +113,7 @@ const Properties: React.FC = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState(0);
   const [displayCount, setDisplayCount] = useState(6); // عدد العقارات المعروضة
+  const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
 
   // ----------- Fetch Properties -----------
   useEffect(() => {
@@ -214,6 +216,44 @@ const Properties: React.FC = () => {
     setActiveFilters(filterCount);
     setFilteredProperties(filtered);
     setIsFilterOpen(false);
+  };
+
+  // ----------- Handle Quick Filter (البحث السريع) -----------
+  const handleQuickFilter = (usageType: string) => {
+    setActiveQuickFilter(usageType);
+
+    // إذا كانت المنطقة محددة بالفعل أو يوجد filters حالي
+    if (currentFilters?.area) {
+      // تطبيق الفلترة على الفلاتر الحالية
+      const newFilters = {
+        ...currentFilters,
+        usageType: currentFilters.usageType === usageType ? "" : usageType,
+      };
+      handleSearch(newFilters);
+    } else if (initialArea) {
+      // إذا كانت هناك منطقة من URL
+      const filters: Filters = {
+        area: initialArea,
+        rooms: "",
+        usageType: usageType,
+        furnished: "",
+        priceRange: [0, 20000],
+      };
+      handleSearch(filters);
+    } else {
+      // إذا لم تكن هناك منطقة محددة، نطبق الفلترة على جميع البيانات
+      let filtered = [...properties];
+      filtered = filtered.filter((p) => p.usage_type === usageType);
+      setFilteredProperties(filtered);
+      setCurrentFilters({
+        area: "",
+        rooms: "",
+        usageType: usageType,
+        furnished: "",
+        priceRange: [0, 20000],
+      });
+      setActiveFilters(1);
+    }
   };
 
   // ----------- Empty Message -----------
@@ -416,7 +456,7 @@ const Properties: React.FC = () => {
                   </SheetHeader>
                   <div className="mt-6">
                     <SearchFilters
-                      onSearch={handleSearch}
+                      onSearch={(filters) => handleSearch(filters as Filters)}
                       initialArea={initialArea}
                     />
                   </div>
@@ -437,6 +477,19 @@ const Properties: React.FC = () => {
             </div>
           )}
 
+          {/* Quick Filters (Mobile & Desktop) */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-8"
+          >
+            <QuickFilters
+              onFilterSelect={handleQuickFilter}
+              activeFilter={activeQuickFilter}
+            />
+          </motion.div>
+
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Desktop Filters Sidebar */}
             <motion.aside
@@ -447,7 +500,7 @@ const Properties: React.FC = () => {
             >
               <div className="sticky top-24">
                 <SearchFilters
-                  onSearch={handleSearch}
+                  onSearch={(filters) => handleSearch(filters as Filters)}
                   initialArea={initialArea}
                 />
               </div>

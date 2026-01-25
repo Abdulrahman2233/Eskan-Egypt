@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Bed, Bath, Maximize2, MapPin } from "lucide-react";
+import { Bed, Bath, Maximize2, MapPin, Percent, Heart } from "lucide-react";
 
 const backendUrl = "https://abdo238923.pythonanywhere.com";
 
@@ -21,12 +21,22 @@ const getUsageTypeInArabic = (type: string | null | undefined): string => {
 };
 
 interface PropertyCardProps {
-  property: any;
+  property: {
+    id: string;
+    name: string;
+    price: number;
+    original_price?: number;
+    discount?: number;
+    images?: Array<{ image_url: string }>;
+    rooms?: number;
+    bathrooms?: number;
+    size?: number;
+    area?: { name: string } | string;
+    usage_type?: string;
+  };
 }
 
 export const PropertyCard = ({ property }: PropertyCardProps) => {
-  const [isFavorite, setIsFavorite] = useState(false);
-  
   // معالجة المنطقة
   const areaName =
     typeof property.area_data === "object" && property.area_data !== null
@@ -68,9 +78,19 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
         {/* طبقة التظليل */}
         <div className="card-gradient-overlay absolute inset-0" />
         
+        {/* شارة الخصم */}
+        {property.discount && property.discount > 0 && (
+          <div className="absolute top-3 left-3 z-10">
+            <Badge className="bg-gradient-to-r from-red-500 to-rose-600 text-white border-0 shadow-lg px-2 py-1 text-xs font-bold flex items-center gap-1">
+              <Percent className="h-3 w-3" />
+              <span>خصم {property.discount}%</span>
+            </Badge>
+          </div>
+        )}
+        
         {/* 🔹 شارة نوع الاستخدام (بدل مميز) */}
         {property.usage_type && (
-          <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground font-bold">
+          <Badge className={`absolute ${property.discount ? 'top-10' : 'top-4'} left-4 bg-primary text-primary-foreground font-bold`}>
             {getUsageTypeInArabic(property.usage_type) || property.usage_type_ar || property.usage_type}
           </Badge>
         )}
@@ -78,13 +98,30 @@ export const PropertyCard = ({ property }: PropertyCardProps) => {
         {/* السعر */}
         <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
           <div className="bg-background/95 backdrop-blur-sm px-4 py-2 rounded-lg">
-            <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-primary">
-                {property.price?.toLocaleString()}
-              </span>
-              <span className="text-sm text-muted-foreground">جنيه/شهر</span>
+            <div className="flex flex-col">
+              {/* السعر الأصلي إذا كان هناك خصم */}
+              {property.original_price && property.discount && (
+                <span className="text-xs text-muted-foreground line-through">
+                  {property.original_price.toLocaleString()} جنيه
+                </span>
+              )}
+              <div className="flex items-baseline gap-1">
+                <span className={`text-2xl font-bold ${property.discount ? 'text-red-500' : 'text-primary'}`}>
+                  {property.price?.toLocaleString()}
+                </span>
+                <span className="text-sm text-muted-foreground">جنيه/شهر</span>
+              </div>
             </div>
           </div>
+          
+          {/* شارة المدخرات */}
+          {property.original_price && property.discount && (
+            <div className="bg-green-500/90 backdrop-blur-sm px-2 py-1 rounded-lg">
+              <span className="text-xs text-white font-medium">
+                وفّر {(property.original_price - property.price).toLocaleString()} جنيه
+              </span>
+            </div>
+          )}
         </div>
       </div>
       

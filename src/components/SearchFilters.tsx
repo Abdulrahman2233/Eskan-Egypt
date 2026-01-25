@@ -16,8 +16,16 @@ import { motion } from "framer-motion";
 import { API_URL } from "@/config";
 
 interface SearchFiltersProps {
-  onSearch: (filters: any) => void;
+  onSearch: (filters: Record<string, unknown> | Filters) => void;
   initialArea?: string;
+}
+
+interface Filters {
+  area: string;
+  priceRange: number[];
+  rooms: string;
+  usageType: string;
+  furnished: string;
 }
 
 // 🔹 الخيارات الثابتة لأنواع الاستخدام (نفس القديمة)
