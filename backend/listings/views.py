@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.utils import timezone
 from django.db import models
+from django.db.models import Q
 from datetime import timedelta
 from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage
 from .serializers import AreaSerializer, PropertySerializer, OfferSerializer, ContactMessageSerializer
@@ -24,16 +25,32 @@ class PropertyViewSet(viewsets.ModelViewSet):
         """
         فلترة العقارات بناءً على دور المستخدم:
         - Admin: يرى جميع العقارات
-        - Landlord: يرى عقاراته فقط + العقارات المُوافق عليها
+        - Landlord: يرى عقاراته فقط (لإدارتها) + العقارات المُوافق عليها من الآخرين في القائمة
         - زائر: يرى العقارات المُوافق عليها فقط
+        
+        ملاحظة: get_queryset تُستخدم أيضاً عند الحصول على عقار محدد (get_object)
+        لذا نسمح بالوصول إلى عقارات المستخدم الخاصة حتى يتمكن من إدارتها (حذف، تحديث، إلخ)
         """
         try:
+            # الحصول على معامل يشير إلى ما إذا كان الطلب للحصول على عقار محدد (detail=True)
+            # أم للحصول على قائمة عقارات (detail=False)
+            is_detail_request = self.action in ['retrieve', 'destroy', 'update', 'partial_update', 'approve', 'reject', 'resubmit']
+            
             if self.request.user.is_staff or self.request.user.is_superuser:
                 # الإدمن يرى كل شيء
                 queryset = Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').all()
             elif self.request.user.is_authenticated:
-                # المستخدم المسجل يرى العقارات المُوافق عليها فقط
-                queryset = Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').filter(status='approved')
+                # المستخدم المسجل:
+                user_profile = self.request.user.profile if hasattr(self.request.user, 'profile') else None
+                
+                if is_detail_request:
+                    # عند الوصول إلى عقار محدد: يمكنه الوصول إلى عقاره الخاص أو العقارات المعتمدة
+                    queryset = Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').filter(
+                        Q(status='approved') | Q(owner=user_profile)
+                    )
+                else:
+                    # في قائمة العقارات: يرى فقط العقارات المعتمدة
+                    queryset = Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').filter(status='approved')
             else:
                 # الزائر يرى فقط العقارات المُوافق عليها
                 queryset = Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').filter(status='approved')
@@ -153,6 +170,30 @@ class PropertyViewSet(viewsets.ModelViewSet):
         serializer.save()
 
         return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        """حذف عقار - يمكن للمالك والإدمن فقط"""
+        instance = self.get_object()
+        user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+        
+        # التحقق من الصلاحيات:
+        # - الإدمن يمكنه حذف أي عقار
+        # - صاحب العقار يمكنه حذف عقاره الخاص فقط
+        is_admin = request.user.is_staff or request.user.is_superuser
+        is_owner = user_profile and instance.owner == user_profile
+        
+        if not (is_admin or is_owner):
+            return Response(
+                {'detail': 'ليس لديك صلاحية حذف هذا العقار'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # حذف العقار
+        self.perform_destroy(instance)
+        return Response(
+            {'detail': 'تم حذف العقار بنجاح'},
+            status=status.HTTP_204_NO_CONTENT
+        )
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_properties(self, request):

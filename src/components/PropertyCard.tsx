@@ -14,7 +14,7 @@ const getUsageTypeInArabic = (type: string | null | undefined): string => {
     families: "عائلات",
     students: "طلاب",
     studio: "استوديو",
-    vacation: "مصيفي",
+    vacation: "مصيفين",
     daily: "حجز يومي",
   };
   return typeMapping[type] || type;

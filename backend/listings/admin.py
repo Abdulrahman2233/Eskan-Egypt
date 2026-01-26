@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage
+from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage, ActivityLog
 
 
 class PropertyImageInline(admin.TabularInline):
@@ -261,3 +261,100 @@ class ContactMessageAdmin(admin.ModelAdmin):
         }),
     )
     ordering = ('-created_at',)
+
+
+@admin.register(ActivityLog)
+class ActivityLogAdmin(admin.ModelAdmin):
+    list_display = (
+        'get_action_badge',
+        'user_display',
+        'content_type',
+        'object_name',
+        'timestamp_display',
+    )
+    list_filter = (
+        'action',
+        'content_type',
+        'timestamp',
+        'user',
+    )
+    search_fields = (
+        'user__user__username',
+        'user__user__email',
+        'object_name',
+        'object_id',
+        'description',
+    )
+    readonly_fields = (
+        'user',
+        'action',
+        'content_type',
+        'object_id',
+        'object_name',
+        'description',
+        'ip_address',
+        'timestamp',
+    )
+    fieldsets = (
+        ('معلومات النشاط', {
+            'fields': ('user', 'action', 'timestamp')
+        }),
+        ('تفاصيل الكائن', {
+            'fields': ('content_type', 'object_id', 'object_name')
+        }),
+        ('معلومات إضافية', {
+            'fields': ('description', 'ip_address'),
+            'classes': ('collapse',)
+        }),
+    )
+    ordering = ('-timestamp',)
+    can_delete = False
+    actions = None
+    
+    def get_action_badge(self, obj):
+        """عرض نوع النشاط في شكل بطاقة ملونة"""
+        action_colors = {
+            'create_property': '#2ecc71',
+            'delete_property': '#e74c3c',
+            'update_property': '#3498db',
+            'create_user': '#9b59b6',
+            'approve_property': '#27ae60',
+            'reject_property': '#c0392b',
+        }
+        color = action_colors.get(obj.action, '#95a5a6')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 5px 10px; border-radius: 3px; font-weight: bold;">{}</span>',
+            color,
+            obj.get_action_display()
+        )
+    get_action_badge.short_description = 'نوع النشاط'
+    
+    def user_display(self, obj):
+        """عرض معلومات المستخدم"""
+        if obj.user:
+            return format_html(
+                '<strong>{}</strong><br/><span style="font-size: 12px; color: #7f8c8d;">{}</span>',
+                obj.user.user.username,
+                obj.user.user.email
+            )
+        return format_html('<span style="color: #e74c3c;">حسابات محذوفة</span>')
+    user_display.short_description = 'المستخدم'
+    
+    def timestamp_display(self, obj):
+        """عرض التاريخ والوقت بشكل محسّن"""
+        from django.utils.timezone import localtime
+        local_time = localtime(obj.timestamp)
+        return local_time.strftime('%Y-%m-%d<br/>%H:%M:%S')
+    timestamp_display.short_description = 'التاريخ والوقت'
+    
+    def has_add_permission(self, request):
+        """منع إضافة سجلات نشاط يدويًا"""
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        """منع حذف سجلات النشاط"""
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        """منع تعديل سجلات النشاط"""
+        return False

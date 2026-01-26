@@ -16,7 +16,7 @@ if not exist "backend" (
 REM Start Backend in new window
 echo 🟢 تشغيل Django Backend...
 cd backend
-start "Django Backend" cmd /k ".venv\Scripts\activate.bat && python manage.py runserver 0.0.0.0:8000"
+start "Django Backend" cmd /k "..\.venv\Scripts\activate.bat && python manage.py runserver 0.0.0.0:8000"
 
 REM Wait longer for backend to initialize
 timeout /t 5 /nobreak

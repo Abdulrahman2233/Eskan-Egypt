@@ -149,3 +149,73 @@ class ContactMessage(models.Model):
         verbose_name = "رسالة تواصل"
         verbose_name_plural = "رسائل التواصل"
         ordering = ['-created_at']
+
+
+class ActivityLog(models.Model):
+    """نموذج سجل نشاط المستخدمين"""
+    ACTION_CHOICES = [
+        ('create_property', 'إضافة عقار جديد'),
+        ('delete_property', 'حذف عقار'),
+        ('update_property', 'تعديل عقار'),
+        ('create_user', 'إنشاء حساب جديد'),
+        ('approve_property', 'الموافقة على عقار'),
+        ('reject_property', 'رفض عقار'),
+    ]
+    
+    user = models.ForeignKey(
+        'users.UserProfile',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='activity_logs',
+        verbose_name='المستخدم'
+    )
+    action = models.CharField(
+        max_length=50,
+        choices=ACTION_CHOICES,
+        verbose_name='نوع النشاط'
+    )
+    content_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('property', 'عقار'),
+            ('user', 'مستخدم'),
+        ],
+        verbose_name='نوع المحتوى'
+    )
+    object_id = models.CharField(
+        max_length=500,
+        verbose_name='معرف الكائن',
+        blank=True
+    )
+    object_name = models.CharField(
+        max_length=500,
+        verbose_name='اسم الكائن',
+        blank=True
+    )
+    description = models.TextField(
+        verbose_name='الوصف',
+        blank=True
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name='عنوان IP'
+    )
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='الوقت'
+    )
+    
+    class Meta:
+        ordering = ['-timestamp']
+        verbose_name = 'سجل النشاط'
+        verbose_name_plural = 'سجلات النشاط'
+        indexes = [
+            models.Index(fields=['-timestamp']),
+            models.Index(fields=['user', '-timestamp']),
+            models.Index(fields=['action', '-timestamp']),
+        ]
+    
+    def __str__(self):
+        return f"{self.get_action_display()} - {self.user} - {self.timestamp.strftime('%Y-%m-%d %H:%M')}"
