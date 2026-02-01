@@ -122,6 +122,10 @@ const Auth = () => {
           };
           localStorage.setItem("user", JSON.stringify(userData));
           localStorage.setItem("user_profile", JSON.stringify(profile));
+          
+          // حفظ الدور (role) بناءً على is_staff أو is_superuser
+          const userRole = (data.user?.is_superuser || data.user?.is_staff) ? "admin" : "user";
+          localStorage.setItem("user_role", userRole);
 
           toast.success("تم تسجيل الدخول بنجاح!");
           navigate("/dashboard");
@@ -183,6 +187,10 @@ const Auth = () => {
             };
             localStorage.setItem("user", JSON.stringify(userData));
             localStorage.setItem("user_profile", JSON.stringify(profile));
+            
+            // حفظ الدور (role) بناءً على is_staff أو is_superuser
+            const userRole = (loginData.user?.is_superuser || loginData.user?.is_staff) ? "admin" : "user";
+            localStorage.setItem("user_role", userRole);
 
             toast.success("تم إنشاء الحساب بنجاح!");
             navigate("/dashboard");

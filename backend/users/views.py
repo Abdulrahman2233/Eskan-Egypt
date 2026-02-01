@@ -13,6 +13,9 @@ from .serializers import (
     ChangePasswordSerializer,
 )
 from .models import UserProfile
+from django.db.models import Q
+from django.utils import timezone
+from datetime import timedelta
 
 class AuthViewSet(viewsets.ViewSet):
     """
@@ -188,3 +191,35 @@ class AuthViewSet(viewsets.ViewSet):
                 },
                 status=status.HTTP_200_OK
             )
+    # ----------- RECENT ACCOUNTS ----------------
+    @action(detail=False, methods=['get'], permission_classes=[IsAdminUser], url_path='recent-accounts')
+    def recent_accounts(self, request):
+        """
+        Get recently added accounts.
+        """
+        limit = int(request.query_params.get('limit', 6))
+        
+        # Get recent users from UserProfile
+        recent_users = UserProfile.objects.select_related('user').order_by('-created_at')[:limit]
+        
+        accounts = []
+        for profile in recent_users:
+            user = profile.user
+            accounts.append({
+                'id': user.id,
+                'name': profile.full_name or user.get_full_name() or user.username,
+                'email': user.email,
+                'username': user.username,
+                'phone': profile.phone_number or '',
+                'accountType': profile.user_type,
+                'registrationDate': profile.created_at.strftime('%Y-%m-%d %H:%M'),
+                'avatar': (profile.full_name or user.username)[0] if profile.full_name or user.username else 'ع',
+            })
+        
+        return Response(
+            {
+                'accounts': accounts,
+                'count': len(accounts),
+            },
+            status=status.HTTP_200_OK
+        )

@@ -52,13 +52,6 @@ const menuItems = [
     description: "إدارة عقاراتك",
   },
   {
-    path: "/dashboard/property-approvals",
-    label: "إدارة العقارات",
-    icon: CheckCircle2,
-    description: "مراجعة وموافقة على العقارات",
-    adminOnly: true,
-  },
-  {
     path: "/dashboard/notes",
     label: "ملاحظات",
     icon: BookOpen,

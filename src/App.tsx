@@ -3,7 +3,7 @@ import { Toaster as RadixToaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 /* ===== Loading Component ===== */
 const PageLoader = () => (
@@ -33,18 +33,42 @@ const MyProperties = lazy(() => import("./pages/dashboard/MyProperties"));
 const Settings = lazy(() => import("./pages/dashboard/Settings"));
 const AdminApprovalPanel = lazy(() => import("./pages/dashboard/AdminApprovalPanel"));
 const MyRejectedProperties = lazy(() => import("./pages/dashboard/MyRejectedProperties"));
-const PropertyApprovals = lazy(() => import("./pages/dashboard/PropertyApprovals"));
 const Notes = lazy(() => import("./pages/dashboard/Notes"));
+
+/* ===== Analytics Pages (Lazy Loaded) ===== */
+const Profits = lazy(() => import("./pages/profits"));
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const AdminProperties = lazy(() => import("./pages/admin/Properties"));
+const AdminUsers = lazy(() => import("./pages/admin/Users"));
+const AdminOffers = lazy(() => import("./pages/admin/Offers"));
+const AdminActivity = lazy(() => import("./pages/admin/Activity"));
+const AdminNotifications = lazy(() => import("./pages/admin/Notifications"));
+const AdminMessages = lazy(() => import("./pages/admin/Messages"));
 
 /* ===== Protection ===== */
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { useEffect } from "react";
+import { recordVisitorVisit } from "@/api";
 
 const queryClient = new QueryClient();
+
+const RouteTracker = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.pathname === "/") {
+      recordVisitorVisit();
+    }
+  }, [location.pathname]);
+
+  return null;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <BrowserRouter>
+        <RouteTracker />
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public */}
@@ -90,12 +114,46 @@ const App = () => (
               element={<ProtectedRoute element={<MyRejectedProperties />} />}
             />
             <Route
-              path="/dashboard/property-approvals"
-              element={<ProtectedRoute element={<PropertyApprovals />} />}
-            />
-            <Route
               path="/dashboard/notes"
               element={<ProtectedRoute element={<Notes />} />}
+            />
+
+            {/* Analytics - Removed */}
+            
+            {/* Profits - Admin Only */}
+            <Route
+              path="/admin/profits"
+              element={<ProtectedRoute element={<Profits />} requiredRole="admin" />}
+            />
+
+            {/* Admin Dashboard Pages */}
+            <Route
+              path="/admin/dashboard"
+              element={<ProtectedRoute element={<AdminDashboard />} requiredRole="admin" />}
+            />
+            <Route
+              path="/admin/properties"
+              element={<ProtectedRoute element={<AdminProperties />} requiredRole="admin" />}
+            />
+            <Route
+              path="/admin/users"
+              element={<ProtectedRoute element={<AdminUsers />} requiredRole="admin" />}
+            />
+            <Route
+              path="/admin/offers"
+              element={<ProtectedRoute element={<AdminOffers />} requiredRole="admin" />}
+            />
+            <Route
+              path="/admin/activity"
+              element={<ProtectedRoute element={<AdminActivity />} requiredRole="admin" />}
+            />
+            <Route
+              path="/admin/notifications"
+              element={<ProtectedRoute element={<AdminNotifications />} requiredRole="admin" />}
+            />
+            <Route
+              path="/admin/messages"
+              element={<ProtectedRoute element={<AdminMessages />} requiredRole="admin" />}
             />
 
             {/* 404 */}
