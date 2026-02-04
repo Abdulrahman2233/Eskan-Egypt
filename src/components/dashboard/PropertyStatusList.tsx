@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { CheckCircle, XCircle, Clock, Eye, Trash2, Download, Search, Filter } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Eye, Trash2, Download, Search, Filter, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PropertyDetailsDialog } from "./PropertyDetailsDialog";
@@ -14,6 +14,11 @@ interface Property {
   region: string;
   addedDate: string;
   deletedDate?: string;
+  submitted_at?: string;
+  approved_at?: string;
+  rejected_at?: string;
+  views?: number;
+  visitors?: number;
   // بيانات إضافية للـ dialog
   address?: string;
   contactNumber?: string;
@@ -58,6 +63,9 @@ interface PropertyDetails {
   description: string;
   addedDate: string;
   deletedDate?: string;
+  approved_at?: string;
+  rejected_at?: string;
+  submitted_at?: string;
   approvalNotes?: string;
 }
 
@@ -273,10 +281,9 @@ function PropertyTable({
               <th className="text-right py-3 px-4 text-sm font-semibold text-muted-foreground">المالك / الوسيط</th>
               <th className="text-right py-3 px-4 text-sm font-semibold text-muted-foreground hidden md:table-cell">النوع</th>
               <th className="text-right py-3 px-4 text-sm font-semibold text-muted-foreground hidden lg:table-cell">المنطقة</th>
-              {status === 'deleted' ? (
+              <th className="text-right py-3 px-4 text-sm font-semibold text-muted-foreground hidden xl:table-cell">تاريخ الإضافة</th>
+              {status === 'deleted' && (
                 <th className="text-right py-3 px-4 text-sm font-semibold text-muted-foreground hidden lg:table-cell">تاريخ الحذف</th>
-              ) : (
-                <th className="text-right py-3 px-4 text-sm font-semibold text-muted-foreground hidden lg:table-cell">تاريخ الإضافة</th>
               )}
               <th className="text-center py-3 px-4 text-sm font-semibold text-muted-foreground">إجراء</th>
             </tr>
@@ -294,9 +301,14 @@ function PropertyTable({
                   </span>
                 </td>
                 <td className="py-3 px-4 text-sm hidden lg:table-cell">{property.region}</td>
-                <td className="py-3 px-4 text-sm text-muted-foreground hidden lg:table-cell">
-                  {status === 'deleted' ? property.deletedDate || 'غير محدد' : property.addedDate}
+                <td className="py-3 px-4 text-xs text-muted-foreground hidden xl:table-cell">
+                  {property.addedDate || 'غير محدد'}
                 </td>
+                {status === 'deleted' && (
+                  <td className="py-3 px-4 text-sm text-muted-foreground hidden lg:table-cell">
+                    {property.deletedDate || 'غير محدد'}
+                  </td>
+                )}
                 <td className="py-3 px-4 text-center">
                   <button 
                     onClick={() => onViewProperty(property.id)}
@@ -406,17 +418,23 @@ export function PropertyStatusList() {
           owner: ownerName,
           ownerType: ownerTypeMap[ownerUserType] || 'مالك',
           region: regionName,
+          views: prop.views || 0,
+          visitors: prop.visitors || 0,
           addedDate: prop.created_at
             ? new Date(prop.created_at).toLocaleDateString('ar-SA', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
               })
             : (prop.submitted_at
               ? new Date(prop.submitted_at).toLocaleDateString('ar-SA', {
                   year: 'numeric',
                   month: '2-digit',
                   day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
                 })
               : ''),
           deletedDate: prop.deleted_at
@@ -428,6 +446,9 @@ export function PropertyStatusList() {
                 minute: '2-digit',
               })
             : undefined,
+          submitted_at: prop.submitted_at,
+          approved_at: prop.approved_at,
+          rejected_at: prop.rejected_at,
           // بيانات إضافية
           address: prop.address || '',
           contactNumber: prop.contact || '',
@@ -509,7 +530,12 @@ export function PropertyStatusList() {
         description: property.description || '',
         addedDate: property.addedDate || '',
         deletedDate: property.deletedDate,
+        submitted_at: property.submitted_at,
+        approved_at: property.approved_at,
+        rejected_at: property.rejected_at,
         approvalNotes: property.approvalNotes,
+        views: property.views || 0,
+        visitors: property.visitors || 0,
       };
       setSelectedProperty(details);
       setDialogOpen(true);
@@ -588,7 +614,11 @@ export function PropertyStatusList() {
       <PropertyDetailsDialog 
         property={selectedProperty} 
         open={dialogOpen} 
-        onOpenChange={setDialogOpen} 
+        onOpenChange={setDialogOpen}
+        onStatusChange={() => {
+          // إعادة تحميل البيانات بعد تغيير الحالة
+          fetchProperties();
+        }}
       />
     </div>
   );

@@ -9,7 +9,6 @@ class UserProfile(models.Model):
     Extended user profile with additional authentication fields.
     """
     USER_TYPE_CHOICES = [
-        ('tenant', 'Tenant'),
         ('landlord', 'Landlord'),
         ('agent', 'Agent'),
         ('office', 'Office'),
@@ -26,7 +25,7 @@ class UserProfile(models.Model):
     user_type = models.CharField(
         max_length=20,
         choices=USER_TYPE_CHOICES,
-        default='tenant'
+        default='landlord'
     )
     full_name = models.CharField(
         max_length=200,

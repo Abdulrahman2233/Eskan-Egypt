@@ -17,7 +17,6 @@ class Area(models.Model):
 
 class Property(models.Model):
     STATUS_CHOICES = [
-        ('draft', 'مسودة'),
         ('pending', 'معلق'),
         ('approved', 'موافق عليه'),
         ('rejected', 'مرفوض'),
@@ -37,7 +36,7 @@ class Property(models.Model):
     address = models.CharField(max_length=300)
     price = models.DecimalField(max_digits=12, decimal_places=2)
     original_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='السعر الأصلي')
-    discount = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)], verbose_name='نسبة الخصم (%)')
+    discount = models.IntegerField(default=0, null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(100)], verbose_name='نسبة الخصم (%)')
     rooms = models.IntegerField(default=1)
     beds = models.IntegerField(default=1)
     bathrooms = models.IntegerField(default=1)
@@ -66,10 +65,12 @@ class Property(models.Model):
     visited_ips = models.JSONField(default=dict, blank=True, verbose_name='IP Addresses التي زارت العقار')
     
     # Approval Fields
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     owner = models.ForeignKey('users.UserProfile', on_delete=models.CASCADE, null=True, blank=True, related_name='properties')
     submitted_at = models.DateTimeField(null=True, blank=True)
     approved_by = models.ForeignKey('users.UserProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_properties')
+    approved_at = models.DateTimeField(null=True, blank=True, verbose_name='تاريخ الموافقة')
+    rejected_at = models.DateTimeField(null=True, blank=True, verbose_name='تاريخ الرفض')
     approval_notes = models.TextField(blank=True)
     
     # حقول الحذف المنطقي

@@ -397,7 +397,7 @@ const Properties: React.FC = () => {
         </section>
 
         {/* Properties Section */}
-        <section className="container mx-auto px-4 py-8 lg:py-12">
+        <section className="container mx-auto px-1 py-8 lg:py-12">
           {/* Header with Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div className="flex items-center gap-3">
@@ -519,14 +519,9 @@ const Properties: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <AnimatePresence mode="wait">
+                <div>
                   {filteredProperties.length > 0 ? (
-                    <motion.div
-                      key="properties"
-                      variants={containerVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit={{ opacity: 0 }}
+                    <div
                       className={`grid gap-4 sm:gap-6 ${
                         viewMode === "grid"
                           ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
@@ -534,15 +529,11 @@ const Properties: React.FC = () => {
                       }`}
                     >
                       {filteredProperties.slice(0, displayCount).map((property) => (
-                        <motion.div
-                          key={property.id}
-                          variants={itemVariants}
-                          layout
-                        >
+                        <div key={property.id}>
                           <PropertyCard property={property} />
-                        </motion.div>
+                        </div>
                       ))}
-                    </motion.div>
+                    </div>
                   ) : (
                     <EmptyState
                       title={getEmptyMessage()}
@@ -550,7 +541,7 @@ const Properties: React.FC = () => {
                       fullScreen={false}
                     />
                   )}
-                </AnimatePresence>
+                </div>
               )}
 
               {/* Load More - Optional (نفس منطق الكود الجديد) */}

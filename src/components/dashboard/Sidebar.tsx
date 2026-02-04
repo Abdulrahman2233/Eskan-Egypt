@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import logo from "../../assets/logo1.png";
 import {
   LayoutDashboard,
   Building2,
   Users,
   Percent,
-  Activity,
   Settings,
   Menu,
   X,
@@ -22,7 +22,6 @@ const navItems = [
   { title: "تحليل المستخدمين", icon: Users, path: "/admin/users" },
   { title: "العروض والخصومات", icon: Percent, path: "/admin/offers" },
   { title: "إدارة الأرباح", icon: DollarSign, path: "/admin/profits" },
-  { title: "سجل النشاط", icon: Activity, path: "/admin/activity" },
   { title: "الإشعارات", icon: Bell, path: "/admin/notifications" },
   { title: "رسائل العملاء", icon: MessageCircle, path: "/admin/messages" },
 ];
@@ -45,7 +44,7 @@ export function Sidebar() {
       {/* Mobile toggle button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 right-4 z-50 lg:hidden p-2.5 rounded-xl bg-card border border-border shadow-lg"
+        className="fixed top-3 right-4 z-50 lg:hidden p-2.5 rounded-xl bg-card border border-border shadow-lg"
       >
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
@@ -53,7 +52,7 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 lg:hidden"
+          className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-20 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
@@ -67,12 +66,21 @@ export function Sidebar() {
         )}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center gap-3 px-6 border-b border-border">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-            <Building2 className="h-5 w-5 text-primary-foreground" />
+        <Link 
+          to="/" 
+          className="flex h-16 items-center gap-3 px-6 border-b border-border hover:opacity-80 transition-opacity"
+          onClick={() => setIsOpen(false)}
+        >
+          <img
+            src={logo}
+            alt="Eskan Egypt Logo"
+            className="h-10 w-8 object-contain"
+          />
+          <div className="flex flex-col">
+            <span className="font-bold text-lg gradient-text">Eskan Egypt</span>
+            <span className="text-xs text-muted-foreground">اسكان مصر</span>
           </div>
-          <span className="text-xl font-bold gradient-text">عقاري</span>
-        </div>
+        </Link>
 
         {/* Navigation */}
         <nav className="p-4 space-y-1">
