@@ -27,7 +27,7 @@ interface Transaction {
 const propertyTypeMap: Record<string, string> = {
   students: "طلاب",
   families: "عائلات",
-  summer: "مصيفين",
+  vacation: "مصيفين",
   daily: "حجز يومي",
   studio: "استوديو",
 };
@@ -63,6 +63,9 @@ const generateData = (days: number, transactions: Transaction[] = []) => {
       const propertyTypeArabic = propertyTypeMap[transaction.propertyType] || transaction.propertyType;
       if (propertyTypeArabic in data[dateKey]) {
         data[dateKey][propertyTypeArabic] += transaction.profit;
+      } else {
+        // إذا لم توجد الترجمة، أضف القيمة الأصلية
+        console.warn(`نوع عقار غير معروف: ${transaction.propertyType}`);
       }
     }
   });

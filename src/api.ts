@@ -543,7 +543,6 @@ export async function fetchAccountTypes() {
       { key: 'owner', label: 'مالك' },
       { key: 'agent', label: 'وسيط' },
       { key: 'office', label: 'مكتب عقارات' },
-      { key: 'tenant', label: 'مستأجر' },
     ];
   } catch (error) {
     console.error("Error fetching account types:", error);
