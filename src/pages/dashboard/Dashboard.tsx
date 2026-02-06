@@ -176,38 +176,6 @@ const Dashboard = () => {
           })}
         </motion.div>
 
-        {/* Views Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mb-8"
-        >
-          <Card className="border-border/50 bg-gradient-to-br from-primary/5 to-primary/10">
-            <CardContent className="p-6 flex items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                  <Eye className="h-5 w-5" />
-                  <span>إجمالي المشاهدات</span>
-                </div>
-                <p className="text-4xl font-bold text-foreground">
-                  {totalViews.toLocaleString()}
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  مشاهدة على جميع عقاراتك
-                </p>
-              </div>
-              <div className="hidden sm:block">
-                <Button asChild variant="outline" className="gap-2">
-                  <Link to="/dashboard/my-properties">
-                    عرض التفاصيل
-                    <ArrowUpRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
 
         {/* Quick Action */}
         <motion.div

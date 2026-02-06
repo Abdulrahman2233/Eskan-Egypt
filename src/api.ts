@@ -226,3 +226,20 @@ export async function searchProperties(filters: any) {
     throw error;
   }
 }
+
+// ============ Contact Messages ============
+export async function sendContactMessage(messageData: {
+  name: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+}) {
+  try {
+    const { data } = await API.post("/contact-messages/", messageData);
+    return data;
+  } catch (error) {
+    console.error("Error sending contact message:", error);
+    throw error;
+  }
+}

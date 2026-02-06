@@ -4,7 +4,7 @@ import Navbar from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { PropertyCard } from "@/components/PropertyCard";
 import { SearchFilters } from "@/components/SearchFilters";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { API_URL } from "@/config";
 import { fetchProperties } from "@/api";
 
@@ -71,6 +71,31 @@ const USAGE_TYPE_LABELS: { [key: string]: string } = {
   daily: "حجز يومي",
 };
 
+// EmptyState Component
+const EmptyState = ({
+  title,
+  message,
+  fullScreen = false,
+}: {
+  title: string;
+  message: string;
+  fullScreen?: boolean;
+}) => (
+  <motion.div
+    key="no-results"
+    initial={{ opacity: 0, scale: 0.95 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0 }}
+    className={`text-center ${fullScreen ? "py-24" : "py-16 sm:py-24"}`}
+  >
+    <div className="bg-muted/50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+      <Building2 className="h-10 w-10 text-muted-foreground" />
+    </div>
+    <h3 className="text-xl sm:text-2xl font-bold mb-3">{title}</h3>
+    <p className="text-muted-foreground max-w-md mx-auto">{message}</p>
+  </motion.div>
+);
+
 const Properties: React.FC = () => {
   const [searchParams] = useSearchParams();
   const initialArea = searchParams.get("area") || "";
@@ -86,6 +111,7 @@ const Properties: React.FC = () => {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilters, setActiveFilters] = useState(0);
+  const [displayCount, setDisplayCount] = useState(6); // عدد العقارات المعروضة
 
   // ----------- Fetch Properties -----------
   useEffect(() => {
@@ -168,7 +194,7 @@ const Properties: React.FC = () => {
 
     // Furnished
     if (filters.furnished !== "" && filters.furnished !== null && filters.furnished !== undefined) {
-      const isFurnished = filters.furnished === "true" || filters.furnished === true;
+      const isFurnished = filters.furnished === "true";
       filtered = filtered.filter((p) => p.furnished === isFurnished);
       filterCount++;
     }
@@ -431,7 +457,13 @@ const Properties: React.FC = () => {
             <div className="flex-1">
               {loading ? (
                 <div className="text-center text-gray-500 py-20">
-                  جارٍ تحميل العقارات...
+                  <div className="inline-flex flex-col items-center gap-3">
+                    <div className="relative w-10 h-10">
+                      <div className="absolute inset-0 rounded-full border-4 border-slate-200" />
+                      <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                    </div>
+                    <p className="text-sm">جاري تحميل العقارات...</p>
+                  </div>
                 </div>
               ) : (
                 <AnimatePresence mode="wait">
@@ -448,7 +480,7 @@ const Properties: React.FC = () => {
                           : "grid-cols-1"
                       }`}
                     >
-                      {filteredProperties.map((property) => (
+                      {filteredProperties.slice(0, displayCount).map((property) => (
                         <motion.div
                           key={property.id}
                           variants={itemVariants}
@@ -459,34 +491,11 @@ const Properties: React.FC = () => {
                       ))}
                     </motion.div>
                   ) : (
-                    <motion.div
-                      key="no-results"
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="text-center py-16 sm:py-24"
-                    >
-                      <div className="bg-muted/50 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                        <Building2 className="h-10 w-10 text-muted-foreground" />
-                      </div>
-                      <h3 className="text-xl sm:text-2xl font-bold mb-3">
-                        {getEmptyMessage()}
-                      </h3>
-                      <p className="text-muted-foreground max-w-md mx-auto mb-6">
-                        حاول تعديل معايير البحث أو إعادة تعيين الفلاتر.
-                      </p>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setFilteredProperties(properties);
-                          setActiveFilters(0);
-                          setCurrentFilters(null);
-                          setAreaError(null);
-                        }}
-                      >
-                        عرض جميع العقارات
-                      </Button>
-                    </motion.div>
+                    <EmptyState
+                      title={getEmptyMessage()}
+                      message="حاول تعديل معايير البحث أو إعادة تعيين الفلاتر."
+                      fullScreen={false}
+                    />
                   )}
                 </AnimatePresence>
               )}
@@ -494,14 +503,19 @@ const Properties: React.FC = () => {
               {/* Load More - Optional (نفس منطق الكود الجديد) */}
               {!loading &&
                 filteredProperties.length > 0 &&
-                filteredProperties.length >= 6 && (
+                displayCount < filteredProperties.length && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.5 }}
                     className="text-center mt-10"
                   >
-                    <Button variant="outline" size="lg" className="px-8">
+                    <Button 
+                      variant="outline" 
+                      size="lg" 
+                      className="px-8"
+                      onClick={() => setDisplayCount(prev => prev + 6)}
+                    >
                       عرض المزيد من العقارات
                     </Button>
                   </motion.div>
@@ -520,19 +534,17 @@ const Properties: React.FC = () => {
               className="max-w-3xl mx-auto text-center"
             >
               <h2 className="text-2xl sm:text-3xl font-bold mb-4">
-                لم تجد ما تبحث عنه؟
+                لم تجد ما تبحث عنه او وهناك اى مشكلة؟
               </h2>
               <p className="text-muted-foreground mb-6">
-                تواصل معنا وسنساعدك في العثور على العقار المثالي الذي يناسب
-                احتياجاتك
+                تواصل معنا وسنساعدك في اقرب وقت
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button size="lg" className="px-8">
-                  تواصل معنا
-                </Button>
-                <Button size="lg" variant="outline" className="px-8">
-                  طلب عقار مخصص
-                </Button>
+                <Link to="/contact">
+                  <Button size="lg" className="px-8">
+                    تواصل معنا
+                  </Button>
+                </Link>
               </div>
             </motion.div>
           </div>

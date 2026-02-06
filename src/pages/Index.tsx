@@ -471,7 +471,13 @@ const Index = () => {
 
           {loading ? (
             <div className="text-center py-12">
-              <p className="text-gray-500">جاري تحميل المناطق...</p>
+              <div className="inline-flex flex-col items-center gap-2">
+                <div className="relative w-10 h-10">
+                  <div className="absolute inset-0 rounded-full border-4 border-slate-200" />
+                  <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+                </div>
+                <p className="text-sm text-slate-500">جاري تحميل المناطق...</p>
+              </div>
             </div>
           ) : displayAreas.length > 0 ? (
             <motion.div

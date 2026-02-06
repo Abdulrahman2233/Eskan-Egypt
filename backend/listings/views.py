@@ -5,8 +5,8 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.utils import timezone
 from django.db import models
 from datetime import timedelta
-from .models import Area, Property, PropertyImage, PropertyVideo, Offer
-from .serializers import AreaSerializer, PropertySerializer, OfferSerializer
+from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage
+from .serializers import AreaSerializer, PropertySerializer, OfferSerializer, ContactMessageSerializer
 from .notifications import (
     send_property_approved_email,
     send_property_rejected_email,
@@ -98,8 +98,20 @@ class PropertyViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
 
+        # طباعة البيانات المُستقبلة للـ debugging
+        print(f"\n=== CREATE PROPERTY DEBUG ===")
+        print(f"POST Data: {request.data}")
+        print(f"Latitude from POST: {request.data.get('latitude')}")
+        print(f"Longitude from POST: {request.data.get('longitude')}")
+        print(f"=== END DEBUG ===\n")
+
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            print(f"Validation Errors: {serializer.errors}")
+            return Response(
+                {'detail': 'خطأ في البيانات المرسلة', 'errors': serializer.errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         
         # حفظ العقار مع تعيين المالك
         property_obj = serializer.save(owner=user_profile, status='pending', submitted_at=timezone.now())
@@ -374,3 +386,74 @@ class OfferViewSet(viewsets.ReadOnlyModelViewSet):
         )
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+
+class ContactMessageViewSet(viewsets.ModelViewSet):
+    """ViewSet للتعامل مع رسائل التواصل"""
+    queryset = ContactMessage.objects.all()
+    serializer_class = ContactMessageSerializer
+    permission_classes = []  # السماح للجميع بإرسال رسائل
+    ordering = ['-created_at']
+
+    def create(self, request, *args, **kwargs):
+        """
+        إنشاء رسالة تواصل جديدة
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        
+        # إرسال بريد إلكتروني (اختياري)
+        self.send_contact_email(serializer.data)
+        
+        return Response(
+            {
+                "message": "تم استقبال رسالتك بنجاح. سنتواصل معك قريباً.",
+                "data": serializer.data
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+    def send_contact_email(self, data):
+        """إرسال بريد إلكتروني عند استقبال رسالة تواصل"""
+        try:
+            from django.core.mail import send_mail
+            from django.conf import settings
+            
+            subject = f"رسالة جديدة من {data['name']}: {data['subject']}"
+            message = f"""
+رسالة جديدة من صفحة التواصل:
+
+الاسم: {data['name']}
+البريد الإلكتروني: {data['email']}
+رقم الهاتف: {data['phone']}
+الموضوع: {data['subject']}
+
+الرسالة:
+{data['message']}
+            """
+            
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [settings.DEFAULT_FROM_EMAIL],
+                fail_silently=True,
+            )
+        except Exception as e:
+            print(f"خطأ في إرسال البريد: {e}")
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
+    def unread(self, request):
+        """جلب الرسائل غير المقروءة (للإدمن فقط)"""
+        unread_messages = self.get_queryset().filter(is_read=False)
+        serializer = self.get_serializer(unread_messages, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def mark_as_read(self, request, pk=None):
+        """تحديد الرسالة كمقروءة (للإدمن فقط)"""
+        message = self.get_object()
+        message.is_read = True
+        message.save()
+        return Response({"message": "تم تحديد الرسالة كمقروءة"})
