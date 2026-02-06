@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  Building2,
   Mail,
   Lock,
   User,
@@ -15,6 +14,7 @@ import {
   Home,
   Loader2,
 } from "lucide-react";
+import logo from "../assets/logo1.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -248,13 +248,14 @@ const Auth = () => {
         </div>
 
         {/* Back to Home */}
-        <Link
-          to="/"
-          className="absolute top-6 right-6 flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+        <Button
+          onClick={() => navigate("/")}
+          variant="ghost"
+          className="absolute top-6 right-6 flex items-center gap-2"
         >
           <Home className="h-5 w-5" />
           <span>العودة للرئيسية</span>
-        </Link>
+        </Button>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -264,10 +265,14 @@ const Auth = () => {
           {/* Logo */}
           <div className="text-center mb-8">
             <motion.div
-              className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4 shadow-lg shadow-primary/30"
+              className="inline-flex items-center justify-center mb-4"
               whileHover={{ scale: 1.05, rotate: 5 }}
             >
-              <Building2 className="h-8 w-8 text-primary-foreground" />
+              <img
+                src={logo}
+                alt="Eskan Egypt Logo"
+                className="h-16 w-auto object-contain"
+              />
             </motion.div>
             <h1 className="text-3xl font-bold text-foreground">Eskan Egypt</h1>
             <p className="text-muted-foreground mt-2">
@@ -690,9 +695,11 @@ const Auth = () => {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="mb-8"
           >
-            <div className="w-32 h-32 bg-white/10 backdrop-blur-sm rounded-3xl flex items-center justify-center border border-white/20 shadow-2xl">
-              <Building2 className="h-16 w-16 text-white" />
-            </div>
+            <img
+              src={logo}
+              alt="Eskan Egypt Logo"
+              className="h-32 w-auto object-contain"
+            />
           </motion.div>
 
           <motion.h2
@@ -710,7 +717,7 @@ const Auth = () => {
             transition={{ delay: 0.5 }}
             className="text-xl text-white/80 max-w-md leading-relaxed"
           >
-            منصة سكن مصر توفر لك أفضل العقارات في الإسكندرية مع خدمة متميزة وموثوقة
+            منصة Eskan Egypt توفر لك أفضل العقارات في الإسكندرية مع خدمة متميزة وموثوقة
           </motion.p>
 
           {/* Stats */}
@@ -722,7 +729,7 @@ const Auth = () => {
           >
             {[
               { value: "500+", label: "عقار" },
-              { value: "100+", label: "منطقة" },
+              { value: "50+", label: "منطقة" },
               { value: "1000+", label: "عميل سعيد" },
             ].map((stat, index) => (
               <div key={index} className="text-center">

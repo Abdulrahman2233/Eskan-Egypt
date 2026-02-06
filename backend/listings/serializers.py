@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Area, Property, PropertyImage, PropertyVideo
+from .models import Area, Property, PropertyImage, PropertyVideo, Offer
 
 class PropertyImageSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
@@ -109,3 +109,21 @@ class PropertySerializer(serializers.ModelSerializer):
             'contact': {'required': True},
             'usage_type': {'required': False},
         }
+
+
+class OfferSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Offer
+        fields = (
+            'id',
+            'title',
+            'description',
+            'discount_percentage',
+            'target_audience',
+            'is_active',
+            'start_date',
+            'end_date',
+            'icon_type',
+            'terms',
+        )
+        read_only_fields = ('id', 'created_at', 'updated_at')

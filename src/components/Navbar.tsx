@@ -1,4 +1,4 @@
-import { Menu, Phone, Heart, User, LogOut } from "lucide-react";
+import { Menu, User, LogOut, ChevronDown, Settings, Home, Building2 } from "lucide-react";
 import logo from "../assets/logo1.png";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { useState, useEffect } from "react";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 
 const Navbar = () => {
   const location = useLocation();
@@ -88,47 +89,61 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
             {isLoggedIn ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="default"
-                    className="gap-2"
+                    variant="ghost"
+                    className="gap-2 h-10 px-3 hover:bg-accent/50 transition-colors"
                   >
-                    <User className="h-4 w-4" />
-                    {userName}
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                        {userName.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium">{userName}</span>
+                    <ChevronDown className="h-4 w-4 opacity-70" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-2 py-1.5">
+                    <p className="text-xs text-muted-foreground">الحساب الشخصي</p>
+                  </div>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard" className="cursor-pointer">
+                    <Link to="/dashboard" className="cursor-pointer flex items-center gap-2">
+                      <Home className="h-4 w-4" />
                       لوحة التحكم
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard/my-properties" className="cursor-pointer">
+                    <Link to="/dashboard/my-properties" className="cursor-pointer flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
                       عقاراتي
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard/settings" className="cursor-pointer">
+                    <Link to="/dashboard/settings" className="cursor-pointer flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
                       الإعدادات
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                    <LogOut className="h-4 w-4 ml-2" />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer flex items-center gap-2">
+                    <LogOut className="h-4 w-4" />
                     تسجيل الخروج
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Link
-                to="/auth"
-                className="text-sm font-medium px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                تسجيل الدخول
+              <Link to="/auth">
+                <Button
+                  className="gap-2 h-10 px-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all hover:shadow-md"
+                >
+                  <User className="h-4 w-4" />
+                  <span className="text-sm font-medium">تسجيل الدخول</span>
+                </Button>
               </Link>
             )}
           </div>

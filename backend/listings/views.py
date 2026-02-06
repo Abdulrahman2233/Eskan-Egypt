@@ -5,8 +5,8 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.utils import timezone
 from django.db import models
 from datetime import timedelta
-from .models import Area, Property, PropertyImage, PropertyVideo
-from .serializers import AreaSerializer, PropertySerializer
+from .models import Area, Property, PropertyImage, PropertyVideo, Offer
+from .serializers import AreaSerializer, PropertySerializer, OfferSerializer
 from .notifications import (
     send_property_approved_email,
     send_property_rejected_email,
@@ -338,3 +338,39 @@ class PropertyViewSet(viewsets.ModelViewSet):
 class AreaViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Area.objects.all()
     serializer_class = AreaSerializer
+
+
+class OfferViewSet(viewsets.ReadOnlyModelViewSet):
+    """عرض العروض الحالية النشطة"""
+    serializer_class = OfferSerializer
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ['created_at', 'discount_percentage']
+    ordering = ['-created_at']
+    permission_classes = []  # للوصول العام
+
+    def get_queryset(self):
+        """جلب العروض النشطة حالياً"""
+        now = timezone.now()
+        return Offer.objects.filter(
+            is_active=True,
+            start_date__lte=now,
+        ).filter(
+            models.Q(end_date__isnull=True) | models.Q(end_date__gte=now)
+        ).order_by('-created_at')
+
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        """جلب جميع العروض النشطة"""
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def by_audience(self, request):
+        """جلب العروض حسب الفئة المستهدفة"""
+        audience = request.query_params.get('audience', 'all')
+        queryset = self.get_queryset().filter(
+            models.Q(target_audience=audience) | models.Q(target_audience='all')
+        )
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

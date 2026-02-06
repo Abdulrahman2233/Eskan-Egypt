@@ -5,7 +5,6 @@ import {
   Menu,
   X,
   Home,
-  Building2,
   LayoutDashboard,
   Plus,
   List,
@@ -14,9 +13,11 @@ import {
   User,
   ChevronLeft,
   CheckCircle2,
+  BookOpen,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
+import logo from "../assets/logo1.png";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -56,6 +57,12 @@ const menuItems = [
     icon: CheckCircle2,
     description: "مراجعة وموافقة على العقارات",
     adminOnly: true,
+  },
+  {
+    path: "/dashboard/notes",
+    label: "ملاحظات",
+    icon: BookOpen,
+    description: "خطة التسويق والعمل",
   },
   {
     path: "/dashboard/settings",
@@ -107,7 +114,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </Button>
 
           <Link to="/" className="flex items-center gap-2">
-            <Building2 className="h-6 w-6" />
+            <img
+              src={logo}
+              alt="Eskan Egypt Logo"
+              className="h-8 w-auto object-contain"
+            />
             <span className="font-bold">Eskan Egypt</span>
           </Link>
 
@@ -236,9 +247,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           {/* Logo */}
           <div className="p-4 border-b border-border">
             <Link to="/" className="flex items-center gap-3">
-              <div className="bg-primary p-2.5 rounded-xl">
-                <Building2 className="h-6 w-6 text-primary-foreground" />
-              </div>
+              <img
+                src={logo}
+                alt="Eskan Egypt Logo"
+                className="h-10 w-auto object-contain"
+              />
               <div>
                 <span className="font-bold text-lg text-foreground">
                   Eskan Egypt

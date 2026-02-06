@@ -4,6 +4,7 @@ import { Footer } from "@/components/Footer";
 import { AreaCard } from "@/components/AreaCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import OfferModal from "@/components/OfferModal";
 
 import {
   Search,
@@ -188,15 +189,16 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col" dir="rtl">
+      <OfferModal />
       <Navbar />
 
       {/* Hero Section - Animated */}
       <section className="relative min-h-[100svh] flex flex-col justify-center overflow-hidden mt-16">
         <motion.div
           className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroHome})` }}
-          initial={{ scale: 1.1 }}
-          animate={{ scale: 1 }}
+          style={{ backgroundImage: `url(${heroHome})`, filter: "blur(3px) brightness(0.75)", margin: "-10px" }}
+          initial={{ scale: 1.15 }}
+          animate={{ scale: 1.05 }}
           transition={{ duration: 1.5 }}
         />
         <div className="absolute inset-0 hero-gradient1" />
