@@ -114,6 +114,7 @@ const Properties: React.FC = () => {
   const [activeFilters, setActiveFilters] = useState(0);
   const [displayCount, setDisplayCount] = useState(6); // عدد العقارات المعروضة
   const [activeQuickFilter, setActiveQuickFilter] = useState<string | null>(null);
+  const [areasCount, setAreasCount] = useState(0); // عدد المناطق الفعلي
 
   // ----------- Fetch Properties -----------
   useEffect(() => {
@@ -145,6 +146,23 @@ const Properties: React.FC = () => {
 
     loadProperties();
   }, [initialArea]);
+
+  // ----------- Fetch Areas Count -----------
+  useEffect(() => {
+    const fetchAreasCount = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/areas/`);
+        const areas = Array.isArray(response.data) 
+          ? response.data 
+          : response.data.results || [];
+        setAreasCount(areas.length);
+      } catch (error) {
+        console.error("Error fetching areas count:", error);
+      }
+    };
+
+    fetchAreasCount();
+  }, []);
 
   // ----------- Handle Search (area required like old code) -----------
   const handleSearch = (filters: Filters) => {
@@ -293,7 +311,7 @@ const Properties: React.FC = () => {
   // ----------- Animations helpers -----------
   const stats = [
     { icon: Home, label: "عقار متاح", value: properties.length },
-    { icon: MapPin, label: "منطقة", value: "15+" },
+    { icon: MapPin, label: "منطقة", value: areasCount },
     { icon: TrendingUp, label: "صفقة هذا الشهر", value: "50+" },
     { icon: Star, label: "تقييم العملاء", value: "4.9" },
   ];
