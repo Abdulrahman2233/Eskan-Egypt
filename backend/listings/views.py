@@ -1,0 +1,307 @@
+from rest_framework import viewsets, filters, status
+from rest_framework.decorators import action, permission_classes
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from django.utils import timezone
+from django.db import models
+from .models import Area, Property
+from .serializers import AreaSerializer, PropertySerializer
+from .notifications import (
+    send_property_approved_email,
+    send_property_rejected_email,
+    send_property_submitted_email,
+)
+
+class PropertyViewSet(viewsets.ModelViewSet):
+    serializer_class = PropertySerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'address', 'area__name', 'description']
+    ordering_fields = ['price', 'created_at', 'size']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        """
+        فلترة العقارات بناءً على دور المستخدم:
+        - Admin: يرى جميع العقارات
+        - Landlord: يرى عقاراته فقط + العقارات المُوافق عليها
+        - زائر: يرى العقارات المُوافق عليها فقط
+        """
+        try:
+            if self.request.user.is_staff or self.request.user.is_superuser:
+                # الإدمن يرى كل شيء
+                queryset = Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').all()
+            elif self.request.user.is_authenticated:
+                # المستخدم المسجل يرى عقاراته + العقارات المُوافق عليها
+                user_profile = None
+                try:
+                    user_profile = self.request.user.profile
+                except:
+                    pass
+                
+                if user_profile:
+                    queryset = Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').filter(
+                        models.Q(owner=user_profile) | models.Q(status__in=['approved', 'draft'])
+                    )
+                else:
+                    # إذا لم يكن هناك profile، عرض العقارات المُوافق عليها فقط
+                    queryset = Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').filter(status__in=['approved', 'draft'])
+            else:
+                # الزائر يرى فقط العقارات المُوافق عليها
+                queryset = Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').filter(status__in=['approved', 'draft'])
+
+            params = self.request.query_params
+
+            # فلتر نوع العقار
+            prop_type = params.get('propertyType')
+            if prop_type:
+                queryset = queryset.filter(type__icontains=prop_type)
+
+            # باقي الفلاتر
+            usage_type_mapping = {
+                'عائلات': 'families', 'طلاب': 'students', 'استوديو': 'studio',
+                'مصيفين': 'vacation', 'حجز يومي': 'daily',
+            }
+            property_type = params.get('usage_type') or params.get('property_type')
+            if property_type and property_type in usage_type_mapping:
+                usage_type = usage_type_mapping[property_type]
+            elif property_type:
+                usage_type = property_type
+            else:
+                usage_type = None
+
+            rooms = params.get('rooms')
+            furnished = params.get('furnished')
+            price_min = params.get('price_min')
+            price_max = params.get('price_max')
+            area_name = params.get('area')
+
+            if usage_type:
+                queryset = queryset.filter(usage_type=usage_type)
+            if rooms:
+                queryset = queryset.filter(rooms=rooms)
+            if furnished in ['true', 'false']:
+                queryset = queryset.filter(furnished=(furnished == 'true'))
+            if price_min:
+                queryset = queryset.filter(price__gte=price_min)
+            if price_max:
+                queryset = queryset.filter(price__lte=price_max)
+            if area_name:
+                queryset = queryset.filter(area__name=area_name)
+
+            return queryset
+        except Exception as e:
+            print(f"Error in get_queryset: {e}")
+            # في حالة الخطأ، عرض العقارات المتاحة
+            return Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').filter(status__in=['approved', 'draft'])
+
+    def create(self, request, *args, **kwargs):
+        """إنشاء عقار جديد من قبل الـ landlord"""
+        if not request.user.is_authenticated:
+            return Response(
+                {'detail': 'يجب تسجيل الدخول أولاً'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+        if not user_profile or user_profile.user_type != 'landlord':
+            return Response(
+                {'detail': 'فقط مالكي العقارات يمكنهم إضافة عقارات'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        # حفظ العقار مع تعيين المالك
+        property_obj = serializer.save(owner=user_profile, status='pending', submitted_at=timezone.now())
+        
+        # إرسال بريد تأكيد الاستقبال
+        send_property_submitted_email(property_obj)
+        
+        return Response(
+            {
+                'detail': 'تم إرسال العقار بنجاح. سيتم مراجعته من قبل فريق الإدارة قريباً.',
+                'data': serializer.data
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+    def update(self, request, *args, **kwargs):
+        """تحديث العقار - يمكن للمالك تحديثه قبل الموافقة فقط"""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+
+        # التحقق من الصلاحيات
+        user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+        
+        if not (request.user.is_staff or request.user.is_superuser or instance.owner == user_profile):
+            return Response(
+                {'detail': 'ليس لديك صلاحية تعديل هذا العقار'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # إذا كان العقار موافق عليه وليس من الإدمن، منع التعديل
+        if instance.status == 'approved' and not (request.user.is_staff or request.user.is_superuser):
+            return Response(
+                {'detail': 'لا يمكن تعديل عقار موافق عليه'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def my_properties(self, request):
+        """الحصول على عقارات المستخدم الحالي"""
+        user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+        if not user_profile:
+            return Response(
+                {'detail': 'المستخدم لا يملك ملف شخصي'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        properties = Property.objects.filter(owner=user_profile).select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos')
+        serializer = self.get_serializer(properties, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
+    def pending(self, request):
+        """الحصول على العقارات المعلقة (للإدمن فقط)"""
+        properties = Property.objects.filter(status='pending').select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos')
+        serializer = self.get_serializer(properties, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def approve(self, request, pk=None):
+        """الموافقة على عقار (للإدمن فقط)"""
+        property_obj = self.get_object()
+        
+        user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+        notes = request.data.get('approval_notes', '')
+
+        property_obj.status = 'approved'
+        property_obj.approved_by = user_profile
+        property_obj.approval_notes = notes
+        property_obj.save()
+
+        # إرسال بريد الموافقة
+        send_property_approved_email(property_obj)
+
+        serializer = self.get_serializer(property_obj)
+        return Response({
+            'detail': 'تم الموافقة على العقار بنجاح وتم إرسال بريد تأكيد',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def reject(self, request, pk=None):
+        """رفض عقار (للإدمن فقط)"""
+        property_obj = self.get_object()
+        
+        user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+        notes = request.data.get('approval_notes', '')
+
+        if not notes:
+            return Response(
+                {'detail': 'يجب إدخال سبب الرفض'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        property_obj.status = 'rejected'
+        property_obj.approved_by = user_profile
+        property_obj.approval_notes = notes
+        property_obj.save()
+
+        # إرسال بريد الرفض
+        send_property_rejected_email(property_obj)
+
+        serializer = self.get_serializer(property_obj)
+        return Response({
+            'detail': 'تم رفض العقار وتم إرسال بريد إخطار',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
+    def rejected(self, request):
+        """الحصول على العقارات المرفوضة (للإدمن فقط)"""
+        properties = Property.objects.filter(status='rejected').select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos')
+        serializer = self.get_serializer(properties, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def rejected_by_me(self, request):
+        """الحصول على العقارات المرفوضة الخاصة بالمستخدم الحالي"""
+        user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+        if not user_profile:
+            return Response(
+                {'detail': 'المستخدم لا يملك ملف شخصي'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        properties = Property.objects.filter(
+            owner=user_profile,
+            status='rejected'
+        ).select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos')
+        serializer = self.get_serializer(properties, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def resubmit(self, request, pk=None):
+        """إعادة إرسال عقار مرفوض (للمالك فقط)"""
+        property_obj = self.get_object()
+        user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+
+        if property_obj.owner != user_profile and not request.user.is_staff:
+            return Response(
+                {'detail': 'ليس لديك صلاحية تعديل هذا العقار'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if property_obj.status != 'rejected':
+            return Response(
+                {'detail': 'يمكن فقط إعادة إرسال العقارات المرفوضة'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        property_obj.status = 'pending'
+        property_obj.submitted_at = timezone.now()
+        property_obj.approved_by = None
+        property_obj.approval_notes = ''
+        property_obj.save()
+
+        serializer = self.get_serializer(property_obj)
+        return Response({
+            'detail': 'تم إعادة إرسال العقار بنجاح',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def featured(self, request):
+        qs = self.get_queryset().filter(featured=True)
+        serializer = self.get_serializer(qs, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def statistics(self, request):
+        """إحصائيات العقارات (للإدمن فقط)"""
+        if not (request.user.is_staff or request.user.is_superuser):
+            return Response(
+                {'detail': 'ليس لديك صلاحية الوصول لهذه البيانات'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        stats = {
+            'total': Property.objects.count(),
+            'pending': Property.objects.filter(status='pending').count(),
+            'approved': Property.objects.filter(status='approved').count(),
+            'rejected': Property.objects.filter(status='rejected').count(),
+            'draft': Property.objects.filter(status='draft').count(),
+        }
+        return Response(stats)
+
+class AreaViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Area.objects.all()
+    serializer_class = AreaSerializer

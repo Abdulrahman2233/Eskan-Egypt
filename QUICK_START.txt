@@ -1,0 +1,43 @@
+# 🎯 TL;DR - الخلاصة السريعة
+
+## المشكلة
+العقارات لا تظهر على الموقع.
+
+## السبب
+Property Model ناقص 5 حقول: `status`, `owner`, `submitted_at`, `approved_by`, `approval_notes`
+
+## الحل (تم تطبيقه)
+✅ أضيفت الحقول للـ model
+✅ أنشئت migrations للـ database
+✅ حدثت الـ serializers و views و admin
+✅ أصلحت الـ frontend API
+
+## لتطبيق على الخادم
+
+```bash
+cd /home/Abdo238923/eskan_com/backend
+source ../venv/bin/activate
+python manage.py migrate
+python manage.py update_properties
+python manage.py collectstatic --noinput
+```
+
+ثم أعد تحميل من PythonAnywhere Dashboard.
+
+## التحقق
+
+```
+✅ https://abdo238923.pythonanywhere.com/admin/ - العقارات تظهر
+✅ https://eskan-com-flax.vercel.app/ - العقارات تظهر على الموقع
+```
+
+## الملفات المهمة
+
+- `FIX_PROPERTIES_DISPLAY.md` - شرح تفصيلي
+- `README_PROPERTIES_FIX.md` - دليل شامل
+- `QUICK_FIX_GUIDE.py` - أوامر سريعة
+- `CHECKLIST.md` - قائمة تحقق
+
+---
+
+**كل شيء جاهز 100% - فقط طبق الـ 4 أوامر أعلاه!**
