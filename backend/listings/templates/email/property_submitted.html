@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arabic', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .success-badge {
+            display: inline-block;
+            background-color: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .property-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-right: 4px solid #667eea;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .label {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .value {
+            color: #666;
+        }
+        
+        .button {
+            display: inline-block;
+            background-color: #667eea;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        
+        .button:hover {
+            background-color: #764ba2;
+        }
+        
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        .timeline-item {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        
+        .timeline-marker {
+            width: 20px;
+            height: 20px;
+            background-color: #667eea;
+            border-radius: 50%;
+            margin-left: 20px;
+            flex-shrink: 0;
+            margin-top: 5px;
+        }
+        
+        .timeline-content {
+            flex: 1;
+        }
+        
+        .timeline-content strong {
+            color: #667eea;
+        }
+        
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .divider {
+            height: 2px;
+            background: linear-gradient(to right, transparent, #667eea, transparent);
+            margin: 20px 0;
+        }
+        
+        .info-box {
+            background-color: #e3f2fd;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📬 تم استقبال عقارك!</h1>
+            <p>شكراً لاختيارك منصتنا</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <div class="success-badge">تم الاستقبال بنجاح</div>
+            
+            <p style="margin-bottom: 20px;">السلام عليكم {{ owner_name }},</p>
+            
+            <p style="margin-bottom: 20px;">
+                شكراً لإرسالك عقارك <strong>{{ property_name }}</strong> 
+                على منصتنا. تم استقبال طلبك بنجاح وجاري مراجعته من قبل فريقنا. ✨
+            </p>
+            
+            <div class="divider"></div>
+            
+            <!-- Property Details -->
+            <h3 style="margin: 20px 0 15px 0; color: #667eea;">تفاصيل العقار المُرسل:</h3>
+            <div class="property-details">
+                <div class="detail-row">
+                    <span class="label">اسم العقار:</span>
+                    <span class="value">{{ property_name }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">المنطقة:</span>
+                    <span class="value">{{ property_area }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">السعر:</span>
+                    <span class="value">{{ property_price|floatformat:0 }} جنيه</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">تاريخ الإرسال:</span>
+                    <span class="value">{{ submitted_date }}</span>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <!-- Timeline -->
+            <h3 style="margin: 20px 0 15px 0; color: #667eea;">خطوات المراجعة:</h3>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <strong>✓ تم الاستقبال</strong>
+                        <p style="margin-top: 5px; color: #666;">تم استقبال عقارك بنجاح</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <strong>⏳ قيد المراجعة</strong>
+                        <p style="margin-top: 5px; color: #666;">جاري مراجعة تفاصيل عقارك</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <strong>📢 إخطار بالنتيجة</strong>
+                        <p style="margin-top: 5px; color: #666;">ستتلقى بريد بنتيجة المراجعة قريباً</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <!-- Info Box -->
+            <div class="info-box">
+                <strong>📌 ملاحظة مهمة:</strong>
+                <p style="margin-top: 10px; color: #1565c0;">
+                    عادة ما تستغرق عملية المراجعة من 24 إلى 48 ساعة. 
+                    يمكنك متابعة حالة عقارك من لوحة التحكم الخاصة بك.
+                </p>
+            </div>
+            
+            <!-- Action Button -->
+            <center>
+                <a href="{{ dashboard_url }}" class="button">الذهاب للوحة التحكم</a>
+            </center>
+            
+            <p style="margin-top: 30px; margin-bottom: 20px;">
+                نحن هنا لمساعدتك دائماً! 🙏
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>هذا البريد تم إرساله من منصة اسكان</p>
+            <p>© جميع الحقوق محفوظة</p>
+        </div>
+    </div>
+</body>
+</html>

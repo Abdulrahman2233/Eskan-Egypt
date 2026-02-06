@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arabic', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .success-badge {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .property-details {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-right: 4px solid #667eea;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .label {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .value {
+            color: #666;
+        }
+        
+        .button {
+            display: inline-block;
+            background-color: #667eea;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        
+        .button:hover {
+            background-color: #764ba2;
+        }
+        
+        .footer {
+            background-color: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .divider {
+            height: 2px;
+            background: linear-gradient(to right, transparent, #667eea, transparent);
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>✅ تم الموافقة على عقارك!</h1>
+            <p>نحن سعداء بموافقتنا على عقارك الجديد</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <div class="success-badge">تم الموافقة بنجاح</div>
+            
+            <p style="margin-bottom: 20px;">السلام عليكم {{ owner_name }},</p>
+            
+            <p style="margin-bottom: 20px;">
+                نحن سعداء بإخبارك أن عقارك <strong>{{ property_name }}</strong> 
+                قد تمت الموافقة عليه بنجاح ✨
+            </p>
+            
+            <div class="divider"></div>
+            
+            <!-- Property Details -->
+            <h3 style="margin: 20px 0 15px 0; color: #667eea;">تفاصيل العقار:</h3>
+            <div class="property-details">
+                <div class="detail-row">
+                    <span class="label">اسم العقار:</span>
+                    <span class="value">{{ property_name }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">المنطقة:</span>
+                    <span class="value">{{ property_area }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">السعر:</span>
+                    <span class="value">{{ property_price|floatformat:0 }} جنيه</span>
+                </div>
+            </div>
+            
+            <!-- Approval Notes -->
+            {% if approval_notes %}
+            <div style="background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <strong style="color: #2e7d32;">ملاحظات الموافقة:</strong>
+                <p style="margin-top: 10px; color: #555;">{{ approval_notes }}</p>
+            </div>
+            {% endif %}
+            
+            <div class="divider"></div>
+            
+            <p style="margin: 20px 0;">
+                يمكنك الآن رؤية عقارك على موقعنا وسيبدأ في جذب المستأجرين المهتمين.
+            </p>
+            
+            <!-- Action Button -->
+            <center>
+                <a href="{{ property_url }}" class="button">عرض العقار</a>
+            </center>
+            
+            <p style="margin-top: 30px; margin-bottom: 20px;">
+                شكراً لاختيارك منصتنا! 🙏
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>هذا البريد تم إرساله من منصة اسكان</p>
+            <p>© جميع الحقوق محفوظة</p>
+        </div>
+    </div>
+</body>
+</html>
