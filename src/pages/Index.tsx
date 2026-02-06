@@ -125,82 +125,48 @@ const propertyMarketingSteps = [
   },
 ];
 
-// Animated Building Component
-const AnimatedBuilding = ({ className, delay = 0 }: { className?: string; delay?: number }) => (
-  <motion.div
-    className={className}
-    initial={{ opacity: 0, y: 50 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 1, delay, ease: "easeOut" }}
-  >
-    <svg viewBox="0 0 100 140" className="w-full h-full" fill="currentColor">
-      {/* Main building body */}
-      <rect x="10" y="40" width="80" height="100" rx="2" className="fill-current opacity-20" />
-      {/* Windows - animated */}
-      <motion.rect
-        x="20" y="50" width="12" height="12" rx="1"
-        className="fill-current opacity-40"
-        animate={{ opacity: [0.3, 0.6, 0.3] }}
-        transition={{ duration: 2, repeat: Infinity, delay: delay + 0.2 }}
-      />
-      <motion.rect
-        x="44" y="50" width="12" height="12" rx="1"
-        className="fill-current opacity-40"
-        animate={{ opacity: [0.4, 0.7, 0.4] }}
-        transition={{ duration: 2.5, repeat: Infinity, delay: delay + 0.5 }}
-      />
-      <motion.rect
-        x="68" y="50" width="12" height="12" rx="1"
-        className="fill-current opacity-40"
-        animate={{ opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 1.8, repeat: Infinity, delay: delay + 0.3 }}
-      />
-      <motion.rect
-        x="20" y="70" width="12" height="12" rx="1"
-        className="fill-current opacity-40"
-        animate={{ opacity: [0.5, 0.8, 0.5] }}
-        transition={{ duration: 2.2, repeat: Infinity, delay: delay + 0.7 }}
-      />
-      <motion.rect
-        x="44" y="70" width="12" height="12" rx="1"
-        className="fill-current opacity-40"
-        animate={{ opacity: [0.3, 0.6, 0.3] }}
-        transition={{ duration: 2, repeat: Infinity, delay: delay + 0.1 }}
-      />
-      <motion.rect
-        x="68" y="70" width="12" height="12" rx="1"
-        className="fill-current opacity-40"
-        animate={{ opacity: [0.4, 0.7, 0.4] }}
-        transition={{ duration: 2.3, repeat: Infinity, delay: delay + 0.4 }}
-      />
-      <motion.rect
-        x="20" y="90" width="12" height="12" rx="1"
-        className="fill-current opacity-40"
-        animate={{ opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 1.9, repeat: Infinity, delay: delay + 0.6 }}
-      />
-      <motion.rect
-        x="44" y="90" width="12" height="12" rx="1"
-        className="fill-current opacity-40"
-        animate={{ opacity: [0.5, 0.8, 0.5] }}
-        transition={{ duration: 2.1, repeat: Infinity, delay: delay + 0.8 }}
-      />
-      <motion.rect
-        x="68" y="90" width="12" height="12" rx="1"
-        className="fill-current opacity-40"
-        animate={{ opacity: [0.4, 0.6, 0.4] }}
-        transition={{ duration: 2.4, repeat: Infinity, delay: delay + 0.2 }}
-      />
-      {/* Door */}
-      <rect x="40" y="115" width="20" height="25" rx="2" className="fill-current opacity-50" />
-      {/* Roof detail */}
-      <rect x="5" y="35" width="90" height="8" rx="1" className="fill-current opacity-30" />
-    </svg>
-  </motion.div>
-);
+// Animated Building Component - Optimized with CSS
+const AnimatedBuilding = React.memo(({ className, delay = 0 }: { className?: string; delay?: number }) => {
+  // Check system preferences for reduced motion
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 1, delay, ease: "easeOut" }}
+      style={{ willChange: 'transform' }}
+    >
+      <svg viewBox="0 0 100 140" className="w-full h-full" fill="currentColor">
+        {/* Main building body */}
+        <rect x="10" y="40" width="80" height="100" rx="2" className="fill-current opacity-20" />
+        
+        {/* Windows - CSS animations via style */}
+        <rect x="20" y="50" width="12" height="12" rx="1" className="fill-current" style={{ opacity: prefersReducedMotion ? 0.4 : undefined, animation: prefersReducedMotion ? 'none' : `pulse 2s ease-in-out ${delay + 0.2}s infinite` }} />
+        <rect x="44" y="50" width="12" height="12" rx="1" className="fill-current" style={{ opacity: prefersReducedMotion ? 0.4 : undefined, animation: prefersReducedMotion ? 'none' : `pulse 2.5s ease-in-out ${delay + 0.5}s infinite` }} />
+        <rect x="68" y="50" width="12" height="12" rx="1" className="fill-current" style={{ opacity: prefersReducedMotion ? 0.4 : undefined, animation: prefersReducedMotion ? 'none' : `pulse 1.8s ease-in-out ${delay + 0.3}s infinite` }} />
+        
+        <rect x="20" y="70" width="12" height="12" rx="1" className="fill-current" style={{ opacity: prefersReducedMotion ? 0.4 : undefined, animation: prefersReducedMotion ? 'none' : `pulse 2.2s ease-in-out ${delay + 0.7}s infinite` }} />
+        <rect x="44" y="70" width="12" height="12" rx="1" className="fill-current" style={{ opacity: prefersReducedMotion ? 0.4 : undefined, animation: prefersReducedMotion ? 'none' : `pulse 2s ease-in-out ${delay + 0.1}s infinite` }} />
+        <rect x="68" y="70" width="12" height="12" rx="1" className="fill-current" style={{ opacity: prefersReducedMotion ? 0.4 : undefined, animation: prefersReducedMotion ? 'none' : `pulse 2.3s ease-in-out ${delay + 0.4}s infinite` }} />
+        
+        <rect x="20" y="90" width="12" height="12" rx="1" className="fill-current" style={{ opacity: prefersReducedMotion ? 0.4 : undefined, animation: prefersReducedMotion ? 'none' : `pulse 1.9s ease-in-out ${delay + 0.6}s infinite` }} />
+        <rect x="44" y="90" width="12" height="12" rx="1" className="fill-current" style={{ opacity: prefersReducedMotion ? 0.4 : undefined, animation: prefersReducedMotion ? 'none' : `pulse 2.1s ease-in-out ${delay + 0.8}s infinite` }} />
+        <rect x="68" y="90" width="12" height="12" rx="1" className="fill-current" style={{ opacity: prefersReducedMotion ? 0.4 : undefined, animation: prefersReducedMotion ? 'none' : `pulse 2.4s ease-in-out ${delay + 0.2}s infinite` }} />
+        
+        {/* Door */}
+        <rect x="40" y="115" width="20" height="25" rx="2" className="fill-current opacity-50" />
+        {/* Roof detail */}
+        <rect x="5" y="35" width="90" height="8" rx="1" className="fill-current opacity-30" />
+      </svg>
+    </motion.div>
+  );
+});
+AnimatedBuilding.displayName = 'AnimatedBuilding';
 
-// Floating Geometric Shapes - Optimized (disable intense animations)
-const FloatingShape = ({ 
+// Floating Geometric Shapes - GPU Optimized with transform
+const FloatingShape = React.memo(({ 
   className, 
   size, 
   delay = 0,
@@ -214,17 +180,27 @@ const FloatingShape = ({
   // Check for reduced motion preference
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   
+  if (prefersReducedMotion) {
+    return (
+      <div
+        className={`absolute ${className}`}
+        style={{ width: size, height: size }}
+      >
+        <div className="w-full h-full rounded-xl bg-primary/10 border border-primary/20" />
+      </div>
+    );
+  }
+  
   return (
     <motion.div
       className={`absolute ${className}`}
-      style={{ width: size, height: size }}
-      animate={prefersReducedMotion ? {} : {
+      style={{ width: size, height: size, willChange: 'transform' }}
+      animate={{
         y: [-20, 20, -20],
-        rotate: [0, 180, 360],
       }}
       transition={{
         duration,
-        repeat: prefersReducedMotion ? 0 : Infinity,
+        repeat: Infinity,
         delay,
         ease: "easeInOut",
       }}
@@ -232,7 +208,8 @@ const FloatingShape = ({
       <div className="w-full h-full rounded-xl bg-primary/10 border border-primary/20" />
     </motion.div>
   );
-};
+});
+FloatingShape.displayName = 'FloatingShape';
 
 // Feature Card Component
 const FeatureCard = ({
@@ -381,70 +358,22 @@ const Index = () => {
       <OfferModal />
       <Navbar />
 
-      {/* Hero Section - Animated Professional Design */}
-      <section className="relative pt-20 md:pt-12 pb-16 md:pb-12 overflow-hidden min-h-[95vh] md:min-h-[60vh] flex items-center mt-16">
-        {/* Animated Grid Pattern - Disabled for performance */}
-        <div className="absolute inset-0 overflow-hidden">
-          <svg className="absolute w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-                <path
-                  d="M 60 0 L 0 0 0 60"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="0.5"
-                  className="text-primary/10"
-                />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
-
-        {/* Animated Circles - Optimized */}
-        <motion.div
-          className="absolute top-20 right-[10%] w-64 h-64 rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-2xl"
-          animate={{
-            scale: [1, 1.15, 1],
-            opacity: [0.3, 0.4, 0.3],
-          }}
-          transition={{ duration: 12, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute bottom-20 left-[5%] w-80 h-80 rounded-full bg-gradient-to-tr from-secondary/20 to-transparent blur-2xl"
-          animate={{
-            scale: [1.15, 1, 1.15],
-            opacity: [0.2, 0.3, 0.2],
-          }}
-          transition={{ duration: 14, repeat: Infinity, delay: 0.5 }}
-        />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-gradient-to-b from-primary/10 to-secondary/10 blur-2xl" />
-
-
-        {/* Animated Lines - Disabled for Performance */}
-
-        {/* Floating Geometric Shapes - Reduced for performance */}
-        <FloatingShape className="top-[10%] right-[3%]" size={40} delay={0} />
-        <FloatingShape className="bottom-[25%] right-[8%]" size={35} delay={1} duration={7} />
-        <FloatingShape className="bottom-[35%] left-[8%]" size={25} delay={1.5} />
-        <FloatingShape className="top-[20%] left-[5%] hidden md:block" size={30} delay={0.5} duration={8} />
-
-
-        {/* Mobile-specific floating elements - Disabled for performance */}
-
-        {/* Animated Buildings Skyline */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 sm:h-48 md:h-64 flex items-end justify-center gap-1 sm:gap-2 md:gap-4 opacity-[0.08] overflow-hidden">
-          <AnimatedBuilding className="w-10 sm:w-16 md:w-24 h-20 sm:h-32 md:h-48 text-primary" delay={0} />
-          <AnimatedBuilding className="w-8 sm:w-12 md:w-20 h-16 sm:h-24 md:h-36 text-primary" delay={0.2} />
-          <AnimatedBuilding className="w-12 sm:w-20 md:w-28 h-24 sm:h-40 md:h-56 text-primary" delay={0.4} />
-          <AnimatedBuilding className="w-9 sm:w-14 md:w-22 h-18 sm:h-28 md:h-44 text-primary" delay={0.1} />
-          <AnimatedBuilding className="w-11 sm:w-18 md:w-26 h-22 sm:h-36 md:h-52 text-primary" delay={0.3} />
-          <AnimatedBuilding className="w-8 sm:w-12 md:w-18 h-14 sm:h-20 md:h-32 text-primary" delay={0.5} />
-          <AnimatedBuilding className="w-10 sm:w-16 md:w-24 h-20 sm:h-32 md:h-48 text-primary hidden xs:block" delay={0.6} />
-          <AnimatedBuilding className="w-12 sm:w-20 md:w-28 h-24 sm:h-40 md:h-56 text-primary hidden sm:block" delay={0.7} />
-        </div>
-
-        {/* Animated Dots Pattern - Disabled for performance */}
+      {/* Hero Section - Static Background Image for Performance */}
+      <section 
+        className="relative pt-20 md:pt-12 pb-16 md:pb-12 overflow-hidden min-h-[95vh] md:min-h-[60vh] flex items-center mt-16" 
+        style={{
+          backgroundImage: `url('${heroHome}')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center center',
+          backgroundRepeat: 'no-repeat',
+          backgroundAttachment: 'fixed',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center'
+        }}
+      >
+        {/* Dark Overlay for text readability */}
+        <div className="absolute inset-0 z-0 bg-gradient-to-r from-black/80 via-black/70 to-black/80" />
 
         <div className="container mx-auto px-4 relative z-10 pt-20 pb-8">
           <motion.div
@@ -454,30 +383,27 @@ const Index = () => {
             variants={staggerContainer}
           >
             <motion.div variants={fadeInUp}>
-              <span className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-2 rounded-full text-primary text-sm font-medium backdrop-blur-sm">
-                <Star className="h-4 w-4 fill-secondary text-secondary" />
+              <span className="inline-flex items-center gap-2 bg-white/20 border border-white/30 px-4 py-2 rounded-full text-white text-sm font-medium backdrop-blur-sm">
+                <Star className="h-4 w-4 fill-yellow-300 text-yellow-300" />
                 <span>المنصة الأولى للإيجار في الإسكندرية</span>
               </span>
             </motion.div>
 
             <motion.h1
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6"
               variants={fadeInUp}
             >
               اعثر على سكنك المثالي
               <br />
               <motion.span 
-                className="text-primary inline-block"
+                className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-200 to-yellow-300 inline-block"
                 animate={{
                   backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
                 }}
                 transition={{ duration: 5, repeat: Infinity }}
                 style={{
-                  background: "linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--primary)))",
                   backgroundSize: "200% auto",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
+                  willChange: 'filter',
                 }}
               >
                 في الإسكندرية
@@ -485,7 +411,7 @@ const Index = () => {
             </motion.h1>
 
             <motion.p
-              className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto mb-8"
+              className="text-base md:text-lg text-white/90 max-w-2xl mx-auto mb-8"
               variants={fadeInUp}
             >
               آلاف الشقق والعقارات المتاحة للإيجار في أفضل مناطق الإسكندرية
@@ -513,14 +439,14 @@ const Index = () => {
                     <motion.div
                       className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity"
                     />
-                    <div className="relative bg-background/80 border border-primary/20 rounded-2xl px-4 py-2 md:px-4 md:py-3 text-center backdrop-blur-sm hover:border-primary/40 transition-colors">
-                      <div className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 text-primary mb-1">
+                    <div className="relative bg-white/10 border border-white/20 rounded-2xl px-4 py-2 md:px-4 md:py-3 text-center backdrop-blur-sm hover:border-white/40 transition-colors">
+                      <div className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-yellow-300/20 text-yellow-300 mb-1">
                         <Icon className="h-3.5 w-3.5" />
                       </div>
-                      <div className="text-base sm:text-lg md:text-xl font-bold text-foreground">
+                      <div className="text-base sm:text-lg md:text-xl font-bold text-white">
                         {stat.value}
                       </div>
-                      <div className="text-xs md:text-sm text-muted-foreground">
+                      <div className="text-xs md:text-sm text-white/70">
                         {stat.label}
                       </div>
                     </div>
@@ -536,11 +462,11 @@ const Index = () => {
                 <Button
                   asChild
                   size="lg"
-                  className="relative h-14 md:h-16 px-8 md:px-12 text-base md:text-lg rounded-2xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary shadow-2xl shadow-primary/40 gap-3 border border-primary-foreground/10"
+                  className="relative h-14 md:h-16 px-8 md:px-12 text-base md:text-lg rounded-2xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 hover:from-yellow-500 hover:to-yellow-600 shadow-2xl shadow-yellow-400/30 gap-3 border border-yellow-300/30 font-bold"
                 >
                   <Link to="/properties" className="flex items-center gap-3">
                     <Search className="h-5 w-5 md:h-6 md:w-6" />
-                    <span className="font-bold">تصفح العقارات</span>
+                    <span>تصفح العقارات</span>
                     <ArrowLeft className="h-5 w-5 md:h-6 md:w-6" />
                   </Link>
                 </Button>
@@ -557,7 +483,7 @@ const Index = () => {
             element?.scrollIntoView({ behavior: 'smooth' });
           }}
         >
-          <ChevronDown className="h-8 w-8 text-primary/60 hover:text-primary transition-colors" />
+          <ChevronDown className="h-8 w-8 text-yellow-300/60 hover:text-yellow-300 transition-colors" />
         </motion.div>
       </section>
 

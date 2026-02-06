@@ -149,3 +149,36 @@ All colors MUST be HSL.
     @apply hover:shadow-xl hover:-translate-y-1;
   }
 }
+
+/* GPU-Optimized Animations */
+@supports (will-change: transform) {
+  .will-change-transform {
+    will-change: transform;
+  }
+}
+
+/* Pulse animation - GPU optimized with opacity only */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Disable animations for reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
