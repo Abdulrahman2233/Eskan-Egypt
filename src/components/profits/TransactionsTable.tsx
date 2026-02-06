@@ -104,6 +104,10 @@ export function TransactionsTable({ transactions, onDelete, onEdit }: Transactio
 
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("ar-EG").format(value);
+  };
+
   return (
     <div className="card-glow rounded-2xl bg-card p-5 lg:p-6 border border-border shadow-lg">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
