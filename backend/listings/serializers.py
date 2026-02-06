@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage
+from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage, ActivityLog, Transaction, Visitor, PropertyAuditTrail, Notification
 from decimal import Decimal, InvalidOperation
 import logging
 
@@ -33,7 +33,7 @@ class AreaSerializer(serializers.ModelSerializer):
         model = Area
         fields = ('id', 'name', 'property_count')
     def get_property_count(self, obj):
-        return obj.properties.count()
+        return obj.properties.filter(is_deleted=False).count()
 
 class PropertySerializer(serializers.ModelSerializer):
     images = PropertyImageSerializer(many=True, read_only=True)
@@ -48,7 +48,9 @@ class PropertySerializer(serializers.ModelSerializer):
     usage_type_ar = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     owner_name = serializers.SerializerMethodField()
+    owner_type = serializers.SerializerMethodField()
     approved_by_name = serializers.SerializerMethodField()
+    deleted_by_name = serializers.SerializerMethodField()
     
     def get_usage_type_ar(self, obj):
         """تحويل usage_type إلى العربية"""
@@ -73,10 +75,22 @@ class PropertySerializer(serializers.ModelSerializer):
             return obj.owner.user.get_full_name() or obj.owner.user.username
         return 'غير محدد'
     
+    def get_owner_type(self, obj):
+        """الحصول على نوع المالك"""
+        if obj.owner and hasattr(obj.owner, 'user_type'):
+            return obj.owner.user_type
+        return 'landlord'
+    
     def get_approved_by_name(self, obj):
         """آمن - التعامل مع NULL values"""
         if obj.approved_by and obj.approved_by.user:
             return obj.approved_by.user.get_full_name() or obj.approved_by.user.username
+        return None
+    
+    def get_deleted_by_name(self, obj):
+        """آمن - التعامل مع NULL values"""
+        if obj.deleted_by and obj.deleted_by.user:
+            return obj.deleted_by.user.get_full_name() or obj.deleted_by.user.username
         return None
     
     def validate_contact(self, value):
@@ -158,10 +172,14 @@ class PropertySerializer(serializers.ModelSerializer):
             'latitude', 'longitude',
             'images', 'videos', 'created_at', 'updated_at',
             # حقول الموافقات
-            'owner', 'owner_name', 'status', 'status_display', 'submitted_at',
-            'approved_by', 'approved_by_name', 'approval_notes'
+            'owner', 'owner_name', 'owner_type', 'status', 'status_display', 'submitted_at',
+            'approved_by', 'approved_by_name', 'approval_notes',
+            # حقول المشاهدات والزيارات
+            'views', 'visitors',
+            # حقول الحذف المنطقي
+            'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name'
         )
-        read_only_fields = ('id', 'created_at', 'updated_at', 'submitted_at', 'approved_by', 'approval_notes', 'status', 'status_display', 'owner', 'owner_name', 'area_data')
+        read_only_fields = ('id', 'created_at', 'updated_at', 'submitted_at', 'approved_by', 'approval_notes', 'status', 'status_display', 'owner', 'owner_name', 'owner_type', 'area_data', 'views', 'visitors', 'visited_ips', 'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name')
         extra_kwargs = {
             'name': {'required': True},
             'area': {'required': True},
@@ -203,10 +221,211 @@ class ContactMessageSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'email',
+            'phone',
             'subject',
             'message',
+            'is_read',
+            'is_archived',
             'created_at',
+            'updated_at',
         )
-        read_only_fields = ('id', 'created_at')
+        read_only_fields = ('id', 'created_at', 'updated_at')
 
 
+class ActivityLogSerializer(serializers.ModelSerializer):
+    user_name = serializers.SerializerMethodField()
+    action_display = serializers.CharField(source='get_action_display', read_only=True)
+    
+    def get_user_name(self, obj):
+        if obj.user and obj.user.user:
+            return obj.user.user.get_full_name() or obj.user.user.username
+        return 'نظام'
+    
+    class Meta:
+        model = ActivityLog
+        fields = (
+            'id',
+            'user',
+            'user_name',
+            'action',
+            'action_display',
+            'content_type',
+            'object_id',
+            'object_name',
+            'description',
+            'ip_address',
+            'timestamp',
+        )
+        read_only_fields = ('id', 'timestamp')
+
+
+class DashboardSummarySerializer(serializers.Serializer):
+    """Serializer لملخص لوحة التحكم"""
+    properties = serializers.DictField()
+    users = serializers.DictField()
+    areas = serializers.ListField()
+    property_types = serializers.ListField()
+    offers = serializers.DictField()
+    contact_messages = serializers.DictField()
+    price_distribution = serializers.ListField()
+    recent_activities = serializers.ListField()
+    top_properties = serializers.ListField()
+    daily_activity = serializers.ListField()
+
+
+class PropertyStatsSerializer(serializers.Serializer):
+    """Serializer لإحصائيات العقارات"""
+    total = serializers.IntegerField()
+    approved = serializers.IntegerField()
+    pending = serializers.IntegerField()
+    draft = serializers.IntegerField()
+    rejected = serializers.IntegerField()
+    total_value = serializers.FloatField()
+    avg_price = serializers.FloatField()
+    today = serializers.IntegerField(required=False)
+
+
+class UserStatsSerializer(serializers.Serializer):
+    """Serializer لإحصائيات المستخدمين"""
+    total = serializers.IntegerField()
+    new_today = serializers.IntegerField()
+    by_type = serializers.DictField()
+    active_users = serializers.IntegerField()
+    total_visits = serializers.IntegerField(required=False)
+    total_unique_visitors = serializers.IntegerField(required=False)
+    visitors_today = serializers.IntegerField(required=False)
+
+class TransactionSerializer(serializers.ModelSerializer):
+    """Serializer لنموذج الصفقات"""
+    account_type_display = serializers.CharField(source='get_account_type_display', read_only=True)
+    property_type_display = serializers.CharField(source='get_property_type_display', read_only=True)
+    user_name = serializers.SerializerMethodField()
+    
+    def get_user_name(self, obj):
+        """الحصول على اسم المستخدم"""
+        if obj.user and obj.user.user:
+            return obj.user.user.get_full_name() or obj.user.user.username
+        return None
+    
+    class Meta:
+        model = Transaction
+        fields = (
+            'id',
+            'user',
+            'user_name',
+            'property_name',
+            'region',
+            'account_type',
+            'account_type_display',
+            'property_type',
+            'property_type_display',
+            'rent_price',
+            'commission',
+            'profit',
+            'created_at',
+            'updated_at',
+        )
+        read_only_fields = ('id', 'created_at', 'updated_at')
+
+
+class VisitorSerializer(serializers.ModelSerializer):
+    """Serializer لنموذج الزائر"""
+    
+    device_type_display = serializers.CharField(source='get_device_type_display', read_only=True)
+    
+    class Meta:
+        model = Visitor
+        fields = (
+            'id',
+            'ip_address',
+            'user_agent',
+            'device_type',
+            'device_type_display',
+            'country',
+            'city',
+            'visit_count',
+            'first_visited',
+            'last_visited',
+        )
+        read_only_fields = ('id', 'visit_count', 'first_visited', 'last_visited')
+
+
+class PropertyAuditTrailSerializer(serializers.ModelSerializer):
+    """Serializer لسجل تدقيق العقارات"""
+    
+    action_display = serializers.CharField(source='get_action_display', read_only=True)
+    performed_by_name = serializers.SerializerMethodField()
+    property_name = serializers.CharField(source='property.name', read_only=True)
+    property_address = serializers.CharField(source='property.address', read_only=True)
+    
+    class Meta:
+        model = PropertyAuditTrail
+        fields = (
+            'id',
+            'property',
+            'property_name',
+            'property_address',
+            'action',
+            'action_display',
+            'performed_by',
+            'performed_by_name',
+            'property_data_before',
+            'property_data_after',
+            'notes',
+            'ip_address',
+            'timestamp',
+        )
+        read_only_fields = ('id', 'timestamp')
+    
+    def get_performed_by_name(self, obj):
+        """الحصول على اسم المستخدم الذي قام بالعملية"""
+        if obj.performed_by and obj.performed_by.user:
+            return obj.performed_by.user.get_full_name() or obj.performed_by.user.username
+        return 'غير معروف'
+
+class NotificationSerializer(serializers.ModelSerializer):
+    """Serializer للإشعارات"""
+    recipient_name = serializers.SerializerMethodField()
+    related_property_name = serializers.CharField(source='related_property.name', read_only=True, allow_null=True)
+    related_user_name = serializers.SerializerMethodField()
+    notification_type_display = serializers.CharField(source='get_notification_type_display', read_only=True)
+    time = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Notification
+        fields = (
+            'id',
+            'recipient',
+            'recipient_name',
+            'notification_type',
+            'notification_type_display',
+            'title',
+            'description',
+            'related_property',
+            'related_property_name',
+            'related_user',
+            'related_user_name',
+            'is_read',
+            'read_at',
+            'created_at',
+            'updated_at',
+            'time',
+        )
+        read_only_fields = ('id', 'recipient', 'created_at', 'updated_at', 'read_at')
+    
+    def get_recipient_name(self, obj):
+        """الحصول على اسم المستقبل"""
+        if obj.recipient and obj.recipient.user:
+            return obj.recipient.user.get_full_name() or obj.recipient.user.username
+        return 'غير معروف'
+    
+    def get_related_user_name(self, obj):
+        """الحصول على اسم المستخدم المتعلق"""
+        if obj.related_user and obj.related_user.user:
+            return obj.related_user.user.get_full_name() or obj.related_user.user.username
+        return None
+    
+    def get_time(self, obj):
+        """حساب الوقت المنقضي بشكل بشري"""
+        from django.utils.timesince import timesince
+        return f"منذ {timesince(obj.created_at)}"

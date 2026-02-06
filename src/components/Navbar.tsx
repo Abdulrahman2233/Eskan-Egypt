@@ -1,4 +1,4 @@
-import { Menu, User, LogOut, ChevronDown, Settings, Home, Building2 } from "lucide-react";
+import { Menu, User, LogOut, ChevronDown, Settings, Home, Building2, BarChart3 } from "lucide-react";
 import logo from "../assets/logo1.png";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
@@ -123,6 +123,14 @@ const Navbar = () => {
                       عقاراتي
                     </Link>
                   </DropdownMenuItem>
+                  {localStorage.getItem('user_role') === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin/dashboard" className="cursor-pointer flex items-center gap-2">
+                        <BarChart3 className="h-4 w-4" />
+                        التحليلات
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
                     <Link to="/dashboard/settings" className="cursor-pointer flex items-center gap-2">
                       <Settings className="h-4 w-4" />

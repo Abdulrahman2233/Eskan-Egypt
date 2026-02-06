@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage, ActivityLog
+from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage, ActivityLog, Transaction, PropertyAuditTrail
 
 
 class PropertyImageInline(admin.TabularInline):
@@ -36,6 +36,7 @@ class PropertyAdmin(admin.ModelAdmin):
         'furnished',
         'created_at',
         'owner__user_type',
+        'is_deleted',  # إضافة فلتر للعقارات المحذوفة
     )
     # inlines = [PropertyImageInline, PropertyVideoInline]  # مخفية من admin
     inlines = [PropertyImageInline, PropertyVideoInline]
@@ -77,6 +78,14 @@ class PropertyAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    def get_queryset(self, request):
+        """إخفاء العقارات المحذوفة من القائمة الافتراضية"""
+        qs = super().get_queryset(request)
+        # إذا لم يكن هناك فلتر "is_deleted"، اخف المحذوفة افتراضياً
+        if 'is_deleted__exact' not in request.GET:
+            qs = qs.filter(is_deleted=False)
+        return qs
 
     def get_owner_info(self, obj):
         """عرض معلومات المالك في قائمة العقارات"""
@@ -156,6 +165,56 @@ class PropertyAdmin(admin.ModelAdmin):
             status_text
         )
     status_badge.short_description = "حالة العقار"
+
+    def delete_model(self, request, obj):
+        """
+        تجاوز الحذف الفعلي (hard delete) واستخدام soft delete بدلاً منه
+        مع تسجيل العملية في PropertyAuditTrail
+        """
+        from django.utils import timezone
+        from .models import PropertyAuditTrail
+        from .serializers import PropertySerializer
+        
+        # حفظ البيانات قبل الحذف
+        serializer = PropertySerializer(obj, context={'request': request})
+        property_data_before = serializer.data
+        
+        # تنفيذ soft delete
+        obj.is_deleted = True
+        obj.deleted_at = timezone.now()
+        obj.deleted_by = request.user.profile if hasattr(request.user, 'profile') else None
+        obj.save()
+        
+        # تسجيل العملية في PropertyAuditTrail
+        try:
+            PropertyAuditTrail.objects.create(
+                property=obj,
+                action='delete',
+                performed_by=request.user.profile if hasattr(request.user, 'profile') else None,
+                property_data_before=property_data_before,
+                property_data_after={},  # لا توجد بيانات بعد الحذف
+                notes=f"تم الحذف من Django Admin بواسطة {request.user.username}",
+                ip_address=self._get_client_ip(request)
+            )
+        except Exception as e:
+            print(f"خطأ في تسجيل حذف العقار: {str(e)}")
+    
+    def _get_client_ip(self, request):
+        """الحصول على عنوان IP الفعلي"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+    def get_actions(self, request):
+        """تعطيل delete_selected action لمنع الحذف المجمع"""
+        actions = super().get_actions(request)
+        # تعطيل الحذف المجمع (bulk delete)
+        if 'delete_selected' in actions:
+            del actions['delete_selected']
+        return actions
 
 
 @admin.register(Area)
@@ -357,4 +416,147 @@ class ActivityLogAdmin(admin.ModelAdmin):
     
     def has_change_permission(self, request, obj=None):
         """منع تعديل سجلات النشاط"""
+        return False
+
+@admin.register(Transaction)
+class TransactionAdmin(admin.ModelAdmin):
+    list_display = (
+        'property_name',
+        'region',
+        'account_type',
+        'property_type',
+        'rent_price',
+        'profit',
+        'created_at',
+        'get_user_info',
+    )
+    search_fields = ('property_name', 'region', 'user__user__username')
+    list_filter = (
+        'account_type',
+        'property_type',
+        'region',
+        'created_at',
+    )
+    readonly_fields = ('id', 'created_at', 'updated_at')
+    fields = (
+        'id',
+        'user',
+        'property_name',
+        'region',
+        'account_type',
+        'property_type',
+        'rent_price',
+        'commission',
+        'profit',
+        'created_at',
+        'updated_at',
+    )
+    
+    def get_user_info(self, obj):
+        """عرض معلومات المستخدم"""
+        if obj.user and obj.user.user:
+            return f"{obj.user.user.get_full_name() or obj.user.user.username}"
+        return "-"
+    get_user_info.short_description = "المستخدم"
+
+
+@admin.register(PropertyAuditTrail)
+class PropertyAuditTrailAdmin(admin.ModelAdmin):
+    list_display = (
+        'get_action_badge',
+        'property_display',
+        'performed_by_display',
+        'timestamp_formatted',
+    )
+    search_fields = (
+        'property__name',
+        'property__address',
+        'performed_by__user__username',
+        'performed_by__user__email',
+        'notes',
+    )
+    list_filter = (
+        'action',
+        'timestamp',
+        'performed_by',
+    )
+    readonly_fields = (
+        'property',
+        'action',
+        'performed_by',
+        'property_data_before',
+        'property_data_after',
+        'ip_address',
+        'timestamp',
+    )
+    fieldsets = (
+        ('معلومات العملية', {
+            'fields': ('action', 'property', 'performed_by', 'timestamp', 'ip_address')
+        }),
+        ('البيانات', {
+            'fields': ('property_data_before', 'property_data_after'),
+            'classes': ('collapse',)
+        }),
+        ('الملاحظات', {
+            'fields': ('notes',),
+        }),
+    )
+    ordering = ('-timestamp',)
+    can_delete = False
+    actions = None
+    
+    def get_action_badge(self, obj):
+        """عرض نوع العملية في شكل بطاقة ملونة"""
+        action_colors = {
+            'create': '#2ecc71',
+            'delete': '#e74c3c',
+            'restore': '#3498db',
+            'approve': '#27ae60',
+            'reject': '#c0392b',
+        }
+        color = action_colors.get(obj.action, '#95a5a6')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 5px 10px; border-radius: 3px; font-weight: bold;">{}</span>',
+            color,
+            obj.get_action_display()
+        )
+    get_action_badge.short_description = 'نوع العملية'
+    
+    def property_display(self, obj):
+        """عرض معلومات العقار"""
+        return format_html(
+            '<strong>{}</strong><br/><span style="font-size: 12px; color: #7f8c8d;">{}</span>',
+            obj.property.name,
+            obj.property.address
+        )
+    property_display.short_description = 'العقار'
+    
+    def performed_by_display(self, obj):
+        """عرض معلومات من قام بالعملية"""
+        if obj.performed_by and obj.performed_by.user:
+            return format_html(
+                '<strong>{}</strong><br/><span style="font-size: 12px; color: #7f8c8d;">{}</span>',
+                obj.performed_by.user.get_full_name() or obj.performed_by.user.username,
+                obj.performed_by.user.email
+            )
+        return format_html('<span style="color: #e74c3c;">حساب محذوف</span>')
+    performed_by_display.short_description = 'تم بواسطة'
+    
+    def timestamp_formatted(self, obj):
+        """عرض التاريخ والوقت بشكل محسّن"""
+        from django.utils.timezone import localtime
+        local_time = localtime(obj.timestamp)
+        return local_time.strftime('%Y-%m-%d<br/>%H:%M:%S')
+    timestamp_formatted.short_description = 'التاريخ والوقت'
+    
+    def has_add_permission(self, request):
+        """منع إضافة سجلات يدويًا"""
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        """منع حذف السجلات"""
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        """منع تعديل السجلات"""
         return False
