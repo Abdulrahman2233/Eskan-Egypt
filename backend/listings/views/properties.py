@@ -305,6 +305,8 @@ class PropertyViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def approve(self, request, pk=None):
         """الموافقة على عقار"""
+        from django.utils import timezone
+        
         property_obj = self.get_object()
         
         if property_obj.is_deleted:
@@ -318,6 +320,7 @@ class PropertyViewSet(viewsets.ModelViewSet):
 
         property_obj.status = 'approved'
         property_obj.approved_by = user_profile
+        property_obj.approved_at = timezone.now()
         property_obj.approval_notes = notes
         property_obj.save()
 
@@ -332,6 +335,8 @@ class PropertyViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
     def reject(self, request, pk=None):
         """رفض عقار"""
+        from django.utils import timezone
+        
         property_obj = self.get_object()
         
         if property_obj.is_deleted:
@@ -351,6 +356,7 @@ class PropertyViewSet(viewsets.ModelViewSet):
 
         property_obj.status = 'rejected'
         property_obj.approved_by = user_profile
+        property_obj.rejected_at = timezone.now()
         property_obj.approval_notes = notes
         property_obj.save()
 

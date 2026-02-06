@@ -173,13 +173,13 @@ class PropertySerializer(serializers.ModelSerializer):
             'images', 'videos', 'created_at', 'updated_at',
             # حقول الموافقات
             'owner', 'owner_name', 'owner_type', 'status', 'status_display', 'submitted_at',
-            'approved_by', 'approved_by_name', 'approval_notes',
+            'approved_by', 'approved_by_name', 'approved_at', 'rejected_at', 'approval_notes',
             # حقول المشاهدات والزيارات
             'views', 'visitors',
             # حقول الحذف المنطقي
             'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name'
         )
-        read_only_fields = ('id', 'created_at', 'updated_at', 'submitted_at', 'approved_by', 'approval_notes', 'status', 'status_display', 'owner', 'owner_name', 'owner_type', 'area_data', 'views', 'visitors', 'visited_ips', 'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name')
+        read_only_fields = ('id', 'created_at', 'updated_at', 'submitted_at', 'approved_by', 'approved_at', 'rejected_at', 'approval_notes', 'status', 'status_display', 'owner', 'owner_name', 'owner_type', 'area_data', 'views', 'visitors', 'visited_ips', 'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name')
         extra_kwargs = {
             'name': {'required': True},
             'area': {'required': True},

@@ -154,10 +154,6 @@ const MyRejectedProperties = () => {
                           <p className="text-sm text-gray-600 text-right">
                             {property.area.name} • {property.address}
                           </p>
-                          <p className="text-xs text-gray-500 text-right mt-1">
-                            تاريخ الرفض:{" "}
-                            {new Date(property.updated_at).toLocaleDateString("ar-EG")}
-                          </p>
                         </div>
                         <button className="ml-4">
                           {expandedId === property.id ? (

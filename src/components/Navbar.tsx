@@ -1,4 +1,4 @@
-import { Menu, User, LogOut, ChevronDown, Settings, Home, Building2, BarChart3 } from "lucide-react";
+import { Menu, User, LogOut, ChevronDown, Settings, Home, Building2, BarChart3, ArrowLeft, Users } from "lucide-react";
 import logo from "../assets/logo1.png";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
@@ -46,9 +46,9 @@ const Navbar = () => {
 
   const isActive = (path: string) => location.pathname === path;
   const navLinks = [
-    { path: "/", label: "الرئيسية" },
-    { path: "/properties", label: "العقارات" },
-    { path: "/about", label: "من نحن" },
+    { path: "/", label: "الرئيسية", icon: Home },
+    { path: "/properties", label: "العقارات", icon: Building2 },
+    { path: "/about", label: "من نحن", icon: Users },
   ];
 
   return (
@@ -106,51 +106,51 @@ const Navbar = () => {
                     <ChevronDown className="h-4 w-4 opacity-70" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-1.5">
-                    <p className="text-xs text-muted-foreground">الحساب الشخصي</p>
+                <DropdownMenuContent align="start" side="bottom" sideOffset={8} className="w-56 mt-2">
+                  <div className="px-3 py-2 border-b border-border/50">
+                    <p className="text-xs text-muted-foreground font-semibold">الحساب الشخصي</p>
                   </div>
-                  <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard" className="cursor-pointer flex items-center gap-2">
-                      <Home className="h-4 w-4" />
-                      لوحة التحكم
+                    <Link to="/dashboard" className="cursor-pointer flex items-center gap-2 py-2.5 px-3 hover:bg-accent rounded-sm transition-colors">
+                      <Home className="h-4 w-4 flex-shrink-0" />
+                      <span>لوحة التحكم</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard/my-properties" className="cursor-pointer flex items-center gap-2">
-                      <Building2 className="h-4 w-4" />
-                      عقاراتي
+                    <Link to="/dashboard/my-properties" className="cursor-pointer flex items-center gap-2 py-2.5 px-3 hover:bg-accent rounded-sm transition-colors">
+                      <Building2 className="h-4 w-4 flex-shrink-0" />
+                      <span>عقاراتي</span>
                     </Link>
                   </DropdownMenuItem>
                   {localStorage.getItem('user_role') === 'admin' && (
                     <DropdownMenuItem asChild>
-                      <Link to="/admin/dashboard" className="cursor-pointer flex items-center gap-2">
-                        <BarChart3 className="h-4 w-4" />
-                        التحليلات
+                      <Link to="/admin/dashboard" className="cursor-pointer flex items-center gap-2 py-2.5 px-3 hover:bg-accent rounded-sm transition-colors">
+                        <BarChart3 className="h-4 w-4 flex-shrink-0" />
+                        <span>التحليلات</span>
                       </Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard/settings" className="cursor-pointer flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      الإعدادات
+                    <Link to="/dashboard/settings" className="cursor-pointer flex items-center gap-2 py-2.5 px-3 hover:bg-accent rounded-sm transition-colors">
+                      <Settings className="h-4 w-4 flex-shrink-0" />
+                      <span>الإعدادات</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer flex items-center gap-2">
-                    <LogOut className="h-4 w-4" />
-                    تسجيل الخروج
+                  <div className="border-t border-border/50 my-1"></div>
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:text-red-600 hover:bg-red-50 cursor-pointer flex items-center gap-2 py-2.5 px-3 rounded-sm transition-colors">
+                    <LogOut className="h-4 w-4 flex-shrink-0" />
+                    <span>تسجيل الخروج</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <Link to="/auth">
                 <Button
-                  className="gap-2 h-10 px-4 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm transition-all hover:shadow-md"
+                  className="gap-2 h-10 px-4 bg-white hover:bg-gray-100 text-gray-800 shadow-md transition-all hover:shadow-lg border border-gray-200 font-medium"
                 >
                   <User className="h-4 w-4" />
                   <span className="text-sm font-medium">تسجيل الدخول</span>
+                  <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
             )}
@@ -159,59 +159,88 @@ const Navbar = () => {
           {/* Mobile Menu */}
           <Sheet>
             <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="hover:bg-accent/50">
                 <Menu className="h-6 w-6" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px]">
-              <div className="flex flex-col gap-4 mt-8">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.path}
-                    to={link.path}
-                    className={`text-lg font-medium transition-colors hover:text-primary p-3 rounded-lg ${
-                      isActive(link.path) ? "bg-accent text-primary" : ""
-                    }`}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                <div className="flex flex-col gap-2 mt-4 border-t pt-4">
+            <SheetContent side="right" className="w-80 p-0">
+              <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="bg-gradient-to-b from-primary/5 to-transparent p-6 border-b">
+                  <h2 className="text-xl font-bold text-primary">القائمة</h2>
+                </div>
+
+                {/* Navigation Links */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-2">
+                  {navLinks.map((link) => {
+                    const Icon = link.icon;
+                    return (
+                      <Link
+                        key={link.path}
+                        to={link.path}
+                        className={`flex items-center gap-3 text-sm font-medium px-4 py-3 rounded-lg transition-all duration-300 ${
+                          isActive(link.path)
+                            ? "bg-primary text-primary-foreground shadow-md"
+                            : "text-foreground hover:bg-accent/50"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        {link.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                {/* Auth Section */}
+                <div className="border-t p-6 space-y-3">
                   {isLoggedIn ? (
                     <>
                       <Link
                         to="/dashboard"
-                        className="text-center text-sm font-medium px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors"
                       >
+                        <Home className="h-4 w-4" />
                         لوحة التحكم
                       </Link>
                       <Link
                         to="/dashboard/my-properties"
-                        className="text-center text-sm font-medium px-4 py-2 rounded-md bg-accent hover:bg-accent/90 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-accent/80 font-medium text-sm transition-colors"
                       >
+                        <Building2 className="h-4 w-4" />
                         عقاراتي
                       </Link>
                       <Link
                         to="/dashboard/settings"
-                        className="text-center text-sm font-medium px-4 py-2 rounded-md bg-accent hover:bg-accent/90 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-accent/80 font-medium text-sm transition-colors"
                       >
+                        <Settings className="h-4 w-4" />
                         الإعدادات
                       </Link>
+                      {localStorage.getItem('user_role') === 'admin' && (
+                        <Link
+                          to="/admin/dashboard"
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-accent/80 font-medium text-sm transition-colors"
+                        >
+                          <BarChart3 className="h-4 w-4" />
+                          التحليلات
+                        </Link>
+                      )}
                       <Button
                         onClick={handleLogout}
                         variant="destructive"
-                        className="w-full"
+                        className="w-full gap-2 h-11 font-semibold"
                       >
-                        <LogOut className="h-4 w-4 ml-2" />
+                        <LogOut className="h-5 w-5" />
                         تسجيل الخروج
                       </Button>
                     </>
                   ) : (
-                    <Link
-                      to="/auth"
-                      className="text-center text-sm font-medium px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                      تسجيل الدخول
+                    <Link to="/auth">
+                      <Button className="w-full gap-2 h-11 bg-white text-gray-800 hover:bg-gray-100 border border-gray-200 font-semibold shadow-md">
+                        <User className="h-5 w-5" />
+                        <span>تسجيل الدخول</span>
+                        <ArrowLeft className="h-5 w-5" />
+                      </Button>
                     </Link>
                   )}
                 </div>

@@ -170,13 +170,12 @@ export function TransactionsTable({ transactions, onDelete, onEdit }: Transactio
               <TableHead className="text-right">الحساب</TableHead>
               <TableHead className="text-right">السعر</TableHead>
               <TableHead className="text-right">ربحك</TableHead>
-              <TableHead className="text-right w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredTransactions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
                   لا توجد صفقات مسجلة
                 </TableCell>
               </TableRow>
@@ -204,32 +203,7 @@ export function TransactionsTable({ transactions, onDelete, onEdit }: Transactio
                   <TableCell className="font-bold text-green-600">
                     {formatCurrency(transaction.profit)} ج.م
                   </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="bg-card border-border">
-                        <DropdownMenuItem onClick={() => onEdit(transaction)}>
-                          <Pencil className="h-4 w-4 ml-2" />
-                          تعديل
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => onDelete(transaction.id)}
-                          className="text-destructive focus:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4 ml-2" />
-                          حذف
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+
                 </TableRow>
               ))
             )}
