@@ -198,7 +198,7 @@ const AnimatedBuilding = ({ className, delay = 0 }: { className?: string; delay?
   </motion.div>
 );
 
-// Floating Geometric Shapes
+// Floating Geometric Shapes - Optimized (disable intense animations)
 const FloatingShape = ({ 
   className, 
   size, 
@@ -209,24 +209,29 @@ const FloatingShape = ({
   size: number; 
   delay?: number;
   duration?: number;
-}) => (
-  <motion.div
-    className={`absolute ${className}`}
-    style={{ width: size, height: size }}
-    animate={{
-      y: [-20, 20, -20],
-      rotate: [0, 180, 360],
-    }}
-    transition={{
-      duration,
-      repeat: Infinity,
-      delay,
-      ease: "easeInOut",
-    }}
-  >
-    <div className="w-full h-full rounded-xl bg-primary/10 backdrop-blur-sm border border-primary/20" />
-  </motion.div>
-);
+}) => {
+  // Check for reduced motion preference
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  
+  return (
+    <motion.div
+      className={`absolute ${className}`}
+      style={{ width: size, height: size }}
+      animate={prefersReducedMotion ? {} : {
+        y: [-20, 20, -20],
+        rotate: [0, 180, 360],
+      }}
+      transition={{
+        duration,
+        repeat: prefersReducedMotion ? 0 : Infinity,
+        delay,
+        ease: "easeInOut",
+      }}
+    >
+      <div className="w-full h-full rounded-xl bg-primary/10 border border-primary/20" />
+    </motion.div>
+  );
+};
 
 // Feature Card Component
 const FeatureCard = ({
@@ -302,7 +307,8 @@ const Index = () => {
             (p.discount && p.discount > 0)
         );
         console.log("Featured properties filtered:", featured.length);
-        setFeaturedProperties(featured.slice(0, 12));
+        // Load only 4 properties initially, not 12
+        setFeaturedProperties(featured.slice(0, 4));
       } catch (error) {
         console.error("Failed to load featured properties:", error);
         setFeaturedProperties([]);
@@ -376,20 +382,17 @@ const Index = () => {
 
       {/* Hero Section - Animated Professional Design */}
       <section className="relative pt-20 md:pt-12 pb-16 md:pb-12 overflow-hidden min-h-[95vh] md:min-h-[60vh] flex items-center mt-16">
-        {/* Animated Grid Pattern */}
+        {/* Animated Grid Pattern - Disabled for performance */}
         <div className="absolute inset-0 overflow-hidden">
           <svg className="absolute w-full h-full" xmlns="http://www.w3.org/2000/svg">
             <defs>
               <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-                <motion.path
+                <path
                   d="M 60 0 L 0 0 0 60"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="0.5"
                   className="text-primary/10"
-                  initial={{ pathLength: 0 }}
-                  animate={{ pathLength: 1 }}
-                  transition={{ duration: 2, ease: "easeInOut" }}
                 />
               </pattern>
             </defs>
@@ -397,88 +400,36 @@ const Index = () => {
           </svg>
         </div>
 
-        {/* Animated Circles */}
+        {/* Animated Circles - Optimized */}
         <motion.div
-          className="absolute top-20 right-[10%] w-64 h-64 rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-3xl"
+          className="absolute top-20 right-[10%] w-64 h-64 rounded-full bg-gradient-to-br from-primary/20 to-transparent blur-2xl"
           animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
+            scale: [1, 1.15, 1],
+            opacity: [0.3, 0.4, 0.3],
           }}
-          transition={{ duration: 8, repeat: Infinity }}
+          transition={{ duration: 12, repeat: Infinity }}
         />
         <motion.div
-          className="absolute bottom-20 left-[5%] w-80 h-80 rounded-full bg-gradient-to-tr from-secondary/20 to-transparent blur-3xl"
+          className="absolute bottom-20 left-[5%] w-80 h-80 rounded-full bg-gradient-to-tr from-secondary/20 to-transparent blur-2xl"
           animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.2, 0.4, 0.2],
+            scale: [1.15, 1, 1.15],
+            opacity: [0.2, 0.3, 0.2],
           }}
-          transition={{ duration: 10, repeat: Infinity }}
+          transition={{ duration: 14, repeat: Infinity, delay: 0.5 }}
         />
-        <motion.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-gradient-to-b from-primary/10 to-secondary/10 blur-3xl"
-          animate={{
-            rotate: [0, 360],
-          }}
-          transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-        />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-gradient-to-b from-primary/10 to-secondary/10 blur-2xl" />
 
-        {/* Animated Lines */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(5)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent"
-              style={{
-                top: `${20 + i * 15}%`,
-                width: "100%",
-              }}
-              animate={{
-                x: ["-100%", "100%"],
-                opacity: [0, 1, 0],
-              }}
-              transition={{
-                duration: 4 + i,
-                repeat: Infinity,
-                delay: i * 0.5,
-                ease: "easeInOut",
-              }}
-            />
-          ))}
-        </div>
 
-        {/* Floating Geometric Shapes - Now visible on mobile too */}
+        {/* Animated Lines - Disabled for Performance */}
+
+        {/* Floating Geometric Shapes - Reduced for performance */}
         <FloatingShape className="top-[10%] right-[3%]" size={40} delay={0} />
-        <FloatingShape className="top-[20%] left-[5%]" size={30} delay={0.5} duration={8} />
         <FloatingShape className="bottom-[25%] right-[8%]" size={35} delay={1} duration={7} />
         <FloatingShape className="bottom-[35%] left-[8%]" size={25} delay={1.5} />
-        <FloatingShape className="top-[50%] right-[20%] hidden sm:block" size={45} delay={2} duration={9} />
-        <FloatingShape className="top-[40%] left-[15%] hidden sm:block" size={38} delay={0.8} duration={6} />
+        <FloatingShape className="top-[20%] left-[5%] hidden md:block" size={30} delay={0.5} duration={8} />
 
-        {/* Mobile-specific floating elements */}
-        <motion.div
-          className="absolute top-[30%] right-[50%] w-3 h-3 rounded-full bg-primary/30 sm:hidden"
-          animate={{
-            y: [-10, 10, -10],
-            opacity: [0.3, 0.7, 0.3],
-          }}
-          transition={{ duration: 3, repeat: Infinity }}
-        />
-        <motion.div
-          className="absolute top-[45%] left-[20%] w-2 h-2 rounded-full bg-secondary/40 sm:hidden"
-          animate={{
-            y: [10, -10, 10],
-            opacity: [0.4, 0.8, 0.4],
-          }}
-          transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
-        />
-        <motion.div
-          className="absolute bottom-[40%] right-[15%] w-4 h-4 rounded-full bg-primary/20 sm:hidden"
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.2, 0.5, 0.2],
-          }}
-          transition={{ duration: 2, repeat: Infinity, delay: 1 }}
-        />
+
+        {/* Mobile-specific floating elements - Disabled for performance */}
 
         {/* Animated Buildings Skyline */}
         <div className="absolute bottom-0 left-0 right-0 h-32 sm:h-48 md:h-64 flex items-end justify-center gap-1 sm:gap-2 md:gap-4 opacity-[0.08] overflow-hidden">
@@ -492,28 +443,7 @@ const Index = () => {
           <AnimatedBuilding className="w-12 sm:w-20 md:w-28 h-24 sm:h-40 md:h-56 text-primary hidden sm:block" delay={0.7} />
         </div>
 
-        {/* Animated Dots Pattern - More dots on mobile */}
-        <div className="absolute inset-0 pointer-events-none">
-          {[...Array(30)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-primary/20"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-              }}
-              animate={{
-                scale: [1, 1.5, 1],
-                opacity: [0.2, 0.5, 0.2],
-              }}
-              transition={{
-                duration: 3 + Math.random() * 2,
-                repeat: Infinity,
-                delay: Math.random() * 2,
-              }}
-            />
-          ))}
-        </div>
+        {/* Animated Dots Pattern - Disabled for performance */}
 
         <div className="container mx-auto px-4 relative z-10 pt-20 pb-8">
           <motion.div
@@ -602,51 +532,17 @@ const Index = () => {
                 className="flex justify-center mb-12"
                 variants={fadeInUp}
               >
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="relative group"
+                <Button
+                  asChild
+                  size="lg"
+                  className="relative h-14 md:h-16 px-8 md:px-12 text-base md:text-lg rounded-2xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary shadow-2xl shadow-primary/40 gap-3 border border-primary-foreground/10"
                 >
-                  {/* Animated glow effect */}
-                  <motion.div
-                    className="absolute -inset-1 bg-gradient-to-r from-primary via-secondary to-primary rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"
-                    animate={{
-                      backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-                    }}
-                    transition={{ duration: 3, repeat: Infinity }}
-                    style={{ backgroundSize: "200% auto" }}
-                  />
-                  {/* Pulsing ring */}
-                  <motion.div
-                    className="absolute -inset-2 rounded-2xl border-2 border-primary/30"
-                    animate={{
-                      scale: [1, 1.05, 1],
-                      opacity: [0.5, 0, 0.5],
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                  <Button
-                    asChild
-                    size="lg"
-                    className="relative h-14 md:h-16 px-8 md:px-12 text-base md:text-lg rounded-2xl bg-gradient-to-r from-primary to-primary/90 text-primary-foreground hover:from-primary/90 hover:to-primary shadow-2xl shadow-primary/40 gap-3 border border-primary-foreground/10"
-                  >
-                    <Link to="/properties" className="flex items-center gap-3">
-                      <motion.div
-                        animate={{ rotate: [0, 10, -10, 0] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                      >
-                        <Search className="h-5 w-5 md:h-6 md:w-6" />
-                      </motion.div>
-                      <span className="font-bold">تصفح العقارات</span>
-                      <motion.div
-                        animate={{ x: [0, -5, 0] }}
-                        transition={{ duration: 1.5, repeat: Infinity }}
-                      >
-                        <ArrowLeft className="h-5 w-5 md:h-6 md:w-6" />
-                      </motion.div>
-                    </Link>
-                  </Button>
-                </motion.div>
+                  <Link to="/properties" className="flex items-center gap-3">
+                    <Search className="h-5 w-5 md:h-6 md:w-6" />
+                    <span className="font-bold">تصفح العقارات</span>
+                    <ArrowLeft className="h-5 w-5 md:h-6 md:w-6" />
+                  </Link>
+                </Button>
               </motion.div>
           </motion.div>
         </div>
@@ -812,7 +708,7 @@ const Index = () => {
                   },
                 }}
               >
-                {featuredProperties.slice(0, 4).map((property) => (
+                {featuredProperties.map((property) => (
                   <motion.div
                     key={property.id}
                     className="flex-shrink-0 w-[85vw] max-w-[320px] will-change-transform"
@@ -841,7 +737,7 @@ const Index = () => {
                 },
               }}
             >
-              {featuredProperties.slice(0, 4).map((property) => (
+              {featuredProperties.map((property) => (
                 <motion.div
                   key={property.id}
                   className="will-change-transform"
@@ -921,6 +817,7 @@ const Index = () => {
                   src={alexHome}
                   alt="Alexandria housing"
                   className="w-full h-[300px] md:h-[400px] object-cover"
+                  loading="lazy"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent" />
                 <div className="absolute bottom-6 right-6 left-6 text-white">

@@ -15,4 +15,24 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Optimize build output for better performance
+    minify: "terser",
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console logs in production
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Split large libraries into separate chunks
+          "framer-motion": ["framer-motion"],
+          "react-router": ["react-router-dom"],
+        },
+      },
+    },
+    // Increase chunk size warning limit since our app is feature-rich
+    chunkSizeWarningLimit: 1000,
+  },
 }));
