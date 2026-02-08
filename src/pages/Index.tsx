@@ -443,12 +443,20 @@ const Index = () => {
             animate="visible"
             variants={staggerContainer}
           >
-            <motion.div variants={fadeInUp}>
-              <span className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 px-4 py-2 rounded-full text-blue-700 text-sm font-medium backdrop-blur-sm">
-                <Star className="h-4 w-4 fill-blue-500 text-blue-500" />
-                <span>المنصة الأولى للإيجار في الإسكندرية</span>
-              </span>
-            </motion.div>
+                <motion.span 
+                  className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-2 rounded-full text-primary text-sm font-medium backdrop-blur-sm"
+                  animate={{
+                    boxShadow: [
+                      "0 0 0 0 rgba(var(--primary), 0)",
+                      "0 0 0 10px rgba(var(--primary), 0.1)",
+                      "0 0 0 0 rgba(var(--primary), 0)",
+                    ],
+                  }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Star className="h-4 w-4 fill-secondary text-secondary" />
+                  <span>المنصة الأولى للإيجار في الإسكندرية</span>
+                </motion.span>
 
             <motion.h1
               className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6"
@@ -456,19 +464,23 @@ const Index = () => {
             >
               اعثر على سكنك المثالي
               <br />
-              <motion.span 
-                className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 inline-block"
-                animate={{
-                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-                }}
-                transition={{ duration: 5, repeat: Infinity }}
-                style={{
-                  backgroundSize: "200% auto",
-                  willChange: 'filter',
-                }}
-              >
-                في الإسكندرية
-              </motion.span>
+                              <motion.span 
+                  className="text-primary inline-block"
+                  animate={{
+                    backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                  }}
+                  transition={{ duration: 5, repeat: Infinity }}
+                  style={{
+                    background: "linear-gradient(90deg, hsl(var(--primary)), hsl(var(--secondary)), hsl(var(--primary)))",
+                    backgroundSize: "200% auto",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                  }}
+                >
+                  في الإسكندرية
+                </motion.span>
+
             </motion.h1>
 
             <motion.p
