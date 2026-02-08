@@ -258,21 +258,10 @@ def create_new_property_notification(sender, instance, created, **kwargs):
 def create_property_approval_notification(sender, instance, created, update_fields=None, **kwargs):
     """
     إرسال إشعار عند الموافقة على عقار
+    ⚠️ معطل - لا يتم إرسال إشعارات للموافقات
     """
-    try:
-        # التحقق من أن الحالة تغيرت إلى 'approved'
-        if not created and instance.status == 'approved' and instance.owner:
-            # إرسال إشعار للمالك
-            Notification.objects.create(
-                recipient=instance.owner,
-                notification_type='approval',
-                title='تم الموافقة على عقارك',
-                description=f'تم الموافقة على عقار: {instance.name} في منطقة {instance.area.name}',
-                related_property=instance,
-                related_user=instance.approved_by
-            )
-    except Exception as e:
-        print(f"Error creating property approval notification: {str(e)}")
+    # تم تعطيل هذه الميزة - لا يتم إنشاء إشعارات للموافقات
+    pass
 
 
 @receiver(post_save, sender=Property)

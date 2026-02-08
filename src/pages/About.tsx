@@ -1,10 +1,11 @@
 import Navbar from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent } from "@/components/ui/card";
-import { Building2, Target, Users, Award, MessageSquare, PhoneIcon } from "lucide-react";
+import { Building2, Target, Users, Award, MessageSquare, PhoneIcon, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import eskanLogo from "@/assets/Eskan Egypt.png";
 import {
   Accordion,
   AccordionContent,
@@ -18,133 +19,157 @@ const About = () => {
       <Navbar />
       
       <main className="flex-1 mt-16">
-        <div className="bg-primary/5 py-12">
-          <div className="container mx-auto px-4">
-            <h1 className="text-4xl font-bold mb-2">من نحن</h1>
-            <p className="text-muted-foreground">تعرف على Eskan Egypt</p>
-          </div>
-        </div>
 
         <div className="container mx-auto px-4 py-12">
           <div className="max-w-4xl mx-auto space-y-12">
-            {/* About Section */}
-            <div className="text-center space-y-4">
-              <h2 className="text-3xl font-bold">Eskan Egypt</h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                منصة Eskan Egypt هي الوجهة الأولى للباحثين عن شقق للإيجار في محافظة الإسكندرية.
-                نحن نوفر منصة سهلة وموثوقة تجمع بين الباحثين عن السكن وأصحاب العقارات والوسطاء العقاريين،
-                مع تقديم خدمة عملاء متميزة وتجربة استخدام سلسة.
-              </p>
-            </div>
+            {/* About Section with Profile Logo */}
+            <motion.div 
+              className="text-center space-y-8"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              {/* Profile Logo */}
+              <div className="flex justify-center">
+                <motion.div
+                  className="relative w-32 h-32 md:w-40 md:h-40"
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/10 rounded-3xl blur-2xl"></div>
+                  <img 
+                    src={eskanLogo} 
+                    alt="Eskan Egypt" 
+                    className="relative w-full h-full object-contain rounded-3xl shadow-2xl"
+                  />
+                </motion.div>
+              </div>
+
+              <div className="space-y-4">
+                <motion.h2 
+                  className="text-3xl md:text-4xl font-bold"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2, duration: 0.6 }}
+                >
+                  Eskan Egypt
+                </motion.h2>
+                <motion.p 
+                  className="text-base text-muted-foreground leading-relaxed max-w-2xl mx-auto"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3, duration: 0.6 }}
+                >
+                  منصة Eskan Egypt هي الوجهة الأولى للباحثين عن شقق للإيجار في محافظة الإسكندرية.
+                  نحن نوفر منصة سهلة وموثوقة تجمع بين الباحثين عن السكن وأصحاب العقارات والوسطاء العقاريين،
+                  مع تقديم خدمة عملاء متميزة وتجربة استخدام سلسة.
+                </motion.p>
+              </div>
+            </motion.div>
 
             {/* Values */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardContent className="p-6 text-center space-y-4">
-                  <div className="inline-flex p-4 bg-primary/10 rounded-full">
-                    <Target className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-bold">رؤيتنا</h3>
-                  <p className="text-muted-foreground">
-                    أن نكون المنصة الرائدة في مجال تأجير العقارات في مصر،
-                    ونوفر تجربة استثنائية لجميع عملائنا
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6 text-center space-y-4">
-                  <div className="inline-flex p-4 bg-primary/10 rounded-full">
-                    <Building2 className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-bold">رسالتنا</h3>
-                  <p className="text-muted-foreground">
-                    تسهيل عملية البحث عن السكن من خلال منصة تقنية حديثة
-                    تجمع بين الشفافية والمصداقية والسرعة
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6 text-center space-y-4">
-                  <div className="inline-flex p-4 bg-primary/10 rounded-full">
-                    <Users className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-bold">فريقنا</h3>
-                  <p className="text-muted-foreground">
-                    فريق محترف من الخبراء في مجال العقارات والتكنولوجيا،
-                    نعمل على مدار الساعة لخدمتكم
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="p-6 text-center space-y-4">
-                  <div className="inline-flex p-4 bg-primary/10 rounded-full">
-                    <Award className="h-8 w-8 text-primary" />
-                  </div>
-                  <h3 className="text-xl font-bold">قيمنا</h3>
-                  <p className="text-muted-foreground">
-                    المصداقية، الشفافية، الاحترافية، والالتزام برضا العملاء
-                    هي القيم التي نؤمن بها
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
+            <motion.div 
+              className="grid grid-cols-1 md:grid-cols-2 gap-6"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              {[
+                {
+                  icon: Target,
+                  title: "رؤيتنا",
+                  description: "أن نكون المنصة الرائدة في مجال تأجير العقارات في مصر، ونوفر تجربة استثنائية لجميع عملائنا"
+                },
+                {
+                  icon: Building2,
+                  title: "رسالتنا",
+                  description: "تسهيل عملية البحث عن السكن من خلال منصة تقنية حديثة تجمع بين الشفافية والمصداقية والسرعة"
+                },
+                {
+                  icon: Users,
+                  title: "فريقنا",
+                  description: "فريق محترف من الخبراء في مجال العقارات والتكنولوجيا، نعمل على مدار الساعة لخدمتكم"
+                },
+                {
+                  icon: Award,
+                  title: "قيمنا",
+                  description: "المصداقية, الشفافية، الاحترافية، والالتزام برضا العملاء هي القيم التي نؤمن بها"
+                }
+              ].map((item, index) => (
+                <motion.div
+                  key={index}
+                  whileHover={{ y: -5 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="h-full hover:shadow-xl transition-shadow duration-300 border-primary/10">
+                    <CardContent className="p-6 text-center space-y-4">
+                      <motion.div 
+                        className="inline-flex p-4 bg-gradient-to-br from-primary/20 to-primary/10 rounded-full"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                      >
+                        <item.icon className="h-8 w-8 text-primary" />
+                      </motion.div>
+                      <h3 className="text-lg font-bold">{item.title}</h3>
+                      <p className="text-muted-foreground text-xs leading-relaxed">
+                        {item.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
 
             {/* Why Choose Us */}
-            <div className="bg-accent/30 rounded-lg p-8">
-              <h2 className="text-2xl font-bold mb-6 text-center">لماذا تختار Eskan Egypt؟</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
-                    1
-                  </div>
-                  <div>
-                    <h3 className="font-bold mb-2">مجموعة واسعة من العقارات</h3>
-                    <p className="text-sm text-muted-foreground">
-                      آلاف العقارات المتنوعة في جميع مناطق الإسكندرية
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
-                    2
-                  </div>
-                  <div>
-                    <h3 className="font-bold mb-2">بحث متقدم وسهل</h3>
-                    <p className="text-sm text-muted-foreground">
-                      أدوات بحث قوية تساعدك في العثور على شقتك المثالية بسرعة
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
-                    3
-                  </div>
-                  <div>
-                    <h3 className="font-bold mb-2">عقارات موثوقة</h3>
-                    <p className="text-sm text-muted-foreground">
-                      جميع العقارات معتمدة ومفحوصة للتأكد من جودتها
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-bold">
-                    4
-                  </div>
-                  <div>
-                    <h3 className="font-bold mb-2">دعم فني متواصل</h3>
-                    <p className="text-sm text-muted-foreground">
-                      فريق دعم جاهز لمساعدتك في أي وقت
-                    </p>
-                  </div>
-                </div>
+            <motion.div 
+              className="bg-gradient-to-br from-primary/10 via-primary/5 to-accent/10 rounded-2xl p-8 md:p-12 border border-primary/20"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h2 className="text-2xl md:text-3xl font-bold mb-8 text-center">لماذا تختار Eskan Egypt؟</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {[
+                  {
+                    title: "مجموعة واسعة من العقارات",
+                    description: "آلاف العقارات المتنوعة في جميع مناطق الإسكندرية"
+                  },
+                  {
+                    title: "بحث متقدم وسهل",
+                    description: "أدوات بحث قوية تساعدك في العثور على شقتك المثالية بسرعة"
+                  },
+                  {
+                    title: "عقارات موثوقة",
+                    description: "جميع العقارات معتمدة ومفحوصة للتأكد من جودتها"
+                  },
+                  {
+                    title: "دعم فني متواصل",
+                    description: "فريق دعم جاهز لمساعدتك في أي وقت"
+                  }
+                ].map((item, index) => (
+                  <motion.div
+                    key={index}
+                    className="flex gap-4"
+                    whileHover={{ x: 5 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <motion.div 
+                      className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center text-white font-bold shadow-lg"
+                      whileHover={{ scale: 1.1 }}
+                    >
+                      <CheckCircle className="h-6 w-6" />
+                    </motion.div>
+                    <div>
+                      <h3 className="font-bold mb-2 text-base">{item.title}</h3>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        {item.description}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* FAQ Section */}
             <div className="py-12 border-t">
@@ -162,7 +187,7 @@ const About = () => {
                   <MessageSquare className="h-4 w-4" />
                   الأسئلة الشائعة
                 </span>
-                <h2 className="text-2xl md:text-3xl font-bold mb-3">
+                <h2 className="text-xl md:text-2xl font-bold mb-3">
                   هل لديك سؤال؟
                 </h2>
                 <p className="text-muted-foreground">
@@ -209,7 +234,7 @@ const About = () => {
                       className="bg-accent/20 rounded-xl px-6 border-0 shadow-sm"
                     >
                       <AccordionTrigger className="text-right hover:no-underline py-5">
-                        <span className="font-semibold text-base">
+                        <span className="font-semibold text-sm">
                           {faq.question}
                         </span>
                       </AccordionTrigger>

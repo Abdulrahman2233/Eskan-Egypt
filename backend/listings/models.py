@@ -503,7 +503,6 @@ class Notification(models.Model):
         ('message', 'رسالة جديدة'),
         ('user', 'مستخدم جديد'),
         ('view', 'مشاهدات عالية'),
-        ('approval', 'موافقة على عقار'),
         ('rejection', 'رفض عقار'),
     ]
     
