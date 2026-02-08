@@ -466,7 +466,7 @@ const Index = () => {
                 >
                   <Link to="/properties" className="flex items-center gap-3">
                     <Search className="h-5 w-5 md:h-6 md:w-6" />
-                    <span>تصفح العقارات</span>
+                    <span>مشاهدة العقارات</span>
                     <ArrowLeft className="h-5 w-5 md:h-6 md:w-6" />
                   </Link>
                 </Button>
