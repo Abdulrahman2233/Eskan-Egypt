@@ -30,7 +30,7 @@ import {
 
 interface Notification {
   id: string;
-  notification_type: "property" | "message" | "user" | "view" | "approval" | "rejection";
+  notification_type: "property" | "message" | "user" | "view" | "rejection";
   title: string;
   description: string;
   time: string;
@@ -44,7 +44,6 @@ const iconMap = {
   message: MessageSquare,
   user: UserPlus,
   view: Eye,
-  approval: CheckCircle,
   rejection: XCircle,
 };
 
@@ -53,7 +52,6 @@ const colorMap = {
   message: "bg-purple-500",
   user: "bg-green-500",
   view: "bg-amber-500",
-  approval: "bg-emerald-500",
   rejection: "bg-red-500",
 };
 
@@ -62,11 +60,10 @@ const badgeColorMap = {
   message: "bg-purple-100 text-purple-800",
   user: "bg-green-100 text-green-800",
   view: "bg-amber-100 text-amber-800",
-  approval: "bg-emerald-100 text-emerald-800",
   rejection: "bg-red-100 text-red-800",
 };
 
-type FilterType = "all" | "unread" | "property" | "approval" | "rejection" | "message" | "user" | "view";
+type FilterType = "all" | "unread" | "property" | "rejection" | "message" | "user" | "view";
 
 const AdminNotifications = () => {
   const { toast } = useToast();
@@ -210,9 +207,9 @@ const AdminNotifications = () => {
   const filters: { value: FilterType; label: string }[] = [
     { value: "all", label: "الكل" },
     { value: "unread", label: "غير مقروء" },
-    // { value: "property", label: "العقارات" },
-    // { value: "approval", label: "الحسابات" },
-    // { value: "rejection", label: "الرسائل" },
+    { value: "rejection", label: "الرفضات" },
+    { value: "property", label: "العقارات الجديدة" },
+    { value: "message", label: "الرسائل" },
   ];
 
   return (
