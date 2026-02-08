@@ -42,8 +42,6 @@ import {
 } from "lucide-react";
 import { fetchAreas, fetchProperties } from "@/api";
 import { Link } from "react-router-dom";
-import heroHome from "@/assets/Alex-home2.jpg";
-import alexHome from "@/assets/Alex-home.jpg";
 import { motion } from "framer-motion";
 import {
   Accordion,
@@ -358,45 +356,108 @@ const Index = () => {
       <OfferModal />
       <Navbar />
 
-      {/* Hero Section - Static Background Image for Performance */}
+      {/* Hero Section - White Background with Geometric Shapes */}
       <section 
-        className="relative pt-20 md:pt-12 pb-16 md:pb-12 overflow-hidden min-h-[95vh] md:min-h-[60vh] flex items-center mt-16" 
-        style={{
-          backgroundImage: `url('${heroHome}')`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center',
-          backgroundRepeat: 'no-repeat',
-          backgroundAttachment: 'fixed',
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center'
-        }}
+        className="relative pt-20 md:pt-12 pb-16 md:pb-12 overflow-hidden min-h-[95vh] md:min-h-[70vh] flex items-center mt-16 bg-white"
       >
-        {/* Dark Overlay for text readability */}
-        <div className="absolute inset-0 z-0 bg-gradient-to-r from-black/80 via-black/70 to-black/80" />
+        {/* Geometric Background Elements */}
+        {/* Large Circle - Top Right */}
+        <motion.div
+          className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-gradient-to-br from-blue-100 to-blue-50 opacity-60"
+          animate={{
+            scale: [1, 1.1, 1],
+            rotate: [0, 90, 360],
+          }}
+          transition={{
+            duration: 20,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* Large Circle - Bottom Left */}
+        <motion.div
+          className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full bg-gradient-to-tr from-cyan-100 to-blue-50 opacity-50"
+          animate={{
+            scale: [1, 1.15, 1],
+            rotate: [360, 180, 0],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* Medium Circle - Right Side */}
+        <motion.div
+          className="absolute top-40 right-10 w-48 h-48 rounded-full border-2 border-primary/20 opacity-40"
+          animate={{
+            y: [-20, 20, -20],
+            x: [0, 15, 0],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* Decorative Squares */}
+        <motion.div
+          className="absolute top-32 left-20 w-24 h-24 rounded-3xl bg-gradient-to-br from-amber-100/40 to-orange-50/40 backdrop-blur-sm"
+          animate={{
+            rotate: [0, 45, 0],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+          }}
+        />
+
+        <motion.div
+          className="absolute bottom-20 right-1/4 w-32 h-32 rounded-3xl border border-primary/20 opacity-30"
+          animate={{
+            rotate: [45, 0, 45],
+            scale: [1, 0.9, 1],
+          }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+          }}
+        />
+
+        {/* Floating Dots */}
+        <motion.div className="absolute top-1/4 left-1/3 w-3 h-3 rounded-full bg-primary opacity-40" animate={{ y: [0, 30, 0] }} transition={{ duration: 6, repeat: Infinity }} />
+        <motion.div className="absolute top-1/3 right-1/4 w-4 h-4 rounded-full bg-blue-400 opacity-30" animate={{ y: [0, -25, 0] }} transition={{ duration: 7, repeat: Infinity, delay: 1 }} />
+        <motion.div className="absolute bottom-1/3 left-1/4 w-2 h-2 rounded-full bg-cyan-400 opacity-40" animate={{ y: [0, 20, 0] }} transition={{ duration: 8, repeat: Infinity, delay: 2 }} />
+
+        {/* Gradient Lines */}
+        <div className="absolute top-0 right-0 w-1/2 h-1 bg-gradient-to-l from-primary/40 to-transparent opacity-50" />
+        <div className="absolute bottom-0 left-0 w-2/3 h-1 bg-gradient-to-r from-cyan-400/30 to-transparent opacity-40" />
 
         <div className="container mx-auto px-4 relative z-10 pt-20 pb-8">
           <motion.div
-            className="max-w-4xl mx-auto text-center text-white space-y-6 md:space-y-8"
+            className="max-w-4xl mx-auto text-center space-y-6 md:space-y-8"
             initial="hidden"
             animate="visible"
             variants={staggerContainer}
           >
             <motion.div variants={fadeInUp}>
-              <span className="inline-flex items-center gap-2 bg-white/20 border border-white/30 px-4 py-2 rounded-full text-white text-sm font-medium backdrop-blur-sm">
-                <Star className="h-4 w-4 fill-yellow-300 text-yellow-300" />
+              <span className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 px-4 py-2 rounded-full text-blue-700 text-sm font-medium backdrop-blur-sm">
+                <Star className="h-4 w-4 fill-blue-500 text-blue-500" />
                 <span>المنصة الأولى للإيجار في الإسكندرية</span>
               </span>
             </motion.div>
 
             <motion.h1
-              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6"
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6"
               variants={fadeInUp}
             >
               اعثر على سكنك المثالي
               <br />
               <motion.span 
-                className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-200 to-yellow-300 inline-block"
+                className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 inline-block"
                 animate={{
                   backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
                 }}
@@ -411,7 +472,7 @@ const Index = () => {
             </motion.h1>
 
             <motion.p
-              className="text-base md:text-lg text-white/90 max-w-2xl mx-auto mb-8"
+              className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto mb-8"
               variants={fadeInUp}
             >
               آلاف الشقق والعقارات المتاحة للإيجار في أفضل مناطق الإسكندرية
@@ -437,16 +498,16 @@ const Index = () => {
                   >
                     {/* Card glow on hover */}
                     <motion.div
-                      className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-secondary/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute -inset-0.5 bg-gradient-to-r from-blue-300/30 to-cyan-300/30 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity"
                     />
-                    <div className="relative bg-white/10 border border-white/20 rounded-2xl px-4 py-2 md:px-4 md:py-3 text-center backdrop-blur-sm hover:border-white/40 transition-colors">
-                      <div className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-yellow-300/20 text-yellow-300 mb-1">
+                    <div className="relative bg-white border border-gray-200 rounded-2xl px-4 py-2 md:px-4 md:py-3 text-center backdrop-blur-sm hover:border-blue-300 hover:shadow-md transition-all">
+                      <div className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-blue-100 text-blue-600 mb-1">
                         <Icon className="h-3.5 w-3.5" />
                       </div>
-                      <div className="text-base sm:text-lg md:text-xl font-bold text-white">
+                      <div className="text-base sm:text-lg md:text-xl font-bold text-gray-900">
                         {stat.value}
                       </div>
-                      <div className="text-xs md:text-sm text-white/70">
+                      <div className="text-xs md:text-sm text-gray-600">
                         {stat.label}
                       </div>
                     </div>
@@ -462,11 +523,11 @@ const Index = () => {
                 <Button
                   asChild
                   size="lg"
-                  className="relative h-14 md:h-16 px-8 md:px-12 text-base md:text-lg rounded-2xl bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 hover:from-yellow-500 hover:to-yellow-600 shadow-2xl shadow-yellow-400/30 gap-3 border border-yellow-300/30 font-bold"
+                  className="relative h-14 md:h-16 px-8 md:px-12 text-base md:text-lg rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 shadow-xl shadow-blue-400/30 gap-3 border border-blue-400/30 font-bold"
                 >
                   <Link to="/properties" className="flex items-center gap-3">
                     <Search className="h-5 w-5 md:h-6 md:w-6" />
-                    <span>مشاهدة العقارات</span>
+                    <span>تصفح العقارات</span>
                     <ArrowLeft className="h-5 w-5 md:h-6 md:w-6" />
                   </Link>
                 </Button>
@@ -483,7 +544,7 @@ const Index = () => {
             element?.scrollIntoView({ behavior: 'smooth' });
           }}
         >
-          <ChevronDown className="h-8 w-8 text-yellow-300/60 hover:text-yellow-300 transition-colors" />
+          <ChevronDown className="h-8 w-8 text-blue-600/70 hover:text-blue-600 transition-colors" />
         </motion.div>
       </section>
 
@@ -739,25 +800,44 @@ const Index = () => {
                 visible: { opacity: 1, scale: 1, transition: { duration: 0.3 } },
               }}
             >
-              <div className="relative rounded-2xl overflow-hidden">
-                <img
-                  src={alexHome}
-                  alt="Alexandria housing"
-                  className="w-full h-[300px] md:h-[400px] object-cover"
-                  loading="lazy"
+              {/* Geometric Shapes Background */}
+              <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-50 to-cyan-50 p-8 h-[300px] md:h-[400px] flex items-center justify-center">
+                
+                {/* Decorative Elements */}
+                <motion.div
+                  className="absolute top-0 right-0 w-48 h-48 rounded-full bg-gradient-to-br from-blue-200 to-blue-100 opacity-40"
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 8, repeat: Infinity }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent" />
-                <div className="absolute bottom-6 right-6 left-6 text-white">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                
+                <motion.div
+                  className="absolute bottom-0 left-0 w-40 h-40 rounded-full bg-gradient-to-tr from-cyan-200 to-cyan-100 opacity-30"
+                  animate={{ scale: [1, 0.9, 1] }}
+                  transition={{ duration: 10, repeat: Infinity, delay: 1 }}
+                />
+                
+                <motion.div
+                  className="absolute top-1/3 left-1/3 w-32 h-32 rounded-3xl border-2 border-blue-300 opacity-40"
+                  animate={{ rotate: [0, 45, 0] }}
+                  transition={{ duration: 12, repeat: Infinity }}
+                />
+
+                {/* Center Content */}
+                <div className="relative z-10 text-center">
+                  <motion.div
+                    animate={{ y: [0, -10, 0] }}
+                    transition={{ duration: 4, repeat: Infinity }}
+                    className="mb-4"
+                  >
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-lg">
                       <Home className="h-8 w-8" />
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold">الإسكندرية</div>
-                      <div className="text-white/80 text-sm">
-                        خيارات سكن متنوعة لكل الاحتياجات
-                      </div>
-                    </div>
+                  </motion.div>
+                  <div className="text-center max-w-xs">
+                    <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">الإسكندرية</h3>
+                    <p className="text-gray-600">
+                      خيارات سكن متنوعة لكل الاحتياجات والميزانيات
+                    </p>
                   </div>
                 </div>
               </div>
