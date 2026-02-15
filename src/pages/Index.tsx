@@ -432,9 +432,82 @@ const Index = () => {
         <motion.div className="absolute top-1/3 right-1/4 w-4 h-4 rounded-full bg-blue-400 opacity-30" animate={{ y: [0, -25, 0] }} transition={{ duration: 7, repeat: Infinity, delay: 1 }} />
         <motion.div className="absolute bottom-1/3 left-1/4 w-2 h-2 rounded-full bg-cyan-400 opacity-40" animate={{ y: [0, 20, 0] }} transition={{ duration: 8, repeat: Infinity, delay: 2 }} />
 
+        {/* Additional Colorful Geometric Shapes */}
+        {/* Green Square - Top Left */}
+        <motion.div
+          className="absolute top-1/3 -left-8 w-40 h-40 rounded-3xl bg-gradient-to-br from-emerald-100/50 to-green-50/50 border border-emerald-200/30"
+          animate={{
+            rotate: [-45, 45, -45],
+            x: [0, 20, 0],
+          }}
+          transition={{
+            duration: 14,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* Pink Circle with Glow - Center Right */}
+        <motion.div
+          className="absolute top-1/2 right-1/3 w-56 h-56 rounded-full bg-gradient-to-bl from-rose-100/30 to-pink-50/30"
+          animate={{
+            scale: [1, 1.08, 1],
+            y: [-15, 15, -15],
+          }}
+          transition={{
+            duration: 11,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* Orange Square - Bottom Center */}
+        <motion.div
+          className="absolute bottom-1/4 left-1/3 w-28 h-28 rounded-2xl bg-gradient-to-tl from-orange-100/40 to-amber-50/40"
+          animate={{
+            rotate: [45, -45, 45],
+            scale: [1, 0.95, 1],
+          }}
+          transition={{
+            duration: 9,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* Teal Circle - Top Center */}
+        <motion.div
+          className="absolute top-20 left-1/2 w-36 h-36 rounded-full border-2 border-teal-200/40 opacity-50"
+          animate={{
+            y: [0, 30, 0],
+            x: [0, -10, 0],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
+        {/* Indigo Rectangle - Center Left */}
+        <motion.div
+          className="absolute top-2/3 left-1/4 w-32 h-20 rounded-2xl bg-gradient-to-r from-indigo-100/30 to-indigo-50/30"
+          animate={{
+            rotate: [0, 30, 0],
+            y: [0, 20, 0],
+          }}
+          transition={{
+            duration: 13,
+            repeat: Infinity,
+            ease: "easeInOut",
+          }}
+        />
+
         {/* Gradient Lines */}
         <div className="absolute top-0 right-0 w-1/2 h-1 bg-gradient-to-l from-primary/40 to-transparent opacity-50" />
         <div className="absolute bottom-0 left-0 w-2/3 h-1 bg-gradient-to-r from-cyan-400/30 to-transparent opacity-40" />
+        <div className="absolute top-1/2 right-0 h-2/3 w-1 bg-gradient-to-b from-purple-300/20 to-transparent opacity-40" />
+        <div className="absolute top-1/3 left-0 h-1/2 w-1 bg-gradient-to-t from-emerald-300/20 to-transparent opacity-40" />
 
         <div className="container mx-auto px-4 relative z-10 pt-20 pb-8">
           <motion.div
@@ -534,13 +607,13 @@ const Index = () => {
               >
                 <Button
                   asChild
-                  size="lg"
-                  className="relative h-14 md:h-16 px-8 md:px-12 text-base md:text-lg rounded-2xl bg-gradient-to-r from-blue-600 to-blue-500 text-white hover:from-blue-700 hover:to-blue-600 shadow-xl shadow-blue-400/30 gap-3 border border-blue-400/30 font-bold"
+                  size="md"
+                  className="relative h-11 md:h-12 px-6 md:px-8 text-sm md:text-base rounded-xl bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50 hover:shadow-lg shadow-md transition-all duration-200 gap-2 font-semibold"
                 >
-                  <Link to="/properties" className="flex items-center gap-3">
-                    <Search className="h-5 w-5 md:h-6 md:w-6" />
+                  <Link to="/properties" className="flex items-center gap-2">
+                    <Search className="h-4 w-4 md:h-5 md:w-5" />
                     <span>تصفح العقارات</span>
-                    <ArrowLeft className="h-5 w-5 md:h-6 md:w-6" />
+                    <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
                   </Link>
                 </Button>
               </motion.div>

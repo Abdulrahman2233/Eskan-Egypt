@@ -49,17 +49,31 @@ const OfferModal = () => {
 
   useEffect(() => {
     if (!loading && offer) {
-      // عرض المودال بعد 1.5 ثانية من دخول الصفحة الرئيسية
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-      }, 1500);
+      // التحقق من localStorage - إذا كان المستخدم قد رأى العرض من قبل، لا تعرضه
+      const hasSeenOffer = localStorage.getItem(`offer_seen_${offer.id}`);
+      // التحقق من sessionStorage لمنع عرض المودال أكثر من مرة في نفس الجلسة
+      const hasShownInSession = sessionStorage.getItem(`offer_shown_${offer.id}`);
+      
+      if (!hasSeenOffer && !hasShownInSession) {
+        // عرض المودال بعد 1.5 ثانية من دخول الصفحة الرئيسية
+        const timer = setTimeout(() => {
+          setIsOpen(true);
+          // حفظ في sessionStorage أن العرض تم عرضه في هذه الجلسة
+          sessionStorage.setItem(`offer_shown_${offer.id}`, 'true');
+        }, 1500);
 
-      return () => clearTimeout(timer);
+        return () => clearTimeout(timer);
+      }
     }
   }, [loading, offer]);
 
   const handleClose = () => {
     setIsOpen(false);
+    // حفظ في localStorage أن المستخدم قد رأى هذا العرض
+    if (offer) {
+      localStorage.setItem(`offer_seen_${offer.id}`, 'true');
+      sessionStorage.setItem(`offer_shown_${offer.id}`, 'true');
+    }
   };
 
   // إذا لم يكن هناك عرض نشط، لا تعرض المودال

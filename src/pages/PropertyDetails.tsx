@@ -258,10 +258,23 @@ const PropertyDetails = () => {
                 transition={{ delay: 0.3 }}
                 className="space-y-4"
               >
-                <h2 className="text-lg font-bold flex items-center gap-2">
-                  <div className="w-1 h-5 bg-primary rounded-full" />
-                  الموقع
-                </h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold flex items-center gap-2">
+                    <div className="w-1 h-5 bg-primary rounded-full" />
+                    الموقع
+                  </h2>
+                  {property.latitude && property.longitude && (
+                    <a
+                      href={`https://www.google.com/maps?q=${property.latitude},${property.longitude}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-all text-sm font-medium"
+                    >
+                      <MapPin className="h-4 w-4" />
+                      فتح في خريطة جوجل
+                    </a>
+                  )}
+                </div>
                 <Card className="border-0 shadow-sm overflow-hidden">
                   <div className="p-4 bg-muted/30 flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">

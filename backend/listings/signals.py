@@ -222,36 +222,10 @@ def log_property_deletion(sender, instance, **kwargs):
 def create_new_property_notification(sender, instance, created, **kwargs):
     """
     إرسال إشعار عند إضافة عقار جديد بانتظار الموافقة
+    ⚠️ معطل - لا يتم إرسال إشعارات عند إضافة عقار جديد
     """
-    try:
-        if created and instance.owner:
-            area_name = instance.area.name if instance.area else 'غير محدد'
-            # الحصول على جميع المسؤولين (حسب الدور أو صلاحيات المستخدم) - استبعاد المالك
-            admins = UserProfile.objects.filter(
-              Q(user_type__in=['admin']) | Q(user__is_staff=True) | Q(user__is_superuser=True)
-            ).exclude(id=instance.owner.id).distinct()
-            
-            for admin in admins:
-                Notification.objects.create(
-                    recipient=admin,
-                    notification_type='property',
-                    title='عقار بانتظار الموافقة',
-                    description=f'عقار جديد {instance.name} في منطقة {area_name} بانتظار الموافقة',
-                    related_property=instance,
-                    related_user=instance.owner
-                )
-
-            # إشعار للمالك بأن العقار معلق للمراجعة
-            Notification.objects.create(
-                recipient=instance.owner,
-                notification_type='property',
-                title='تم إرسال العقار للمراجعة',
-                description=f'تم إضافة عقارك {instance.name} في منطقة {area_name} بنجاح وهو الآن "معلق" لحين المراجعة من الفريق.',
-                related_property=instance,
-                related_user=instance.owner
-            )
-    except Exception as e:
-        print(f"Error creating new property notification: {str(e)}")
+    # تم تعطيل هذه الميزة - لا يتم إنشاء إشعارات
+    pass
 
 
 @receiver(post_save, sender=Property)
@@ -260,7 +234,7 @@ def create_property_approval_notification(sender, instance, created, update_fiel
     إرسال إشعار عند الموافقة على عقار
     ⚠️ معطل - لا يتم إرسال إشعارات للموافقات
     """
-    # تم تعطيل هذه الميزة - لا يتم إنشاء إشعارات للموافقات
+    # تم تعطيل هذه الميزة بالكامل - تم طلب عدم إرسال إشعارات للموافقات
     pass
 
 
