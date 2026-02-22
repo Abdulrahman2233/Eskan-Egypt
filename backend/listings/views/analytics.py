@@ -16,7 +16,18 @@ from .utils import get_client_ip
 
 
 class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
-    """عرض سجلات النشاط"""
+    """
+    ViewSet لعرض وتحليل سجلات نشاط المستخدمين
+    
+    المميزات:
+    - تتبع جميع عمليات المستخدمين (إضافة، تعديل، حذف، موافقة)
+    - البحث حسب الفعل أو المستخدم
+    - الفلترة حسب التاريخ
+    - ترتيب حسب الوقت أو نوع الفعل
+    
+    الأذونات: IsAdminUser (الأدمن فقط)
+    البيانات المسجلة: نوع الفعل، المستخدم، الوقت، عنوان IP
+    """
     queryset = ActivityLog.objects.all()
     serializer_class = ActivityLogSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -49,7 +60,26 @@ class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class DashboardAnalyticsViewSet(viewsets.ViewSet):
-    """تحليلات لوحة التحكم"""
+    """
+    ViewSet شامل لإحصائيات لوحة التحكم
+    
+    Endpoints المتاحة:
+    - /analytics/summary/ - ملخص شامل (عدد العقارات، المستخدمين، الرسائل)
+    - /analytics/properties/ - إحصائيات العقارات
+    - /analytics/users/ - إحصائيات المستخدمين
+    - /analytics/property_types/ - توزيع أنواع العقارات
+    - /analytics/areas/ - إحصائيات المناطق
+    - /analytics/offers/ - إحصائيات العروض
+    - /analytics/recent_activities/ - آخر الأنشطة
+    - /analytics/top_properties/?limit=5 - أكثر العقارات مشاهدة
+    - /analytics/price_distribution/ - توزيع الأسعار
+    - /analytics/daily_activity/?days=30 - النشاط اليومي
+    - /analytics/contact_messages/ - إحصائيات الرسائل
+    - /analytics/top_owners/ - أفضل المالكين
+    - /analytics/device_stats/ - إحصائيات أنواع الأجهزة
+    
+    الأذونات: IsAdminUser (الأدمن فقط)
+    """
     permission_classes = [IsAdminUser]
     
     def list(self, request):
@@ -181,7 +211,21 @@ class DashboardAnalyticsViewSet(viewsets.ViewSet):
 
 
 class TransactionViewSet(viewsets.ModelViewSet):
-    """إدارة الصفقات"""
+    """
+    ViewSet لإدارة الصفقات والأرباح
+    
+    العمليات المدعومة:
+    - عرض الصفقات (القسم / الأدمن يرى الكل)
+    - إضافة صفقة جديدة
+    - تعديل الصفقات
+    - حذف الصفقات
+    
+    الفلترة والبحث: حسب اسم العقار، المنطقة
+    الترتيب: حسب الربح أو التاريخ
+    
+    الأذونات: IsAuthenticated (للمستخدمين المسجلين)
+    البيانات المسجلة: اسم العقار، المنطقة، الإيجار، الربح، التاريخ
+    """
     serializer_class = TransactionSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -310,7 +354,23 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
 
 class VisitorViewSet(viewsets.ViewSet):
-    """تتبع الزوار"""
+    """
+    ViewSet لتتبع الزوار والإحصائيات
+    
+    Endpoints المتاحة:
+    - POST /visitors/record_visit/ - تسجيل زيارة (تلقائي بدون مصادقة)
+    - GET /visitors/today_count/ - عدد الزوار اليوم
+    - GET /visitors/total_count/ - إجمالي الزوار
+    - GET /visitors/ - قائمة الزوار (الأدمن فقط)
+    
+    البيانات المتتبعة:
+    - عنوان IP
+    - نوع المتصفح (User Agent)
+    - نوع الجهاز (هاتف، تابلت، كمبيوتر)
+    - عدد الزيارات لكل IP
+    
+    الأذونات: AllowAny للعمليات العامة، IsAdminUser للعرض الكامل
+    """
     permission_classes = [AllowAny]
     
     def list(self, request):

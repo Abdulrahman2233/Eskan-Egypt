@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Copy, Loader2 } from "lucide-react";
+import { Copy, Loader2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface LocationPickerProps {
   onLocationSelect: (latitude: number, longitude: number) => void;
@@ -30,6 +31,7 @@ export const LocationPicker = ({
   const marker = useRef<L.Marker | null>(null);
   const [copying, setCopying] = useState(false);
   const [coords, setCoords] = useState<{lat: number, lng: number} | null>(null);
+  const [geoLoading, setGeoLoading] = useState(false);
 
   // تحويل الإحداثيات الأولية
   const initialLat = latitude ? parseFloat(String(latitude)) : 31.2054;
@@ -124,53 +126,120 @@ export const LocationPicker = ({
     }
   };
 
-  return (
-    <div className="space-y-3">
-      <div
-        ref={mapContainer}
-        style={{
-          height,
-          borderRadius: "8px",
-          border: "2px solid #e5e7eb",
-          overflow: "hidden",
-          cursor: "crosshair",
-          position: "relative",
-          zIndex: 1,
-        }}
-      />
-      
-      {coords && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="space-y-2 text-sm rtl">
-              <p className="text-slate-600">
-                <span className="font-semibold text-slate-800">خط العرض:</span>
-                <span className="mr-2 font-mono">{coords.lat.toFixed(6)}</span>
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("المتصفح لا يدعم تحديد الموقع");
+      return;
+    }
+
+    setGeoLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+
+        // تحديث الخريطة والمؤشر
+        if (map.current) {
+          map.current.setView([latitude, longitude], 16);
+
+          // إزالة المؤشر القديم
+          if (marker.current) {
+            map.current.removeLayer(marker.current);
+          }
+
+          // إضافة مؤشر جديد
+          marker.current = L.marker([latitude, longitude], {
+            title: "موقعك الحالي",
+            draggable: true,
+          }).addTo(map.current);
+
+          marker.current.on("dragend", () => {
+            if (marker.current) {
+              const pos = marker.current.getLatLng();
+              setCoords({ lat: pos.lat, lng: pos.lng });
+              onLocationSelect(pos.lat, pos.lng);
+            }
+          });
+
+          // عرض popup
+          marker.current.bindPopup(`
+            <div style="direction: rtl; text-align: right; font-family: Cairo, sans-serif;">
+              <p style="margin: 0 0 8px 0; font-weight: bold; color: #1f2937;">موقعك الحالي</p>
+              <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                الخط العرض: ${latitude.toFixed(6)}
               </p>
-              <p className="text-slate-600">
-                <span className="font-semibold text-slate-800">خط الطول:</span>
-                <span className="mr-2 font-mono">{coords.lng.toFixed(6)}</span>
-              </p>
-              <p className="text-xs text-slate-500 mt-2">
-                💡 اضغط على الخريطة لاختيار موقع جديد أو اسحب المؤشر
+              <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">
+                خط الطول: ${longitude.toFixed(6)}
               </p>
             </div>
-            <Button
-              onClick={copyCoordinates}
-              size="sm"
-              variant="outline"
-              disabled={copying}
-              className="flex-shrink-0"
-            >
-              {copying ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
-        </div>
-      )}
+          `).openPopup();
+
+          setCoords({ lat: latitude, lng: longitude });
+          onLocationSelect(latitude, longitude);
+          toast.success("تم تحديد موقعك الحالي بنجاح");
+        }
+
+        setGeoLoading(false);
+      },
+      (error) => {
+        setGeoLoading(false);
+        console.error("Geolocation error:", error);
+        
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            toast.error("لم تسمح بالوصول إلى موقعك");
+            break;
+          case error.POSITION_UNAVAILABLE:
+            toast.error("لم يتمكن النظام من تحديد موقعك");
+            break;
+          case error.TIMEOUT:
+            toast.error("انتهت مهلة تحديد الموقع");
+            break;
+          default:
+            toast.error("خطأ في تحديد الموقع");
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <div
+          ref={mapContainer}
+          style={{
+            height,
+            borderRadius: "8px",
+            border: "2px solid #e5e7eb",
+            overflow: "hidden",
+            cursor: "crosshair",
+            position: "relative",
+            zIndex: 1,
+          }}
+        />
+        <Button
+          onClick={getCurrentLocation}
+          disabled={geoLoading}
+          size="sm"
+          className="absolute top-3 right-3 z-10 bg-white hover:bg-gray-50 text-slate-700 border border-slate-300 shadow-lg"
+          variant="outline"
+        >
+          {geoLoading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <MapPin className="h-4 w-4" />
+          )}
+          <span className="mr-2 text-xs">موقعي الآن</span>
+        </Button>
+        
+
+      </div>
+      
+
     </div>
   );
 };

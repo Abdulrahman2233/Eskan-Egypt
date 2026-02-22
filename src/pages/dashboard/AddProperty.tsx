@@ -13,6 +13,9 @@ import {
   FileText,
   MessageSquare,
   Phone,
+  CheckCircle,
+  ArrowRight,
+  Home,
 } from "lucide-react";
 import {
   Card,
@@ -34,15 +37,18 @@ import {
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 import LocationPicker from "@/components/LocationPicker";
-import { fetchAreas, createProperty } from "@/api";
+import { fetchAreas, fetchAmenities, createProperty } from "@/api";
 
 const AddProperty = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [areas, setAreas] = useState<any[]>([]);
+  const [amenities, setAmenities] = useState<any[]>([]);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [videos, setVideos] = useState<File[]>([]);
+  const [successProperty, setSuccessProperty] = useState<any>(null);
 
   /* نوع الاستخدام من البيانات المتوقعة */
   const usageTypes = [
@@ -58,6 +64,9 @@ const AddProperty = () => {
     location: "",
     address: "",
     price: "",
+    daily_price: "",
+    original_price: "",
+    discount: "",
     bedrooms: "",
     beds: "",
     bathrooms: "",
@@ -71,21 +80,25 @@ const AddProperty = () => {
     longitude: "",
   });
 
-  /* جلب المناطق من الـ API */
+  /* جلب المناطق والمميزات من الـ API */
   useEffect(() => {
-    const loadAreas = async () => {
+    const loadData = async () => {
       try {
         setLoadingData(true);
-        const data = await fetchAreas();
-        setAreas(data || []);
+        const [areasData, amenitiesData] = await Promise.all([
+          fetchAreas(),
+          fetchAmenities()
+        ]);
+        setAreas(areasData || []);
+        setAmenities(amenitiesData || []);
       } catch (error) {
-        console.error("Error loading areas:", error);
-        toast.error("خطأ في تحميل المناطق");
+        console.error("Error loading data:", error);
+        toast.error("خطأ في تحميل البيانات");
       } finally {
         setLoadingData(false);
       }
     };
-    loadAreas();
+    loadData();
   }, []);
 
   const handleInputChange = (
@@ -206,10 +219,45 @@ const AddProperty = () => {
     e.preventDefault();
     setLoading(true);
 
-    if (!formData.title_ar || !formData.location || !formData.price || !formData.bedrooms || !formData.beds || !formData.bathrooms || !formData.address || !formData.description_ar || !formData.area || !formData.floor || !formData.contact) {
+    // التحقق الأساسي من الحقول المطلوبة
+    if (!formData.title_ar || !formData.location || !formData.bedrooms || !formData.beds || !formData.bathrooms || !formData.address || !formData.description_ar || !formData.area || !formData.floor || !formData.contact || !formData.usage_type) {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
       setLoading(false);
       return;
+    }
+
+    // التحقق من السعر حسب نوع التصنيف
+    if (formData.usage_type === "vacation" || formData.usage_type === "daily") {
+      // للمصيفين والحجز اليومي: يتطلب السعر اليومي فقط
+      if (!formData.daily_price) {
+        toast.error("يرجى إدخال السعر اليومي");
+        setLoading(false);
+        return;
+      }
+    } else {
+      // للتصنيفات الأخرى: يتطلب السعر الشهري فقط
+      if (!formData.price) {
+        toast.error("يرجى إدخال السعر الشهري");
+        setLoading(false);
+        return;
+      }
+    }
+
+    // التحقق من السعر الأصلي والخصم - إذا تم إدخال الخصم يجب إدخال السعر الأصلي
+    if (formData.discount && !formData.original_price) {
+      toast.error("يرجى إدخال السعر الأصلي عند تطبيق خصم");
+      setLoading(false);
+      return;
+    }
+
+    // التحقق من صحة نسبة الخصم
+    if (formData.discount) {
+      const discountValue = parseInt(formData.discount);
+      if (discountValue < 0 || discountValue > 100) {
+        toast.error("نسبة الخصم يجب أن تكون بين 0 و 100");
+        setLoading(false);
+        return;
+      }
     }
 
     if (!formData.latitude || !formData.longitude) {
@@ -310,7 +358,10 @@ const AddProperty = () => {
         name: formData.title_ar,
         area: selectedArea?.id || null,
         address: formData.address || "",
-        price: parseFloat(formData.price),
+        price: formData.price ? parseFloat(formData.price) : 0,
+        daily_price: formData.daily_price ? parseFloat(formData.daily_price) : null,
+        original_price: formData.original_price ? parseFloat(formData.original_price) : null,
+        discount: formData.discount ? parseInt(formData.discount) : null,
         rooms: parseInt(formData.bedrooms) || 1,
         beds: parseInt(formData.beds) || 1,
         bathrooms: parseInt(formData.bathrooms) || 1,
@@ -322,6 +373,7 @@ const AddProperty = () => {
         contact: formData.contact || "",
         latitude: formatCoordinate(formData.latitude),
         longitude: formatCoordinate(formData.longitude),
+        amenity_ids: selectedAmenities.map(id => parseInt(id)),
       };
 
       // حذف القيم الفارغة والـ null والـ undefined فقط (ليس 0)
@@ -343,8 +395,13 @@ const AddProperty = () => {
       // Add property fields - تحويل جميع القيم إلى strings
       Object.keys(cleanData).forEach(key => {
         const value = cleanData[key];
-        // تحويل الأرقام والقيم الأخرى إلى strings
-        if (value !== null && value !== undefined) {
+        // معالجة خاصة للمصفوفات (مثل amenities)
+        if (Array.isArray(value)) {
+          // إضافة كل عنصر في المصفوفة بشكل منفصل
+          value.forEach((item) => {
+            formDataMultipart.append(key, item.toString());
+          });
+        } else if (value !== null && value !== undefined) {
           formDataMultipart.append(key, String(value));
         }
       });
@@ -372,17 +429,24 @@ const AddProperty = () => {
       console.log("Sending to:", `${apiUrl}/properties/`);
       console.log("With images:", images.length);
       console.log("With videos:", videos.length);
+      console.log("Selected Amenities (state):", selectedAmenities);
+      console.log("Amenity IDs (parsed):", selectedAmenities.map(id => parseInt(id)));
       console.log("Latitude:", formData.latitude);
       console.log("Longitude:", formData.longitude);
-      console.log("Token:", token);
+      console.log("Token:", token ? "✅ Present" : "❌ Missing");
       console.log("FormData entries:");
+      let amenityCount = 0;
       for (const [key, value] of formDataMultipart.entries()) {
-        if (typeof value === 'string') {
+        if (key === 'amenity_ids') {
+          amenityCount++;
+          console.log(`  ${key}: ${value}`);
+        } else if (typeof value === 'string') {
           console.log(`  ${key}: ${value}`);
         } else {
           console.log(`  ${key}: [File]`);
         }
       }
+      console.log(`Total amenity_ids sent: ${amenityCount}`);
       console.log("=== END DEBUG ===");
       
       const response = await fetch(`${apiUrl}/properties/`, {
@@ -408,8 +472,7 @@ const AddProperty = () => {
       }
 
       const data = await response.json();
-      toast.success("تم إضافة العقار بنجاح! سيتم مراجعته من قبل الفريق.");
-      navigate("/dashboard/my-properties");
+      setSuccessProperty(data);
     } catch (error: any) {
       console.error("Error:", error);
       toast.error(error.message || "خطأ في إضافة العقار");
@@ -417,6 +480,133 @@ const AddProperty = () => {
       setLoading(false);
     }
   };
+
+  if (successProperty) {
+    return (
+      <DashboardLayout>
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+            className="w-full max-w-sm"
+          >
+            <Card className="border-2 border-emerald-300 dark:border-emerald-700 bg-gradient-to-br from-emerald-50 via-blue-50 to-indigo-50 dark:from-emerald-950/40 dark:via-blue-950/40 dark:to-indigo-950/40 shadow-2xl overflow-hidden">
+              {/* الخط العلوي المتوهج */}
+              <div className="h-1 bg-gradient-to-r from-emerald-400 via-blue-400 to-indigo-400 dark:from-emerald-500 dark:via-blue-500 dark:to-indigo-500"></div>
+              <CardContent className="pt-6 pb-6">
+                <div className="text-center space-y-5">
+                  {/* رمز النجاح المتحرك */}
+                  <motion.div
+                    initial={{ scale: 0, rotate: -180 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: 0.2, duration: 0.6, type: "spring" }}
+                    className="flex justify-center"
+                  >
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-emerald-400 dark:bg-emerald-500 rounded-full opacity-20 blur-xl animate-pulse"></div>
+                      <CheckCircle className="h-16 w-16 text-emerald-500 dark:text-emerald-400 relative z-10" />
+                    </div>
+                  </motion.div>
+
+                  {/* الرسالة الرئيسية */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="space-y-1"
+                  >
+                    <h1 className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">
+                      تم الإضافة بنجاح! 🎉
+                    </h1>
+                    <p className="text-xs text-gray-600 dark:text-gray-300">
+                      تم إنشاء العقار بنجاح في النظام
+                    </p>
+                  </motion.div>
+
+                  {/* خريطة المراحل */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/30 dark:to-blue-950/30 rounded-lg p-4 border border-emerald-100 dark:border-emerald-900/30"
+                  >
+                    <div className="space-y-3">
+                      {/* المرحلة 1: تم الإضافة */}
+                      <div className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-xs">✓</div>
+                          <div className="w-0.5 h-10 bg-emerald-300 dark:bg-emerald-700 mt-1"></div>
+                        </div>
+                        <div className="pb-4">
+                          <p className="font-bold text-emerald-700 dark:text-emerald-300 text-xs">تم اضافة العقار</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">تم حفظ البيانات بنجاح</p>
+                        </div>
+                      </div>
+
+                      {/* المرحلة 2: قيد المراجعة */}
+                      <div className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-amber-500 flex items-center justify-center text-white animate-pulse">
+                            <span className="text-sm">📋</span>
+                          </div>
+                          <div className="w-0.5 h-10 bg-gray-300 dark:bg-gray-600 mt-1"></div>
+                        </div>
+                        <div className="pb-4">
+                          <p className="font-bold text-amber-700 dark:text-amber-300 text-xs">قيد المراجعة</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">فريق الإدارة يتحقق</p>
+                        </div>
+                      </div>
+
+                      {/* المرحلة 3: الموافقة */}
+                      <div className="flex gap-3">
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-gray-600 dark:text-gray-400">
+                            <span className="text-sm">🔒</span>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-500 dark:text-gray-400 text-xs">انتظر الموافقة</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">سيظهر بعد الموافقة</p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* الأزرار */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="flex gap-2 pt-3"
+                  >
+                    <button
+                      onClick={() => navigate("/dashboard/my-properties")}
+                      className="flex-1 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 group shadow-lg hover:shadow-xl text-sm"
+                    >
+                      <span>عرض عقاراتي</span>
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  </motion.div>
+
+                  {/* رابط ثانوي */}
+                  <motion.button
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.7 }}
+                    onClick={() => navigate("/dashboard")}
+                    className="text-xs text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                  >
+                    العودة إلى لوحة التحكم
+                  </motion.button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -450,7 +640,7 @@ const AddProperty = () => {
                 <Input
                   id="title_ar"
                   name="title_ar"
-                  placeholder="شقة ميامي "
+                  placeholder="شقة مميزه فى خالد بن الوليد "
                   value={formData.title_ar}
                   onChange={handleInputChange}
                   required
@@ -539,7 +729,7 @@ const AddProperty = () => {
                   <Input
                     id="address"
                     name="address"
-                    placeholder="العنوان التفصيلي"
+                    placeholder="ادخل العنوان التفصيلي (مثال: شارع خالد بن الوليد، بجوار مسجد النور)"
                     value={formData.address}
                     onChange={handleInputChange}
                     required
@@ -609,23 +799,108 @@ const AddProperty = () => {
                 السعر
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <label
-                  htmlFor="price"
-                  className="text-sm font-medium text-foreground"
-                >
-                  السعر (للايجارالشهرى) <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  placeholder="السعر بالجنيه"
-                  value={formData.price}
-                  onChange={handleInputChange}
-                  required
-                />
+            <CardContent className="space-y-4">
+              {/* السعر الشهري - يختفي للمصيفين والحجز اليومي */}
+              {formData.usage_type !== "vacation" && formData.usage_type !== "daily" ? (
+                <div className="space-y-2">
+                  <label
+                    htmlFor="price"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    السعر الشهري <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    placeholder="السعر بالجنيه"
+                    value={formData.price}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    ℹ️ لا يوجد سعر شهري لهذا التصنيف. استخدم السعر اليومي فقط.
+                  </p>
+                </div>
+              )}
+              
+              {/* السعر اليومي - يظهر فقط للمصيفين والحجز اليومي */}
+              {(formData.usage_type === "vacation" || formData.usage_type === "daily") && (
+                <div className="space-y-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <label
+                    htmlFor="daily_price"
+                    className="text-sm font-medium text-foreground flex items-center gap-2"
+                  >
+                    <span className="text-xs font-semibold px-2 py-1 bg-amber-100 dark:bg-amber-900 text-amber-900 dark:text-amber-100 rounded-full">
+                      {formData.usage_type === "vacation" ? "🏖️ المصيفين" : "📅 الحجز اليومي"}
+                    </span>
+                    السعر اليومي <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    id="daily_price"
+                    name="daily_price"
+                    type="number"
+                    placeholder="السعر اليومي بالجنيه"
+                    value={formData.daily_price}
+                    onChange={handleInputChange}
+                    required
+                  />
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    💡 أدخل السعر اليومي لهذا التصنيف
+                  </p>
+                </div>
+              )}
+
+              {/* السعر الأصلي والخصم - اختياري */}
+              <div className="space-y-4 p-3 bg-teal-50 dark:bg-teal-950/20 border border-teal-200 dark:border-teal-800 rounded-lg">
+                <p className="text-xs font-semibold text-teal-700 dark:text-teal-300 flex items-center gap-2">
+                  <span>💎</span> السعر الأصلي والخصم (اختياري)
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="original_price"
+                      className="text-sm font-medium text-foreground"
+                    >
+                      السعر الأصلي
+                    </label>
+                    <Input
+                      id="original_price"
+                      name="original_price"
+                      type="number"
+                      placeholder="السعر الأصلي بالجنيه"
+                      value={formData.original_price}
+                      onChange={handleInputChange}
+                    />
+                    <p className="text-xs text-teal-600 dark:text-teal-400">
+                      💡 أدخل السعر الأصلي للعقار قبل التخفيف
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="discount"
+                      className="text-sm font-medium text-foreground"
+                    >
+                      نسبة الخصم (%)
+                    </label>
+                    <Input
+                      id="discount"
+                      name="discount"
+                      type="number"
+                      placeholder="0 - 100"
+                      min="0"
+                      max="100"
+                      value={formData.discount}
+                      onChange={handleInputChange}
+                    />
+                    <p className="text-xs text-teal-600 dark:text-teal-400">
+                      💡 أدخل نسبة الخصم من 0 إلى 100%
+                    </p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -744,6 +1019,57 @@ const AddProperty = () => {
                     الشقة مفروشة
                   </span>
                 </label>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* المميزات والخدمات */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-primary" />
+                المميزات والخدمات
+              </CardTitle>
+              <CardDescription>
+                اختر المميزات المتاحة في العقار
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {loadingData ? (
+                  <p className="text-sm text-muted-foreground col-span-full">
+                    جاري تحميل المميزات...
+                  </p>
+                ) : amenities.length > 0 ? (
+                  amenities.map((amenity) => (
+                    <label
+                      key={amenity.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary hover:bg-muted/50 cursor-pointer transition-all"
+                    >
+                      <input
+                        type="checkbox"
+                        value={amenity.id}
+                        checked={selectedAmenities.includes(String(amenity.id))}
+                        onChange={(e) => {
+                          const id = String(amenity.id);
+                          if (e.target.checked) {
+                            setSelectedAmenities([...selectedAmenities, id]);
+                          } else {
+                            setSelectedAmenities(
+                              selectedAmenities.filter((aid) => aid !== id)
+                            );
+                          }
+                        }}
+                        className="w-4 h-4 rounded border-border"
+                      />
+                      <span className="text-sm font-medium">{amenity.name}</span>
+                    </label>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground col-span-full">
+                    لا توجد مميزات متاحة
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

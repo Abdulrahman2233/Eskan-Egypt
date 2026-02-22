@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Bell, Building2, MessageSquare, UserPlus, Eye, CheckCircle, XCircle, Trash2, MoreVertical } from "lucide-react";
+import { Bell, MessageSquare, UserPlus, Building2, CheckCircle, Trash2, MoreVertical } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,7 @@ import {
 
 interface Notification {
   id: string;
-  notification_type: "property" | "message" | "user" | "view" | "approval" | "rejection";
+  notification_type: "message" | "user" | "property";
   title: string;
   description: string;
   time: string;
@@ -24,30 +24,21 @@ interface Notification {
 }
 
 const iconMap = {
-  property: Building2,
   message: MessageSquare,
   user: UserPlus,
-  view: Eye,
-  approval: CheckCircle,
-  rejection: XCircle,
+  property: Building2,
 };
 
 const colorMap = {
-  property: "bg-blue-100 text-blue-600",
   message: "bg-purple-100 text-purple-600",
   user: "bg-green-100 text-green-600",
-  view: "bg-amber-100 text-amber-600",
-  approval: "bg-emerald-100 text-emerald-600",
-  rejection: "bg-red-100 text-red-600",
+  property: "bg-blue-100 text-blue-600",
 };
 
 const typeLabels = {
-  property: "عقار جديد",
   message: "رسالة",
   user: "مستخدم جديد",
-  view: "مشاهدات",
-  approval: "موافقة",
-  rejection: "رفض",
+  property: "عقار جديد",
 };
 
 export function NotificationsPopover() {
@@ -60,27 +51,33 @@ export function NotificationsPopover() {
   // تحميل الإشعارات عند فتح البوبوفر
   useEffect(() => {
     if (isOpen) {
-      loadNotifications();
-      // تحديث جميع الإشعارات كمقروءة تلقائياً عند فتح البوبوفر
-      if (unreadCount > 0) {
-        handleMarkAllAsRead();
-      }
+      loadNotificationsAndMarkAsRead();
     }
   }, [isOpen]);
 
   // تحميل العدد الأولي للإشعارات غير المقروءة
   useEffect(() => {
+    // تحديث العداد فوراً عند تحميل الصفحة
     loadUnreadCount();
-    // تحديث العداد كل 30 ثانية
-    const interval = setInterval(loadUnreadCount, 30000);
+    // تحديث العداد كل 10 ثوانٍ للحصول على التحديثات الفورية
+    const interval = setInterval(loadUnreadCount, 10000);
     return () => clearInterval(interval);
   }, []);
 
-  const loadNotifications = async () => {
+  const loadNotificationsAndMarkAsRead = async () => {
     try {
       setIsLoading(true);
       const data = await fetchNotifications(1, 20);
       setNotifications(data.results || []);
+      // تحديث جميع الإشعارات كمقروءة تلقائياً عند فتح البوبوفر
+      await markAllNotificationsAsRead();
+      // تحديث الحالة المحلية
+      setNotifications((prev) =>
+        prev.map((n) => ({ ...n, is_read: true }))
+      );
+      // تحديث العداد
+      setUnreadCount(0);
+      await loadUnreadCount();
     } catch (error) {
       console.error("Error loading notifications:", error);
     } finally {
@@ -120,7 +117,10 @@ export function NotificationsPopover() {
       setNotifications(
         notifications.map((n) => ({ ...n, is_read: true }))
       );
+      // تحديث العداد فوراً
       setUnreadCount(0);
+      // تحديث العداد من الخادم أيضاً للتأكد
+      loadUnreadCount();
     } catch (error) {
       console.error("Error marking all as read:", error);
     }

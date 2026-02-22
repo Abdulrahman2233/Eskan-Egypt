@@ -20,6 +20,32 @@ from .utils import get_client_ip
 
 
 class PropertyViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet شامل لإدارة العقارات
+    
+    العمليات المدعومة:
+    - GET /properties/ - قائمة العقارات (المعتمدة فقط للعموم)
+    - POST /properties/ - إضافة عقار جديد (للمستخدمين المسجلين)
+    - GET /properties/{id}/ - عرض تفاصيل العقار
+    - PUT/PATCH /properties/{id}/ - تعديل العقار (ليس المالك)
+    - DELETE /properties/{id}/ - حذف العقار (المالك أو الأدمن)
+    
+    الأدوار الخاصة:
+    - POST /properties/{id}/approve/ - موافقة على عقار (الأدمن)
+    - POST /properties/{id}/reject/ - رفض عقار (الأدمن)
+    - POST /properties/{id}/resubmit/ - إعادة إرسال عقار مرفوض (المالك)
+    - POST /properties/{id}/record_view/ - تسجيل مشاهدة
+    - GET /properties/pending/ - العقارات المعلقة (الأدمن)
+    - GET /properties/by-me/ - عقاراتي (المستخدم)
+    
+    فلترة البحث:
+    - search: اسم، عنوان، منطقة، وصف
+    - usage_type: نوع الاستخدام (طلاب، عائلات، إلخ)
+    - rooms, price_min, price_max: الخصائص المختلفة
+    - area: المنطقة
+    
+    Permissions: IsAuthenticated للإضافة، AllowAny للاستعراض
+    """
     serializer_class = PropertySerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'address', 'area__name', 'description']
@@ -28,22 +54,21 @@ class PropertyViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        فلترة العقارات بناءً على دور المستخدم:
-        - في قائمة العقارات: الجميع يرى فقط المعتمدة (approved)
-        - في صفحة عقار محدد: الأدمن يرى جميع العقارات، المستخدم يرى عقاره أو المعتمدة
-        - Landlord: يرى عقاراته فقط (لإدارتها) + العقارات المُوافق عليها من الآخرين
-        - زائر: يرى العقارات المُوافق عليها فقط
+        فلترة العقارات بناءً على دور المستخدم والـ Action:
+        - الصفحة الرئيسية (list): الجميع يرى العقارات المعتمدة فقط
+        - صفحة الأدمن (admin actions): الأدمن يرى جميع العقارات
+        - التفاصيل (retrieve): الأدمن يرى كل شيء، الآخرون يرون عقارهم أو المعتمدة
         """
         try:
-            # الحصول على معامل يشير إلى ما إذا كان الطلب للحصول على عقار محدد (detail=True)
-            is_detail_request = self.action in ['retrieve', 'update', 'partial_update', 'approve', 'reject', 'resubmit']
             is_admin = self.request.user.is_staff or self.request.user.is_superuser
+            is_list_view = self.action == 'list'
+            is_detail_request = self.action in ['retrieve', 'update', 'partial_update', 'approve', 'reject', 'resubmit']
             
-            # في قائمة العقارات العادية: الجميع يرى فقط المعتمدة (approved)
-            if not is_detail_request and self.action != 'destroy':
+            # الصفحة الرئيسية: الجميع (حتى الأدمن) يرى العقارات المعتمدة فقط
+            if is_list_view:
                 queryset = Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').filter(status='approved', is_deleted=False)
+            # صفحة الأدمن والـ Admin Actions: الأدمن يرى جميع العقارات
             elif is_admin:
-                # الإدمن في الطلبات المفصلة: يرى جميع العقارات (بدون فلتر status)
                 queryset = Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').filter(is_deleted=False)
             elif self.request.user.is_authenticated:
                 # المستخدم المسجل:
@@ -66,7 +91,7 @@ class PropertyViewSet(viewsets.ModelViewSet):
                     else:
                         queryset = Property.objects.none()
                 else:
-                    # في قائمة العقارات: يرى فقط العقارات المعتمدة (غير المحذوفة)
+                    # في قائمة العقارات: المستخدم يرى فقط العقارات المعتمدة (غير المحذوفة)
                     queryset = Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').filter(status='approved', is_deleted=False)
             else:
                 # الزائر يرى فقط العقارات المُوافق عليها (غير المحذوفة)
@@ -184,18 +209,46 @@ class PropertyViewSet(viewsets.ModelViewSet):
         )
 
     def update(self, request, *args, **kwargs):
-        """منع تعديل العقارات تماماً - يجب حذف وإضافة عقار جديد"""
-        return Response(
-            {'detail': 'لا يمكن تعديل العقارات. يجب حذف العقار وإضافة واحد جديد بدلاً منه'},
-            status=status.HTTP_403_FORBIDDEN
-        )
+        """تعديل كامل العقار (محدود - الإدمن فقط)"""
+        is_admin = request.user.is_staff or request.user.is_superuser
+        if not is_admin:
+            return Response(
+                {'detail': 'فقط الإدارة يمكنها تعديل العقارات'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        instance = self.get_object()
+        
+        # السماح فقط بتعديل حقول معينة (رقم الاتصال مثلا)
+        allowed_fields = ['contact', 'name', 'address']
+        for field in allowed_fields:
+            if field in request.data:
+                setattr(instance, field, request.data[field])
+        
+        instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     def partial_update(self, request, *args, **kwargs):
-        """منع التعديل الجزئي للعقارات"""
-        return Response(
-            {'detail': 'لا يمكن تعديل العقارات. يجب حذف العقار وإضافة واحد جديد بدلاً منه'},
-            status=status.HTTP_403_FORBIDDEN
-        )
+        """التعديل الجزئي للعقار (محدود - الإدمن فقط)"""
+        is_admin = request.user.is_staff or request.user.is_superuser
+        if not is_admin:
+            return Response(
+                {'detail': 'فقط الإدارة يمكنها تعديل العقارات'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        instance = self.get_object()
+        
+        # السماح فقط بتعديل حقول معينة
+        allowed_fields = ['contact', 'name', 'address']
+        for field in allowed_fields:
+            if field in request.data:
+                setattr(instance, field, request.data[field])
+        
+        instance.save()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
         """حذف عقار (حذف منطقي) - يمكن للمالك والإدمن فقط"""

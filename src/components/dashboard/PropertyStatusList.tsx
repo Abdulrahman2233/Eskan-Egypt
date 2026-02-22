@@ -38,6 +38,9 @@ interface Property {
   longitude?: number;
   description?: string;
   approvalNotes?: string;
+  amenities?: Array<{ id: number; name: string; icon: string; description?: string }>;
+  images?: Array<{ id: number; image_url: string; order: number }>;
+  videos?: Array<{ id: number; video_url: string; order: number }>;
 }
 
 interface PropertyDetails {
@@ -67,6 +70,11 @@ interface PropertyDetails {
   rejected_at?: string;
   submitted_at?: string;
   approvalNotes?: string;
+  views?: number;
+  visitors?: number;
+  amenities?: Array<{ id: number; name: string; icon: string; description?: string }>;
+  images?: Array<{ id: number; image_url: string; order: number }>;
+  videos?: Array<{ id: number; video_url: string; order: number }>;
 }
 
 
@@ -348,10 +356,33 @@ export function PropertyStatusList() {
   const [deletedProperties, setDeletedProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [successType, setSuccessType] = useState<'approve' | 'reject' | null>(null);
+  const [isClosingDialog, setIsClosingDialog] = useState(false);
 
   useEffect(() => {
     fetchProperties();
   }, []);
+
+  // إزالة رسالة النجاح تلقائياً بعد 4 ثوانٍ
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage(null);
+        setSuccessType(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
+  // دالة للموافقة مع التأخير الزمني
+  const handlePropertyStatusChanged = (type: 'approve' | 'reject', message: string) => {
+    // أظهر الرسالة بعد ثانية واحدة من استدعاء النافذة للإغلاق
+    setTimeout(() => {
+      setSuccessMessage(message);
+      setSuccessType(type);
+    }, 1200); // 500ms لحركة الإغلاق + 700ms انتظار = 1200ms إجمالي
+  };
 
   const fetchProperties = async () => {
     try {
@@ -383,45 +414,38 @@ export function PropertyStatusList() {
           'office': 'مكتب',
         };
 
-        // الحصول على اسم المالك بشكل صحيح
         let ownerName = 'غير معروف';
-        if (prop.owner?.user?.first_name) {
-          ownerName = prop.owner.user.first_name;
-        } else if (prop.owner?.name) {
-          ownerName = prop.owner.name;
+        if ((prop.owner as any)?.user?.first_name) {
+          ownerName = (prop.owner as any).user.first_name;
+        } else if ((prop.owner as any)?.name) {
+          ownerName = (prop.owner as any).name;
         } else if (prop.owner_name) {
-          ownerName = prop.owner_name;
+          ownerName = prop.owner_name as string;
         }
 
-        // الحصول على نوع المالك - استخدام الحقل المُرجع مباشرة من API
-        const ownerUserType = prop.owner_type || 'landlord';
+        const ownerUserType = prop.owner_type as string || 'landlord';
 
-        // Debug log
-        // console.log(`Property: ${prop.name}, Owner Type: ${ownerUserType}, Owner Data:`, prop.owner);
-
-        // الحصول على المنطقة - يمكن أن تكون area أو area_data
         let regionName = 'غير معروف';
-        if (prop.area_data?.name) {
-          regionName = prop.area_data.name;
-        } else if (prop.area?.name) {
-          regionName = prop.area.name;
+        if ((prop.area_data as any)?.name) {
+          regionName = (prop.area_data as any).name;
+        } else if ((prop.area as any)?.name) {
+          regionName = (prop.area as any).name;
         } else if (typeof prop.area === 'string') {
           regionName = prop.area;
         } else if (typeof prop.area_data === 'string') {
           regionName = prop.area_data;
         }
 
-        // ضمان القيم الافتراضية لجميع الحقول المطلوبة
-        return {
-          id: prop.id || '',
-          name: prop.name || '',
+        const transformedProperty: Property = {
+          id: (prop.id || '') as string,
+          name: (prop.name || '') as string,
           owner: ownerName,
           ownerType: ownerTypeMap[ownerUserType] || 'مالك',
           region: regionName,
-          views: prop.views || 0,
-          visitors: prop.visitors || 0,
+          views: (prop.views || 0) as number,
+          visitors: (prop.visitors || 0) as number,
           addedDate: prop.created_at
-            ? new Date(prop.created_at).toLocaleDateString('ar-SA', {
+            ? new Date(prop.created_at as string).toLocaleDateString('ar-SA', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
@@ -429,7 +453,7 @@ export function PropertyStatusList() {
                 minute: '2-digit',
               })
             : (prop.submitted_at
-              ? new Date(prop.submitted_at).toLocaleDateString('ar-SA', {
+              ? new Date(prop.submitted_at as string).toLocaleDateString('ar-SA', {
                   year: 'numeric',
                   month: '2-digit',
                   day: '2-digit',
@@ -438,7 +462,7 @@ export function PropertyStatusList() {
                 })
               : ''),
           deletedDate: prop.deleted_at
-            ? new Date(prop.deleted_at).toLocaleDateString('ar-SA', {
+            ? new Date(prop.deleted_at as string).toLocaleDateString('ar-SA', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
@@ -449,26 +473,37 @@ export function PropertyStatusList() {
           submitted_at: prop.submitted_at,
           approved_at: prop.approved_at,
           rejected_at: prop.rejected_at,
-          // بيانات إضافية
-          address: prop.address || '',
-          contactNumber: prop.contact || '',
-          currentPrice: prop.price ? parseFloat(prop.price) : 0,
-          originalPrice: prop.original_price ? parseFloat(prop.original_price) : undefined,
-          discountPercentage: prop.discount || 0,
-          rooms: prop.rooms || 0,
-          beds: prop.beds || 0,
-          bathrooms: prop.bathrooms || 0,
-          area: prop.size || 0,
-          floor: prop.floor || 0,
-          type: prop.usage_type_ar || prop.usage_type || '',
-          furnished: prop.furnished ?? false,
-          featured: prop.featured ?? false,
-          status: (prop.status as "approved" | "rejected" | "pending") || 'approved',
-          latitude: prop.latitude ? parseFloat(prop.latitude) : 0,
-          longitude: prop.longitude ? parseFloat(prop.longitude) : 0,
-          description: prop.description || '',
-          approvalNotes: prop.approval_notes || '',
+          address: (prop.address || '') as string,
+          contactNumber: (prop.contact || '') as string,
+          currentPrice: prop.display_price ? parseFloat(prop.display_price as string) : (prop.price ? parseFloat(prop.price as string) : 0),
+          originalPrice: prop.original_price ? parseFloat(prop.original_price as string) : undefined,
+          discountPercentage: (prop.discount || 0) as number,
+          rooms: (prop.rooms || 0) as number,
+          beds: (prop.beds || 0) as number,
+          bathrooms: (prop.bathrooms || 0) as number,
+          area: (prop.size || 0) as number,
+          floor: (prop.floor || 0) as number,
+          type: (prop.usage_type_ar || prop.usage_type || '') as string,
+          furnished: (prop.furnished ?? false) as boolean,
+          featured: (prop.featured ?? false) as boolean,
+          status: ((prop.status as "approved" | "rejected" | "pending") || 'approved') as "approved" | "rejected" | "pending",
+          latitude: prop.latitude ? parseFloat(prop.latitude as string) : 0,
+          longitude: prop.longitude ? parseFloat(prop.longitude as string) : 0,
+          description: (prop.description || '') as string,
+          approvalNotes: (prop.approval_notes || '') as string,
+          amenities: (prop.amenities || []) as Array<{ id: number; name: string; icon: string; description?: string }>,
+          images: (prop.images || []) as Array<{ id: number; image: string; order: number }>,
+          videos: (prop.videos || []) as Array<{ id: number; video: string; order: number }>,
         };
+      
+        if (transformedProperty.images && transformedProperty.images.length > 0) {
+          console.log(`[Debug] Property "${transformedProperty.name}" has ${transformedProperty.images.length} images:`, transformedProperty.images);
+        }
+        if (transformedProperty.videos && transformedProperty.videos.length > 0) {
+          console.log(`[Debug] Property "${transformedProperty.name}" has ${transformedProperty.videos.length} videos:`, transformedProperty.videos);
+        }
+      
+        return transformedProperty;
       };
 
       // معالجة البيانات المرسلة من API
@@ -536,6 +571,9 @@ export function PropertyStatusList() {
         approvalNotes: property.approvalNotes,
         views: property.views || 0,
         visitors: property.visitors || 0,
+        amenities: property.amenities || [],
+        images: property.images || [],
+        videos: property.videos || [],
       };
       setSelectedProperty(details);
       setDialogOpen(true);
@@ -613,13 +651,198 @@ export function PropertyStatusList() {
 
       <PropertyDetailsDialog 
         property={selectedProperty} 
-        open={dialogOpen} 
-        onOpenChange={setDialogOpen}
-        onStatusChange={() => {
-          // إعادة تحميل البيانات بعد تغيير الحالة
-          fetchProperties();
+        open={dialogOpen}
+        isClosing={isClosingDialog}
+        onOpenChange={(open) => {
+          if (!open && successMessage) {
+            // عند إغلاق النافذة، ابدأ حركة الإغلاق بسلاسة
+            setIsClosingDialog(true);
+            
+            // انتظر 500ms لاكتمال حركة الإغلاق
+            setTimeout(() => {
+              setDialogOpen(false);
+              setIsClosingDialog(false);
+              
+              // بعد إغلاق النافذة، أعد تحميل البيانات
+              setTimeout(() => {
+                fetchProperties();
+              }, 500);
+            }, 500);
+          } else {
+            setDialogOpen(open);
+          }
         }}
+        onPropertyStatusChanged={handlePropertyStatusChanged}
       />
+
+      {/* Success Modal - رسالة النجاح الاحترافية */}
+      {successMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <style>{`
+            @keyframes fadeIn {
+              from {
+                opacity: 0;
+              }
+              to {
+                opacity: 1;
+              }
+            }
+            @keyframes zoomIn {
+              from {
+                opacity: 0;
+                transform: scale(0.5);
+              }
+              to {
+                opacity: 1;
+                transform: scale(1);
+              }
+            }
+            @keyframes checkmarkDraw {
+              from {
+                stroke-dasharray: 100;
+                stroke-dashoffset: 100;
+              }
+              to {
+                stroke-dasharray: 100;
+                stroke-dashoffset: 0;
+              }
+            }
+            @keyframes bounce {
+              0%, 100% {
+                transform: scale(1);
+              }
+              50% {
+                transform: scale(1.1);
+              }
+            }
+            @keyframes confetti-fall {
+              0% {
+                transform: translateY(-10px) rotate(0deg);
+                opacity: 1;
+              }
+              100% {
+                transform: translateY(calc(100vh + 100px)) rotate(360deg);
+                opacity: 0;
+              }
+            }
+            .success-backdrop {
+              animation: fadeIn 0.5s ease-out forwards;
+            }
+            .success-card {
+              animation: zoomIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            }
+            .success-icon-circle {
+              animation: bounce 0.6s ease-out 0.3s both;
+            }
+            .checkmark {
+              animation: checkmarkDraw 0.6s ease-out 0.4s forwards;
+            }
+            .confetti {
+              animation: confetti-fall linear forwards;
+            }
+          `}</style>
+          
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/40 success-backdrop" />
+          
+          {/* Confetti pieces */}
+          {successType === 'approve' && Array.from({ length: 25 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute pointer-events-none confetti"
+              style={{
+                left: Math.random() * 100 + '%',
+                top: '-10px',
+                width: '8px',
+                height: '8px',
+                backgroundColor: ['#10b981', '#059669', '#047857', '#34d399', '#6ee7b7'][Math.floor(Math.random() * 5)],
+                borderRadius: Math.random() > 0.5 ? '50%' : '0',
+                animationDuration: (2 + Math.random() * 1) + 's',
+                animationDelay: (Math.random() * 0.3) + 's',
+              }}
+            />
+          ))}
+          
+          {/* Success Card */}
+          <div className="relative bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full success-card z-10">
+            {/* Icon Circle */}
+            <div className={`mx-auto mb-6 success-icon-circle ${
+              successType === 'approve' ? 'bg-emerald-100' : 'bg-red-100'
+            } rounded-full p-6 w-fit`}>
+              {successType === 'approve' ? (
+                <svg 
+                  className="w-12 h-12 text-emerald-600 checkmark" 
+                  viewBox="0 0 24 24" 
+                  fill="none"
+                  stroke="currentColor" 
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              ) : (
+                <svg 
+                  className="w-12 h-12 text-red-600" 
+                  viewBox="0 0 24 24" 
+                  fill="none"
+                  stroke="currentColor" 
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              )}
+            </div>
+            
+            {/* Title */}
+            <h2 className={`text-2xl font-bold text-center mb-2 ${
+              successType === 'approve' ? 'text-emerald-900' : 'text-red-900'
+            }`}>
+              {successType === 'approve' ? 'تم الموافقة بنجاح!' : 'تم الرفض بنجاح'}
+            </h2>
+            
+            {/* Message */}
+            <p className={`text-center text-sm ${
+              successType === 'approve' ? 'text-emerald-700' : 'text-red-700'
+            } mb-6`}>
+              {successMessage}
+            </p>
+            
+            {/* Success Details */}
+            <div className={`text-center py-4 px-4 rounded-lg mb-6 ${
+              successType === 'approve' 
+                ? 'bg-emerald-50 border border-emerald-200' 
+                : 'bg-red-50 border border-red-200'
+            }`}>
+              <p className={`${
+                successType === 'approve' ? 'text-emerald-600' : 'text-red-600'
+              } text-xs font-medium`}>
+                {successType === 'approve' 
+                  ? '✓ تم تحديث حالة العقار إلى موافق عليه' 
+                  : '✓ تم تحديث حالة العقار إلى مرفوض'}
+              </p>
+            </div>
+            
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setSuccessMessage(null);
+                setSuccessType(null);
+              }}
+              className={`w-full py-3 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg ${
+                successType === 'approve'
+                  ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-95'
+                  : 'bg-red-600 text-white hover:bg-red-700 active:scale-95'
+              }`}
+            >
+              حسناً، فهمت
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

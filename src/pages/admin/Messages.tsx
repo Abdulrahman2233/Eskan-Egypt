@@ -12,9 +12,9 @@ import {
   User,
   Building2,
   MoreVertical,
-  Send,
-  Paperclip,
-  ArrowLeft
+  ArrowLeft,
+  Phone,
+  Mail as MailIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,7 @@ interface Message {
   sender?: string;
   name?: string;
   email: string;
+  phone?: string;
   subject: string;
   preview?: string;
   content?: string;
@@ -60,7 +61,6 @@ export default function Messages() {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [filter, setFilter] = useState<"all" | "unread" | "starred">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [replyText, setReplyText] = useState("");
   const [messageList, setMessageList] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +83,7 @@ export default function Messages() {
             sender: msg.name as string,
             name: msg.name as string,
             email: msg.email as string,
+            phone: msg.phone as string,
             subject: msg.subject as string,
             preview: (msg.message as string)?.substring(0, 100) || "",
             content: msg.message as string,
@@ -204,28 +205,31 @@ export default function Messages() {
 
   return (
     <DashboardLayout title="الرسائل">
-      <div className="flex gap-6 h-[calc(100vh-180px)]">
+      <div className="flex gap-3 sm:gap-6 h-auto sm:h-[calc(100vh-180px)] flex-col sm:flex-row">
         {/* Messages List */}
         <div className={cn(
-          "flex flex-col rounded-2xl bg-card border border-border shadow-lg overflow-hidden transition-all duration-300",
-          selectedMessage ? "w-2/5 hidden lg:flex" : "flex-1"
+          "flex flex-col rounded-lg sm:rounded-2xl bg-card border border-border shadow-lg overflow-hidden transition-all duration-300 w-full sm:flex-1",
+          selectedMessage ? "hidden sm:flex" : "flex"
         )}>
           {/* Header */}
-          <div className="p-4 border-b border-border space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold">صندوق الوارد</h2>
-                {unreadCount > 0 && (
-                  <Badge variant="default" className="rounded-full">
-                    {unreadCount}
-                  </Badge>
-                )}
+          <div className="bg-gradient-to-r from-primary/5 to-primary/10 border-b border-border p-3 sm:p-6 space-y-3 sm:space-y-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <h2 className="text-base sm:text-lg font-bold text-foreground truncate">صندوق الوارد</h2>
+                  {unreadCount > 0 && (
+                    <p className="text-xs text-muted-foreground">{unreadCount} جديدة</p>
+                  )}
+                </div>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <Filter className="h-4 w-4" />
-                    تصفية
+                  <Button variant="outline" size="sm" className="gap-1 sm:gap-2 text-xs sm:text-sm flex-shrink-0">
+                    <Filter className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">تصفية</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="bg-card">
@@ -243,10 +247,10 @@ export default function Messages() {
             </div>
             
             <div className="relative">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />
               <Input
-                placeholder="بحث في الرسائل..."
-                className="pr-10"
+                placeholder="بحث..."
+                className="pr-8 sm:pr-10 bg-background/50 border-border text-xs sm:text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -254,27 +258,27 @@ export default function Messages() {
           </div>
           
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
+          <div className="flex-1 overflow-y-auto custom-scrollbar min-h-[300px] sm:min-h-0">
             {loading ? (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-                <p className="mt-4">جاري تحميل الرسائل...</p>
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-8">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+                <p className="mt-3 text-sm">جاري التحميل...</p>
               </div>
             ) : error ? (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <Mail className="h-12 w-12 mb-3 opacity-50 text-destructive" />
-                <p>{error}</p>
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-8">
+                <Mail className="h-10 w-10 mb-2 opacity-50 text-destructive" />
+                <p className="text-sm text-center px-4">{error}</p>
               </div>
             ) : filteredMessages.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                <Mail className="h-12 w-12 mb-3 opacity-50" />
-                <p>لا توجد رسائل</p>
+              <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-8">
+                <Mail className="h-10 w-10 mb-2 opacity-50" />
+                <p className="text-sm">لا توجد رسائل</p>
               </div>
             ) : (
               filteredMessages.map((message) => {
                 const isRead = message.isRead !== undefined ? message.isRead : message.is_read;
                 const sender = message.sender || message.name || "بدون اسم";
-                const preview = message.preview || (message.message as string)?.substring(0, 100) || "";
+                const preview = message.preview || (message.message as string)?.substring(0, 60) || "";
                 
                 return (
                   <div
@@ -284,53 +288,53 @@ export default function Messages() {
                       markAsRead(message.id);
                     }}
                     className={cn(
-                      "p-4 border-b border-border cursor-pointer transition-all duration-200 hover:bg-muted/50",
-                      !isRead && "bg-primary/5 border-r-4 border-r-primary",
-                      selectedMessage?.id === message.id && "bg-muted"
+                      "px-3 sm:px-4 py-2.5 sm:py-3 border-b border-border cursor-pointer transition-all duration-200 hover:bg-muted/50 hover:border-r-4 hover:border-r-primary",
+                      !isRead && "bg-primary/8 border-r-4 border-r-primary",
+                      selectedMessage?.id === message.id && "bg-primary/10 border-r-4 border-r-primary"
                     )}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <User className="h-5 w-5 text-primary" />
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className={cn(
+                        "h-10 w-10 sm:h-11 sm:w-11 rounded-lg flex items-center justify-center flex-shrink-0 font-semibold text-white text-sm",
+                        !isRead ? "bg-gradient-to-br from-primary to-primary/60" : "bg-muted text-muted-foreground"
+                      )}>
+                        {(sender || "?").charAt(0)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
                           <h4 className={cn(
-                            "text-sm truncate",
-                            !isRead && "font-bold"
+                            "text-xs sm:text-sm truncate",
+                            !isRead ? "font-bold text-foreground" : "font-medium text-foreground"
                           )}>
                             {sender}
                           </h4>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <span className="text-xs text-muted-foreground">{message.time}</span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleStar(message.id);
-                              }}
-                              className="hover:scale-110 transition-transform"
-                            >
-                              {message.isStarred ? (
-                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                              ) : (
-                                <StarOff className="h-4 w-4 text-muted-foreground hover:text-yellow-400" />
-                              )}
-                            </button>
-                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleStar(message.id);
+                            }}
+                            className="hover:scale-110 transition-transform flex-shrink-0"
+                          >
+                            {message.isStarred ? (
+                              <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400" />
+                            ) : (
+                              <StarOff className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground hover:text-yellow-400" />
+                            )}
+                          </button>
                         </div>
                         <p className={cn(
-                          "text-sm truncate",
+                          "text-xs sm:text-sm truncate",
                           !isRead ? "font-semibold text-foreground" : "text-muted-foreground"
                         )}>
                           {message.subject}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate mt-1">
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">
                           {preview}
                         </p>
                         {message.property && (
-                          <div className="flex items-center gap-1 mt-2">
-                            <Building2 className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">{message.property}</span>
+                          <div className="flex items-center gap-0.5 mt-1">
+                            <Building2 className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-primary" />
+                            <span className="text-xs text-primary font-medium truncate">{message.property}</span>
                           </div>
                         )}
                       </div>
@@ -344,109 +348,112 @@ export default function Messages() {
         
         {/* Message Detail */}
         {selectedMessage ? (
-          <div className="flex-1 flex flex-col rounded-2xl bg-card border border-border shadow-lg overflow-hidden">
+          <div className="flex-1 flex flex-col rounded-lg sm:rounded-2xl bg-card border border-border shadow-lg overflow-hidden w-full">
             {/* Detail Header */}
-            <div className="p-4 border-b border-border flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="lg:hidden"
-                  onClick={() => setSelectedMessage(null)}
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User className="h-6 w-6 text-primary" />
+            <div className="bg-gradient-to-r from-primary/5 to-primary/10 border-b border-border p-3 sm:p-6">
+              <div className="flex items-start justify-between gap-2 sm:gap-4">
+                <div className="flex items-start gap-2 sm:gap-4 flex-1 min-w-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="sm:hidden mt-1 flex-shrink-0"
+                    onClick={() => setSelectedMessage(null)}
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center flex-shrink-0 shadow-md">
+                    <User className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base sm:text-xl font-bold text-foreground truncate">{selectedMessage.sender || selectedMessage.name}</h3>
+                    <div className="space-y-1 mt-1 sm:mt-2">
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground min-w-0">
+                        <MailIcon className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                        <span className="truncate">{selectedMessage.email}</span>
+                      </div>
+                      {selectedMessage.phone && (
+                        <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                          <Phone className="h-3 w-3 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                          <span dir="ltr" className="font-medium">{selectedMessage.phone}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold">{selectedMessage.sender || selectedMessage.name}</h3>
-                  <p className="text-sm text-muted-foreground">{selectedMessage.email}</p>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => toggleStar(selectedMessage.id)}
+                    className="hover:bg-primary/20 h-9 w-9 sm:h-10 sm:w-10"
+                  >
+                    {selectedMessage.isStarred ? (
+                      <Star className="h-4 w-4 sm:h-5 sm:w-5 fill-yellow-400 text-yellow-400" />
+                    ) : (
+                      <StarOff className="h-4 w-4 sm:h-5 sm:w-5" />
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteMessage(selectedMessage.id)}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 h-9 w-9 sm:h-10 sm:w-10"
+                  >
+                    <Trash2 className="h-4 w-4 sm:h-5 sm:w-5" />
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
+                        <MoreVertical className="h-4 w-4 sm:h-5 sm:w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="bg-card">
+                      <DropdownMenuItem>تحديد كغير مقروءة</DropdownMenuItem>
+                      <DropdownMenuItem>نقل إلى الأرشيف</DropdownMenuItem>
+                      <DropdownMenuItem>الإبلاغ عن بريد مزعج</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => toggleStar(selectedMessage.id)}
-                >
-                  {selectedMessage.isStarred ? (
-                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                  ) : (
-                    <StarOff className="h-5 w-5" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteMessage(selectedMessage.id)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-5 w-5" />
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="bg-card">
-                    <DropdownMenuItem>تحديد كغير مقروءة</DropdownMenuItem>
-                    <DropdownMenuItem>نقل إلى الأرشيف</DropdownMenuItem>
-                    <DropdownMenuItem>الإبلاغ عن بريد مزعج</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             </div>
             
             {/* Message Content */}
-            <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold">{selectedMessage.subject}</h2>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>{selectedMessage.date || new Date(selectedMessage.created_at as string).toLocaleDateString("ar-SA")} - {selectedMessage.time}</span>
+            <div className="flex-1 overflow-y-auto p-3 sm:p-8 custom-scrollbar">
+              <div className="space-y-4 sm:space-y-6 max-w-4xl">
+                {/* Subject and Metadata */}
+                <div>
+                  <h2 className="text-lg sm:text-2xl font-bold text-foreground mb-2 sm:mb-3">{selectedMessage.subject}</h2>
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground flex-wrap">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                      <span>{selectedMessage.date || new Date(selectedMessage.created_at as string).toLocaleDateString("ar-SA")}</span>
+                    </div>
+                    <span className="text-muted-foreground/50">•</span>
+                    <span>{selectedMessage.time}</span>
                   </div>
                 </div>
-                
+
+                {/* Property Badge */}
                 {selectedMessage.property && (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm">
-                    <Building2 className="h-4 w-4" />
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg bg-primary/10 text-primary text-xs sm:text-sm font-medium border border-primary/20">
+                    <Building2 className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                     <span>{selectedMessage.property}</span>
                   </div>
                 )}
                 
-                <div className="mt-6 p-4 rounded-xl bg-muted/30 whitespace-pre-wrap text-foreground leading-relaxed">
-                  {selectedMessage.content || selectedMessage.message}
+                {/* Message Body */}
+                <div className="mt-4 sm:mt-8 pt-4 sm:pt-6 border-t border-border">
+                  <p className="text-muted-foreground text-xs sm:text-sm font-medium mb-3 sm:mb-4">محتوى الرسالة</p>
+                  <div className="bg-muted/40 border border-border rounded-lg p-3 sm:p-6 whitespace-pre-wrap text-foreground leading-relaxed text-xs sm:text-sm">
+                    {selectedMessage.content || selectedMessage.message}
+                  </div>
                 </div>
               </div>
             </div>
-            
-            {/* Reply Section */}
-            <div className="p-4 border-t border-border">
-              <div className="flex gap-3">
-                <Textarea
-                  placeholder="اكتب ردك هنا..."
-                  className="min-h-[80px] resize-none"
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                />
-              </div>
-              <div className="flex items-center justify-between mt-3">
-                <Button variant="ghost" size="sm">
-                  <Paperclip className="h-4 w-4 ml-2" />
-                  إرفاق ملف
-                </Button>
-                <Button className="gap-2">
-                  <Send className="h-4 w-4" />
-                  إرسال الرد
-                </Button>
-              </div>
-            </div>
+
           </div>
         ) : (
-          <div className="hidden lg:flex flex-1 items-center justify-center rounded-2xl bg-card border border-border shadow-lg">
+          <div className="hidden sm:flex flex-1 items-center justify-center rounded-2xl bg-card border border-border shadow-lg">
             <div className="text-center text-muted-foreground">
               <MailOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
               <p className="text-lg font-medium">اختر رسالة لعرضها</p>

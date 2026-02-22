@@ -5,15 +5,12 @@ import {
   Building2,
   MessageSquare,
   UserPlus,
-  Eye,
   CheckCircle,
-  XCircle,
   Trash2,
   Filter,
   Loader2,
   AlertCircle,
   Search,
-  Download,
   RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +26,7 @@ import {
 
 interface Notification {
   id: string;
-  notification_type: "property" | "message" | "user" | "view" | "rejection";
+  notification_type: "message" | "user" | "property";
   title: string;
   description: string;
   time: string;
@@ -39,30 +36,24 @@ interface Notification {
 }
 
 const iconMap = {
-  property: Building2,
   message: MessageSquare,
   user: UserPlus,
-  view: Eye,
-  rejection: XCircle,
+  property: Building2,
 };
 
 const colorMap = {
-  property: "bg-blue-500",
   message: "bg-purple-500",
   user: "bg-green-500",
-  view: "bg-amber-500",
-  rejection: "bg-red-500",
+  property: "bg-blue-500",
 };
 
 const badgeColorMap = {
-  property: "bg-blue-100 text-blue-800",
   message: "bg-purple-100 text-purple-800",
   user: "bg-green-100 text-green-800",
-  view: "bg-amber-100 text-amber-800",
-  rejection: "bg-red-100 text-red-800",
+  property: "bg-blue-100 text-blue-800",
 };
 
-type FilterType = "all" | "unread" | "property" | "rejection" | "message" | "user" | "view";
+type FilterType = "all" | "unread" | "message" | "user" | "property";
 
 const AdminNotifications = () => {
   const { toast } = useToast();
@@ -184,9 +175,9 @@ const AdminNotifications = () => {
   const filters: { value: FilterType; label: string }[] = [
     { value: "all", label: "الكل" },
     { value: "unread", label: "غير مقروء" },
-    { value: "rejection", label: "الرفضات" },
-    { value: "property", label: "العقارات الجديدة" },
-    { value: "message", label: "الرسائل" },
+    { value: "property", label: "عقارات معلقة" },
+    { value: "message", label: "رسائل" },
+    { value: "user", label: "مستخدمون جدد" },
   ];
 
   return (

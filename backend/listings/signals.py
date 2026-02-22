@@ -217,70 +217,55 @@ def log_property_deletion(sender, instance, **kwargs):
 
 
 # ============ Notifications Signals ============
+# تم تفعيل إشعارات العقارات الجديدة والمستخدمين والرسائل
 
 @receiver(post_save, sender=Property)
 def create_new_property_notification(sender, instance, created, **kwargs):
     """
-    إرسال إشعار عند إضافة عقار جديد بانتظار الموافقة
-    ⚠️ معطل - لا يتم إرسال إشعارات عند إضافة عقار جديد
-    """
-    # تم تعطيل هذه الميزة - لا يتم إنشاء إشعارات
-    pass
-
-
-@receiver(post_save, sender=Property)
-def create_property_approval_notification(sender, instance, created, update_fields=None, **kwargs):
-    """
-    إرسال إشعار عند الموافقة على عقار
-    ⚠️ معطل - لا يتم إرسال إشعارات للموافقات
-    """
-    # تم تعطيل هذه الميزة بالكامل - تم طلب عدم إرسال إشعارات للموافقات
-    pass
-
-
-@receiver(post_save, sender=Property)
-def create_property_rejection_notification(sender, instance, created, update_fields=None, **kwargs):
-    """
-    إرسال إشعار عند رفض عقار
+    إرسال إشعار للمسؤولين عند إضافة عقار جديد بانتظار الموافقة
     """
     try:
-        # التحقق من أن الحالة تغيرت إلى 'rejected'
-        if not created and instance.status == 'rejected' and instance.owner:
-            # إرسال إشعار للمالك
-            Notification.objects.create(
-                recipient=instance.owner,
-                notification_type='rejection',
-                title='تم رفض عقارك',
-                description=f'تم رفض عقار: {instance.name}. السبب: {instance.approval_notes or "لم يتم تحديد السبب"}',
-                related_property=instance,
-                related_user=instance.approved_by
-            )
-    except Exception as e:
-        print(f"Error creating property rejection notification: {str(e)}")
-
-
-@receiver(post_save, sender=Property)
-def create_high_views_notification(sender, instance, created, **kwargs):
-    """
-    إرسال إشعار عند وصول المشاهدات إلى حد معين
-    """
-    try:
-        if not created and instance.owner and instance.views > 0:
-            # إذا وصلت المشاهدات إلى 50, 100, 200, إلخ
-            milestone_views = [50, 100, 200, 500, 1000, 2000]
+        if created and instance.status == 'pending' and instance.owner:
+            # الحصول على جميع المسؤولين (admins و staff)
+            admins = UserProfile.objects.filter(
+                Q(user_type='admin') | Q(user__is_staff=True),
+                user__is_active=True
+            ).exclude(id=instance.owner.id).values_list('user', flat=True)
             
-            for milestone in milestone_views:
-                if instance.views == milestone:
+            # بيانات العقار
+            usage_type_display = dict(Property.USAGE_TYPES).get(instance.usage_type, instance.usage_type)
+            
+            # إنشاء إشعارات للمسؤولين
+            for admin_id in admins:
+                try:
+                    admin_user = User.objects.get(id=admin_id)
+                    admin_profile = admin_user.profile
+                    
                     Notification.objects.create(
-                        recipient=instance.owner,
-                        notification_type='view',
-                        title='مشاهدات عالية',
-                        description=f'عقار "{instance.name}" وصلت مشاهداته إلى {instance.views} مشاهدة 🎉',
-                        related_property=instance
+                        recipient=admin_profile,
+                        notification_type='property',
+                        title='عقار معلق بانتظار الموافقة',
+                        description=f'عقار جديد من {instance.owner.user.username}\n🏠 العقار: {instance.name}\n📍 المنطقة: {instance.area.name}\n💰 السعر: {instance.price} ريال\n🏷️ النوع: {usage_type_display}\n👤 المالك: {instance.owner.user.get_full_name() or instance.owner.user.username}',
+                        related_property=instance,
+                        related_user=instance.owner
                     )
-                    break
+                except Exception as e:
+                    print(f"Error creating notification for admin {admin_id}: {str(e)}")
+            
+            # إنشاء إشعار أيضاً للمالك نفسه
+            try:
+                Notification.objects.create(
+                    recipient=instance.owner,
+                    notification_type='property',
+                    title='عقارك قيد المراجعة',
+                    description=f'تم إضافة عقارك "{instance.name}" بنجاح وهو الآن قيد المراجعة من الفريق الإداري',
+                    related_property=instance
+                )
+            except Exception as e:
+                print(f"Error creating notification for owner: {str(e)}")
+                    
     except Exception as e:
-        print(f"Error creating high views notification: {str(e)}")
+        print(f"Error creating new property notification: {str(e)}")
 
 
 @receiver(post_save, sender=User)

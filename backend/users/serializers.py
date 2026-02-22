@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
-from .models import UserProfile
+from .models import UserProfile, PasswordResetToken
 import re
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -185,6 +185,64 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def validate(self, data):
         """Validate password confirmation."""
+        if data.get('new_password') != data.get('new_password_confirm'):
+            raise serializers.ValidationError(
+                {"new_password": "Passwords do not match."}
+            )
+        return data
+
+
+class RequestPasswordResetSerializer(serializers.Serializer):
+    """
+    Serializer for requesting a password reset token.
+    """
+    email = serializers.EmailField(required=True)
+
+    def validate_email(self, value):
+        """Validate that the email exists."""
+        try:
+            User.objects.get(email=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                "No account found with this email address."
+            )
+        return value
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    """
+    Serializer for resetting password with token.
+    """
+    email = serializers.EmailField(required=True)
+    token = serializers.CharField(required=True, max_length=6)
+    new_password = serializers.CharField(
+        style={'input_type': 'password'},
+        required=True,
+        min_length=8
+    )
+    new_password_confirm = serializers.CharField(
+        style={'input_type': 'password'},
+        required=True
+    )
+
+    def validate_new_password(self, value):
+        """Validate new password format."""
+        if not re.search(r'[A-Z]', value):
+            raise serializers.ValidationError(
+                "Password must contain at least one uppercase letter."
+            )
+        if not re.search(r'[a-z]', value):
+            raise serializers.ValidationError(
+                "Password must contain at least one lowercase letter."
+            )
+        if not re.search(r'[0-9]', value):
+            raise serializers.ValidationError(
+                "Password must contain at least one digit."
+            )
+        return value
+
+    def validate(self, data):
+        """Validate password confirmation and token."""
         if data.get('new_password') != data.get('new_password_confirm'):
             raise serializers.ValidationError(
                 {"new_password": "Passwords do not match."}

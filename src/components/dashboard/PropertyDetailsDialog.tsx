@@ -6,9 +6,17 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Home, DollarSign, Building2, Settings2, MapPin, FileText, Clock, Eye, Users, CheckCircle, XCircle } from "lucide-react";
+import { Home, DollarSign, Building2, Settings2, MapPin, FileText, Clock, Eye, Users, CheckCircle, XCircle, Wind, Coffee, Wifi, Car, Shield, Droplets, Tv, Zap, Droplet, Thermometer, Flame, Filter, UtensilsCrossed, Waves, Dumbbell, Leaf, Refrigerator, Fuel, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 import API from "@/api";
+
+interface Amenity {
+  id: number;
+  name: string;
+  icon: string;
+  description?: string;
+}
 
 interface PropertyDetails {
   id: string;
@@ -47,13 +55,20 @@ interface PropertyDetails {
   approval_notes?: string;
   views?: number;
   visitors?: number;
+  price_unit?: string;
+  is_daily_pricing?: boolean;
+  amenities?: Amenity[];
+  images?: Array<{ id: number; image_url: string; order: number }>;
+  videos?: Array<{ id: number; video_url: string; order: number }>;
 }
 
 interface PropertyDetailsDialogProps {
   property: PropertyDetails | null;
   open: boolean;
+  isClosing?: boolean;
   onOpenChange: (open: boolean) => void;
   onStatusChange?: (propertyId: string, newStatus: string) => void;
+  onPropertyStatusChanged?: (type: 'approve' | 'reject', message: string) => void;
 }
 
 const statusLabels: Record<string, { label: string; class: string }> = {
@@ -63,7 +78,7 @@ const statusLabels: Record<string, { label: string; class: string }> = {
   deleted: { label: "محذوف", class: "bg-gray-100 text-gray-700" },
 };
 
-export function PropertyDetailsDialog({ property, open, onOpenChange, onStatusChange }: PropertyDetailsDialogProps) {
+export function PropertyDetailsDialog({ property, open, isClosing, onOpenChange, onStatusChange, onPropertyStatusChanged }: PropertyDetailsDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -71,7 +86,45 @@ export function PropertyDetailsDialog({ property, open, onOpenChange, onStatusCh
   const [rejectReason, setRejectReason] = useState('');
   const [showApproveForm, setShowApproveForm] = useState(false);
   const [showRejectForm, setShowRejectForm] = useState(false);
-  const [successType, setSuccessType] = useState<'approve' | 'reject' | null>(null);
+  const [successType, setSuccessType] = useState<'approve' | 'reject' | 'update' | null>(null);
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [editingContact, setEditingContact] = useState(false);
+  const [newContactNumber, setNewContactNumber] = useState('');
+  const [contactUpdateError, setContactUpdateError] = useState<string | null>(null);
+  const [contactUpdateSuccess, setContactUpdateSuccess] = useState<string | null>(null);
+
+  // خريطة الأيقونات للمميزات والخدمات
+  const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } = {
+    wind: Wind,
+    coffee: UtensilsCrossed,
+    wifi: Wifi,
+    car: Car,
+    shield: Shield,
+    dooropen: Building2,
+    droplets: Droplets,
+    tv: Tv,
+    sofa: Building2,
+    bath: Droplet,
+    washing: Droplets,
+    microwave: Coffee,
+    fridge: Refrigerator,
+    ac: Wind,
+    heater: Flame,
+    balcony: Building2,
+    garden: Leaf,
+    parking: Car,
+    gym: Dumbbell,
+    pool: Waves,
+    zap: Zap,
+    water_card: Droplets,
+    droplet: Droplet,
+    receipt: FileText,
+    thermometer: Thermometer,
+    filter: Filter,
+    flame: Flame,
+    bottle: Fuel,
+  };
   
   if (!property) return null;
 
@@ -88,17 +141,16 @@ export function PropertyDetailsDialog({ property, open, onOpenChange, onStatusCh
         approval_notes: approveNotes
       });
       
-      setSuccess('تم الموافقة على العقار بنجاح');
-      setSuccessType('approve');
-      onStatusChange?.(property.id, 'approved');
+      // استدعاء callback الأب بدلاً من إظهار رسالة داخل النافذة
+      const message = `تمت الموافقة على "${property.name}" بنجاح`;
+      onPropertyStatusChanged?.('approve', message);
       
-      // إغلاق النافذة بعد 2 ثانية
+      // إغلاق النافذة بعد 1 ثانية (بدون رسالة داخلها)
       setTimeout(() => {
         onOpenChange(false);
         setShowApproveForm(false);
         setApproveNotes('');
-        setSuccessType(null);
-      }, 2000);
+      }, 1000);
     } catch (err) {
       setError('فشل في الموافقة على العقار');
       console.error('Error approving property:', err);
@@ -123,17 +175,16 @@ export function PropertyDetailsDialog({ property, open, onOpenChange, onStatusCh
         approval_notes: rejectReason
       });
       
-      setSuccess('تم رفض العقار بنجاح');
-      setSuccessType('reject');
-      onStatusChange?.(property.id, 'rejected');
+      // استدعاء callback الأب بدلاً من إظهار رسالة داخل النافذة
+      const message = `تم رفض "${property.name}" بنجاح`;
+      onPropertyStatusChanged?.('reject', message);
       
-      // إغلاق النافذة بعد 2 ثانية
+      // إغلاق النافذة بعد 1 ثانية (بدون رسالة داخلها)
       setTimeout(() => {
         onOpenChange(false);
         setShowRejectForm(false);
         setRejectReason('');
-        setSuccessType(null);
-      }, 2000);
+      }, 1000);
     } catch (err) {
       setError('فشل في رفض العقار');
       console.error('Error rejecting property:', err);
@@ -142,9 +193,60 @@ export function PropertyDetailsDialog({ property, open, onOpenChange, onStatusCh
     }
   };
 
+  const handleUpdateContact = async () => {
+    if (!newContactNumber.trim()) {
+      setContactUpdateError('يجب إدخال رقم الاتصال');
+      return;
+    }
+
+    if (!/^[0-9]+$/.test(newContactNumber)) {
+      setContactUpdateError('رقم الاتصال يجب أن يحتوي على أرقام فقط');
+      return;
+    }
+
+    if (newContactNumber.length < 11 || newContactNumber.length > 15) {
+      setContactUpdateError('رقم الاتصال يجب أن يكون بين 11 و 15 رقم');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setContactUpdateError(null);
+      setContactUpdateSuccess(null);
+
+      // استدعاء API لتحديث رقم الاتصال
+      await API.patch(`/properties/${property.id}/`, {
+        contact: newContactNumber
+      });
+
+      setContactUpdateSuccess('✓ تم تحديث رقم الاتصال بنجاح يرجي تحيث الصفحه لرؤية التغييرات');
+      
+      // إغلاق وضع التعديل بعد ثانيتين
+      setTimeout(() => {
+        setEditingContact(false);
+        setNewContactNumber('');
+        setContactUpdateSuccess(null);
+      }, 4000);
+    } catch (err) {
+      setContactUpdateError('✗ فشل في تحديث رقم الاتصال');
+      console.error('Error updating contact:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="max-w-4xl max-h-[95vh] overflow-y-auto"
+        style={{
+          opacity: isClosing ? 0 : 1,
+          transform: isClosing ? 'translate(-50%, -50%) scale(0.95)' : 'translate(-50%, -50%) scale(1)',
+          transition: 'all 0.5s cubic-bezier(0.4, 0, 0.6, 1)',
+          width: '90%',
+          maxWidth: '1000px',
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Home className="h-5 w-5 text-primary" />
@@ -174,7 +276,65 @@ export function PropertyDetailsDialog({ property, open, onOpenChange, onStatusCh
               </div>
               <div className="p-3 rounded-lg bg-slate-100">
                 <span className="text-muted-foreground">رقم الاتصال:</span>
-                <p className="font-medium" dir="ltr">{property.contactNumber}</p>
+                {editingContact ? (
+                  <div className="space-y-2 mt-2">
+                    <input
+                      type="text"
+                      value={newContactNumber}
+                      onChange={(e) => setNewContactNumber(e.target.value)}
+                      placeholder={property.contactNumber}
+                      className={`w-full px-2 py-1 rounded border focus:outline-none focus:ring-2 text-sm transition-colors ${
+                        contactUpdateError
+                          ? 'border-red-300 focus:ring-red-500'
+                          : 'border-primary/30 focus:ring-primary'
+                      }`}
+                      disabled={isSubmitting}
+                      dir="ltr"
+                    />
+                    {contactUpdateError && (
+                      <p className="text-xs text-red-600 font-medium">{contactUpdateError}</p>
+                    )}
+                    {contactUpdateSuccess && (
+                      <p className="text-xs text-green-600 font-medium">{contactUpdateSuccess}</p>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleUpdateContact}
+                        disabled={isSubmitting}
+                        className="flex-1 px-2 py-1.5 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700 transition-colors disabled:opacity-50"
+                      >
+                        حفظ
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingContact(false);
+                          setNewContactNumber('');
+                          setContactUpdateError(null);
+                          setContactUpdateSuccess(null);
+                        }}
+                        disabled={isSubmitting}
+                        className="flex-1 px-2 py-1.5 bg-gray-300 text-gray-700 text-xs font-medium rounded hover:bg-gray-400 transition-colors disabled:opacity-50"
+                      >
+                        إلغاء
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="font-medium" dir="ltr">{property.contactNumber}</p>
+                    <button
+                      onClick={() => {
+                        setEditingContact(true);
+                        setNewContactNumber(property.contactNumber);
+                        setContactUpdateError(null);
+                        setContactUpdateSuccess(null);
+                      }}
+                      className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                    >
+                      تعديل
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -189,7 +349,7 @@ export function PropertyDetailsDialog({ property, open, onOpenChange, onStatusCh
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
               <div className="p-3 rounded-lg bg-slate-100">
-                <span className="text-muted-foreground">السعر الحالي:</span>
+                <span className="text-muted-foreground">السعر الحالي ({property.price_unit || (property.is_daily_pricing ? 'يوم' : 'شهر')}):</span>
                 <p className="font-medium text-primary">{property.currentPrice.toLocaleString()} مصرى</p>
               </div>
               <div className="p-3 rounded-lg bg-slate-100">
@@ -328,6 +488,117 @@ export function PropertyDetailsDialog({ property, open, onOpenChange, onStatusCh
 
           <Separator />
 
+          {/* Images and Videos Section */}
+          <div className="space-y-4">
+            <h4 className="font-semibold flex items-center gap-2 text-primary">
+              📸 الصور والفديوهات
+            </h4>
+
+            {/* Debug: Check if images exist */}
+            {/* Images Section */}
+            {property.images && property.images.length > 0 && (
+              <div className="space-y-2">
+                <h5 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <span>📷</span> الصور ({property.images.length})
+                </h5>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {property.images.map((img, idx) => (
+                      <div
+                        key={img.id}
+                        className="group relative overflow-hidden rounded-lg border border-gray-200 hover:border-primary transition-colors cursor-pointer"
+                        onClick={() => {
+                          setSelectedImageIndex(idx);
+                          setShowImageViewer(true);
+                        }}
+                      >
+                        <img
+                          src={img.image_url}
+                          alt={`صورة ${img.order + 1}`}
+                          className="w-full h-32 object-cover group-hover:scale-110 transition-transform duration-300"
+                          onError={(e) => {
+                            console.error('Error loading image:', img.image_url);
+                            (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23ddd" width="100" height="100"/%3E%3Ctext x="50%25" y="50%25" font-size="14" fill="%23999" text-anchor="middle" dy=".3em"%3EImage Error%3C/text%3E%3C/svg%3E';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                          <span className="text-white text-sm font-medium bg-black/70 px-3 py-1 rounded">
+                            اضغط للعرض
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Videos Section */}
+            {property.videos && property.videos.length > 0 && (
+              <div className="space-y-2">
+                <h5 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <span>🎬</span> الفديوهات ({property.videos.length})
+                </h5>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {property.videos.map((video) => (
+                    <div
+                      key={video.id}
+                      className="group relative overflow-hidden rounded-lg border border-gray-200 bg-black/5"
+                    >
+                      <video
+                        src={video.video_url}
+                        className="w-full h-40 object-cover"
+                        controls
+                        controlsList="nodownload"
+                        onError={(e) => {
+                          console.error('Error loading video:', video.video_url);
+                        }}
+                      />
+                      <div className="absolute top-2 right-2 bg-primary/90 text-white text-xs px-2 py-1 rounded">
+                        فيديو {video.order + 1}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* No Media Message */}
+            {(!property.images || property.images.length === 0) && (!property.videos || property.videos.length === 0) && (
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-200 text-center">
+                <p className="text-gray-600 text-sm">لا توجد صور أو فديوهات</p>
+              </div>
+            )}
+          </div>
+
+          <Separator />
+          {property.amenities && property.amenities.length > 0 && (
+            <>
+              <div className="space-y-3">
+                <h4 className="font-semibold flex items-center gap-2 text-primary">
+                  <Building2 className="h-4 w-4" />
+                  المميزات والخدمات 📋
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {property.amenities.map((amenity) => {
+                    const IconComponent = iconMap[amenity.icon.toLowerCase()] || Wind;
+                    return (
+                      <div
+                        key={amenity.id}
+                        className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                          <IconComponent className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">{amenity.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <Separator />
+            </>
+          )}
+
           {/* Timestamps */}
           <div className="space-y-3">
             <h4 className="font-semibold flex items-center gap-2 text-primary">
@@ -402,34 +673,8 @@ export function PropertyDetailsDialog({ property, open, onOpenChange, onStatusCh
             </div>
           )}
 
-          {success && successType === 'approve' && (
-            <div className="flex flex-col items-center justify-center py-8 px-4">
-              <div className="mb-4 relative">
-                <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center animate-bounce">
-                  <CheckCircle className="h-12 w-12 text-emerald-600" />
-                </div>
-              </div>
-              <h3 className="text-xl font-bold text-emerald-700 mb-2">تم الموافقة بنجاح! ✓</h3>
-              <p className="text-emerald-600 text-sm text-center">{property.name}</p>
-              <p className="text-muted-foreground text-xs mt-2">يتم إغلاق النافذة...</p>
-            </div>
-          )}
-
-          {success && successType === 'reject' && (
-            <div className="flex flex-col items-center justify-center py-8 px-4">
-              <div className="mb-4">
-                <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center animate-bounce">
-                  <XCircle className="h-12 w-12 text-red-600" />
-                </div>
-              </div>
-              <h3 className="text-xl font-bold text-red-700 mb-2">تم الرفض بنجاح</h3>
-              <p className="text-red-600 text-sm text-center">{property.name}</p>
-              <p className="text-muted-foreground text-xs mt-2">يتم إغلاق النافذة...</p>
-            </div>
-          )}
-
           {/* Actions */}
-          {property.status === 'pending' && !success && (
+          {property.status === 'pending' && !error && (
             <div className="space-y-3">
               <h4 className="font-semibold text-primary">الإجراءات</h4>
               
@@ -534,6 +779,75 @@ export function PropertyDetailsDialog({ property, open, onOpenChange, onStatusCh
           )}
         </div>
       </DialogContent>
+
+      {/* Image Viewer Modal */}
+      {showImageViewer && property.images && property.images.length > 0 && (
+        <div className="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4 pointer-events-auto">
+          <div className="relative w-full max-w-4xl h-auto pointer-events-auto">
+            {/* Close Button */}
+            <button
+              onClick={() => setShowImageViewer(false)}
+              className="absolute -top-12 right-0 text-white hover:text-gray-300 active:text-gray-400 transition-colors z-[10000] p-2 cursor-pointer pointer-events-auto touch-none"
+              title="إغلاق"
+            >
+              <X className="h-8 w-8 sm:h-10 sm:w-10" />
+            </button>
+
+            {/* Image Container */}
+            <div className="relative bg-black rounded-lg overflow-hidden w-full pointer-events-auto">
+              <img
+                src={property.images[selectedImageIndex]?.image_url}
+                alt={`صورة ${selectedImageIndex + 1}`}
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  maxHeight: '70vh',
+                  backgroundColor: '#000',
+                  objectFit: 'contain',
+                }}
+                loading="eager"
+              />
+            </div>
+
+            {/* Navigation Buttons */}
+            {property.images.length > 1 && (
+              <>
+                <button
+                  onClick={() =>
+                    setSelectedImageIndex(
+                      selectedImageIndex === 0
+                        ? property.images!.length - 1
+                        : selectedImageIndex - 1
+                    )
+                  }
+                  className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 active:bg-white/50 text-white p-2.5 sm:p-3 rounded-full transition-colors z-[10001] cursor-pointer pointer-events-auto touch-none"
+                  title="السابقة"
+                >
+                  <ChevronLeft className="h-6 w-6 sm:h-7 sm:w-7" />
+                </button>
+                <button
+                  onClick={() =>
+                    setSelectedImageIndex(
+                      selectedImageIndex === property.images!.length - 1
+                        ? 0
+                        : selectedImageIndex + 1
+                    )
+                  }
+                  className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 active:bg-white/50 text-white p-2.5 sm:p-3 rounded-full transition-colors z-[10001] cursor-pointer pointer-events-auto touch-none"
+                  title="التالية"
+                >
+                  <ChevronRight className="h-6 w-6 sm:h-7 sm:w-7" />
+                </button>
+              </>
+            )}
+
+            {/* Image Counter */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 text-white px-4 py-2 rounded-lg text-sm font-medium">
+              {selectedImageIndex + 1} / {property.images.length}
+            </div>
+          </div>
+        </div>
+      )}
     </Dialog>
   );
 }

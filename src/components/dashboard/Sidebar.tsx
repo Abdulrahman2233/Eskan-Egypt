@@ -14,12 +14,14 @@ import {
   DollarSign,
   Bell,
   LogOut,
+  FileText,
 } from "lucide-react";
 
 const navItems = [
   { title: "الرئيسية", icon: LayoutDashboard, path: "/admin/dashboard" },
   { title: "تحليل العقارات", icon: Building2, path: "/admin/properties" },
   { title: "تحليل المستخدمين", icon: Users, path: "/admin/users" },
+  { title: "بيانات العملاء", icon: FileText, path: "/admin/customer-data" },
   { title: "العروض والخصومات", icon: Percent, path: "/admin/offers" },
   { title: "إدارة الأرباح", icon: DollarSign, path: "/admin/profits" },
   { title: "الإشعارات", icon: Bell, path: "/admin/notifications" },

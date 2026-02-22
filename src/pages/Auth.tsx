@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import ForgotPasswordModal from "@/components/ForgotPasswordModal";
 
 const API_BASE = 
   (import.meta.env.VITE_API_BASE_URL || "https://abdo238923.pythonanywhere.com/api").replace('/api', '');
@@ -40,6 +41,7 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -400,6 +402,7 @@ const Auth = () => {
                 <div className="flex justify-end">
                   <button
                     type="button"
+                    onClick={() => setShowForgotModal(true)}
                     className="text-sm text-primary hover:underline"
                   >
                     نسيت كلمة المرور؟
@@ -748,6 +751,18 @@ const Auth = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotModal}
+        onClose={() => setShowForgotModal(false)}
+        onSuccess={() => {
+          setShowForgotModal(false);
+          setIsLogin(true);
+          setLoginUsername("");
+          setLoginPassword("");
+        }}
+      />
     </div>
   );
 };

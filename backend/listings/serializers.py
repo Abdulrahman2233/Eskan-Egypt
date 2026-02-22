@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage, ActivityLog, Transaction, Visitor, PropertyAuditTrail, Notification
+from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage, ActivityLog, Transaction, Visitor, PropertyAuditTrail, Notification, Amenity
 from decimal import Decimal, InvalidOperation
 import logging
 
@@ -33,7 +33,16 @@ class AreaSerializer(serializers.ModelSerializer):
         model = Area
         fields = ('id', 'name', 'property_count')
     def get_property_count(self, obj):
-        return obj.properties.filter(is_deleted=False).count()
+        # عدد العقارات المعتمدة فقط غير المحذوفة
+        return obj.properties.filter(is_deleted=False, status='approved').count()
+
+
+class AmenitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Amenity
+        fields = ('id', 'name', 'icon', 'description', 'is_active')
+        read_only_fields = ('id',)
+
 
 class PropertySerializer(serializers.ModelSerializer):
     images = PropertyImageSerializer(many=True, read_only=True)
@@ -45,12 +54,35 @@ class PropertySerializer(serializers.ModelSerializer):
         allow_null=False,
         required=True
     )
+    amenities = AmenitySerializer(many=True, read_only=True)
+    amenity_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Amenity.objects.all(),
+        many=True,
+        write_only=True,
+        source='amenities',
+        required=False
+    )
     usage_type_ar = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     owner_name = serializers.SerializerMethodField()
     owner_type = serializers.SerializerMethodField()
     approved_by_name = serializers.SerializerMethodField()
     deleted_by_name = serializers.SerializerMethodField()
+    price_unit = serializers.SerializerMethodField()
+    display_price = serializers.SerializerMethodField()
+    is_daily_pricing = serializers.SerializerMethodField()
+    
+    def get_price_unit(self, obj):
+        """الحصول على وحدة السعر (شهري أو يومي)"""
+        return obj.get_price_unit()
+    
+    def get_display_price(self, obj):
+        """الحصول على السعر المناسب للعرض"""
+        return float(obj.get_display_price())
+    
+    def get_is_daily_pricing(self, obj):
+        """التحقق إذا كانت الفئة تستخدم سعر يومي"""
+        return obj.is_daily_pricing_category()
     
     def get_usage_type_ar(self, obj):
         """تحويل usage_type إلى العربية"""
@@ -166,11 +198,14 @@ class PropertySerializer(serializers.ModelSerializer):
     class Meta:
         model = Property
         fields = (
-            'id', 'name', 'area', 'area_data', 'address', 'price', 'original_price', 'discount', 'rooms', 'beds', 'bathrooms',
+            'id', 'name', 'area', 'area_data', 'address', 'price', 'daily_price', 'original_price', 'discount', 'rooms', 'beds', 'bathrooms',
             'size', 'floor', 'furnished', 'usage_type', 'usage_type_ar',
-            'description', 'contact', 'featured',
+            'description', 'contact', 'original_contact', 'featured',
             'latitude', 'longitude',
             'images', 'videos', 'created_at', 'updated_at',
+            'amenities', 'amenity_ids',
+            # حقول جديدة للسعر
+            'price_unit', 'display_price', 'is_daily_pricing',
             # حقول الموافقات
             'owner', 'owner_name', 'owner_type', 'status', 'status_display', 'submitted_at',
             'approved_by', 'approved_by_name', 'approved_at', 'rejected_at', 'approval_notes',
@@ -179,7 +214,7 @@ class PropertySerializer(serializers.ModelSerializer):
             # حقول الحذف المنطقي
             'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name'
         )
-        read_only_fields = ('id', 'created_at', 'updated_at', 'submitted_at', 'approved_by', 'approved_at', 'rejected_at', 'approval_notes', 'status', 'status_display', 'owner', 'owner_name', 'owner_type', 'area_data', 'views', 'visitors', 'visited_ips', 'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name')
+        read_only_fields = ('id', 'created_at', 'updated_at', 'submitted_at', 'approved_by', 'approved_at', 'rejected_at', 'approval_notes', 'status', 'status_display', 'owner', 'owner_name', 'owner_type', 'area_data', 'views', 'visitors', 'visited_ips', 'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name', 'price_unit', 'display_price', 'is_daily_pricing', 'original_contact')
         extra_kwargs = {
             'name': {'required': True},
             'area': {'required': True},
@@ -194,6 +229,17 @@ class PropertySerializer(serializers.ModelSerializer):
             'contact': {'required': True},
             'usage_type': {'required': False},
         }
+
+    def create(self, validated_data):
+        """
+        تسجيل رقم التواصل الأول (original_contact) عند إنشاء العقار
+        هذا الرقم لن يتغير حتى لو غير العميل رقم التواصل الحالي
+        """
+        # حفظ رقم التواصل الأول إذا لم يكن موجوداً
+        if 'contact' in validated_data and not validated_data.get('original_contact'):
+            validated_data['original_contact'] = validated_data['contact']
+        
+        return super().create(validated_data)
 
 
 class OfferSerializer(serializers.ModelSerializer):

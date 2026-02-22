@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     # Local apps
     "users",
     "listings",
+    "earnings",
 ]
 
 # ================== Middleware ==================
@@ -76,12 +77,22 @@ TEMPLATES = [
 WSGI_APPLICATION = "backend_project.wsgi.application"
 
 # ================== Database ==================
+# Smart database selection:
+# - Development (default): SQLite
+# - Production (Railway): PostgreSQL via DATABASE_URL
 DATABASES = {
     "default": dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
         conn_max_age=600,
     )
 }
+
+# Use PostgreSQL if DATABASE_URL is provided (Production on Railway)
+if os.getenv('DATABASE_URL'):
+    DATABASES['default'] = dj_database_url.config(
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 
 # ================== Password Validation ==================
 AUTH_PASSWORD_VALIDATORS = [
@@ -161,15 +172,22 @@ SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 # ================== Email Configuration ==================
-EMAIL_BACKEND = config(
-    "EMAIL_BACKEND",
-    default="django.core.mail.backends.console.EmailBackend"
-)
-EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
-EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
-EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
-EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
-EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+if DEBUG:
+    # Development: Save emails to files for inspection
+    EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+    EMAIL_FILE_PATH = BASE_DIR / "sent_emails"
+else:
+    # Production: Use SMTP
+    EMAIL_BACKEND = config(
+        "EMAIL_BACKEND",
+        default="django.core.mail.backends.smtp.EmailBackend"
+    )
+    EMAIL_HOST = config("EMAIL_HOST", default="smtp.gmail.com")
+    EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+    EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
+    EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+    EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@eskan.com")
 SUPPORT_EMAIL = config("SUPPORT_EMAIL", default="support@eskan.com")
 

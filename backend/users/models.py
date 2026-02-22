@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.core.validators import URLValidator
 from django.utils import timezone
+import secrets
 
 class UserProfile(models.Model):
     """
@@ -71,3 +72,42 @@ class UserProfile(models.Model):
         """Update the last login timestamp."""
         self.last_login_at = timezone.now()
         self.save(update_fields=['last_login_at'])
+
+
+class PasswordResetToken(models.Model):
+    """
+    Model to store password reset tokens.
+    """
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='password_reset_token'
+    )
+    token = models.CharField(
+        max_length=6,
+        unique=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_used = models.BooleanField(default=False)
+    attempts = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Reset token for {self.user.username}"
+
+    @staticmethod
+    def generate_token():
+        """Generate a 6-digit reset token."""
+        return str(secrets.randbelow(1000000)).zfill(6)
+
+    def is_valid(self):
+        """Check if token is still valid (not expired and not used)."""
+        # Token expires after 3 minutes
+        from datetime import timedelta
+        return (
+            not self.is_used and 
+            timezone.now() - self.created_at < timedelta(minutes=3) and
+            self.attempts < 5
+        )

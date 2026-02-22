@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Area, Property, PropertyImage, PropertyVideo, Offer, ContactMessage, ActivityLog, Transaction, PropertyAuditTrail
+from django.utils import timezone
+from django.http import HttpResponseRedirect
+from .models import Area, Amenity, Property, PropertyImage, PropertyVideo, Offer, ContactMessage, ActivityLog, Transaction, PropertyAuditTrail
 
 
 class PropertyImageInline(admin.TabularInline):
@@ -21,7 +23,8 @@ class PropertyAdmin(admin.ModelAdmin):
         'name',
         'get_owner_info',
         'area',
-        'price',
+        'usage_type',
+        'get_display_price',
         'discount',
         'rooms',
         'beds',
@@ -34,10 +37,13 @@ class PropertyAdmin(admin.ModelAdmin):
         'status',
         'featured',
         'furnished',
+        'usage_type',
         'created_at',
         'owner__user_type',
         'is_deleted',  # إضافة فلتر للعقارات المحذوفة
     )
+    # الـ actions المتاحة
+    actions = ['soft_delete_selected', 'delete_selected']
     # inlines = [PropertyImageInline, PropertyVideoInline]  # مخفية من admin
     inlines = [PropertyImageInline, PropertyVideoInline]
     readonly_fields = (
@@ -46,16 +52,38 @@ class PropertyAdmin(admin.ModelAdmin):
         'updated_at',
         'submitted_at',
         'status_badge',
-        'get_owner_preview'
+        'get_owner_preview',
+        'get_display_price',
+        'get_price_unit'
     )
+    
+    filter_horizontal = ('amenities',)
 
     fieldsets = (
         ('معلومات العقار الأساسية', {
             'fields': (
                 'id', 'name', 'area', 'address',
-                'price', 'original_price', 'discount', 'rooms', 'beds', 'bathrooms', 'size', 'floor',
-                'furnished', 'usage_type'
+                'usage_type', 'furnished', 'featured'
             )
+        }),
+        ('السعر والتسعير 💰', {
+            'fields': (
+                'price',
+                'daily_price',
+                'get_display_price',
+                'get_price_unit',
+                'original_price',
+                'discount'
+            ),
+            'description': '<p style="color: #FF6B6B; font-weight: bold;">⚠️ ملاحظة: استخدم <strong>price</strong> للسعر الشهري و <strong>daily_price</strong> للسعر اليومي (المصيفين والحجز اليومي)</p>'
+        }),
+        ('الأبعاد والمساحة', {
+            'fields': (
+                'rooms', 'beds', 'bathrooms', 'size', 'floor'
+            )
+        }),
+        ('المميزات والخدمات', {
+            'fields': ('amenities',)
         }),
         ('الموقع الجغرافي', {
             'fields': (
@@ -64,7 +92,7 @@ class PropertyAdmin(admin.ModelAdmin):
         }),
         ('الوصف والتفاصيل', {
             'fields': (
-                'description', 'contact', 'featured'
+                'description', 'contact'
             )
         }),
         ('معلومات المالك والموافقة', {
@@ -86,6 +114,57 @@ class PropertyAdmin(admin.ModelAdmin):
         if 'is_deleted__exact' not in request.GET:
             qs = qs.filter(is_deleted=False)
         return qs
+
+    def get_display_price(self, obj):
+        """عرض السعر المناسب حسب نوع التصنيف"""
+        # التحقق من عدم وجود بيانات ضرورية
+        if not obj.price or not obj.usage_type:
+            return format_html('<span style="color: #95a5a6;">غير محدد</span>')
+        
+        unit = obj.get_price_unit()
+        price = obj.get_display_price()
+        
+        usage_type_colors = {
+            'students': '#3498db',
+            'families': '#2ecc71',
+            'studio': '#f39c12',
+            'vacation': '#e74c3c',
+            'daily': '#c0392b',
+        }
+        
+        usage_type_display = {
+            'students': '🎓 طلاب',
+            'families': '👨‍👩‍👧‍👦 عائلات',
+            'studio': '🎨 استوديو',
+            'vacation': '🏖️ مصيفين',
+            'daily': '📅 حجز يومي',
+        }
+        
+        color = usage_type_colors.get(obj.usage_type, '#95a5a6')
+        usage_display = usage_type_display.get(obj.usage_type, obj.usage_type)
+        
+        # التحقق من أن price ليست None قبل التنسيق
+        if price is None:
+            price = 0
+        
+        html = f'<div style="font-weight: bold; color: {color};">{price:,.2f} جنيه/{unit}</div>'
+        html += f'<small style="color: #7f8c8d;">{usage_display}</small>'
+        
+        return format_html(html)
+    get_display_price.short_description = "السعر المناسب"
+
+    def get_price_unit(self, obj):
+        """عرض وحدة السعر"""
+        # التحقق من وجود usage_type
+        if not obj.usage_type:
+            return format_html('<span style="background-color: #95a5a6; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px;">-</span>')
+        
+        unit = obj.get_price_unit()
+        if unit == 'يوم':
+            return format_html('<span style="background-color: #e74c3c; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px;">📅 يومي</span>')
+        else:
+            return format_html('<span style="background-color: #2ecc71; color: white; padding: 3px 8px; border-radius: 3px; font-size: 11px;">📆 شهري</span>')
+    get_price_unit.short_description = "نوع السعر"
 
     def get_owner_info(self, obj):
         """عرض معلومات المالك في قائمة العقارات"""
@@ -209,12 +288,54 @@ class PropertyAdmin(admin.ModelAdmin):
         return ip
 
     def get_actions(self, request):
-        """تعطيل delete_selected action لمنع الحذف المجمع"""
+        """تفعيل الحذف المجمع مع حفظ soft delete"""
         actions = super().get_actions(request)
-        # تعطيل الحذف المجمع (bulk delete)
-        if 'delete_selected' in actions:
-            del actions['delete_selected']
+        # تفعيل حذف مجمع آمن
         return actions
+    
+    def soft_delete_selected(self, request, queryset):
+        """حذف ناعم للعناصر المختارة (soft delete) مع تسجيل في PropertyAuditTrail"""
+        from .serializers import PropertySerializer
+        
+        deleted_count = 0
+        
+        for obj in queryset:
+            try:
+                # حفظ البيانات قبل الحذف
+                serializer = PropertySerializer(obj, context={'request': request})
+                property_data_before = serializer.data
+                
+                # تنفيذ soft delete
+                obj.is_deleted = True
+                obj.deleted_at = timezone.now()
+                obj.deleted_by = request.user.profile if hasattr(request.user, 'profile') else None
+                obj.save()
+                
+                # تسجيل العملية في PropertyAuditTrail
+                try:
+                    PropertyAuditTrail.objects.create(
+                        property=obj,
+                        action='delete',
+                        performed_by=request.user.profile if hasattr(request.user, 'profile') else None,
+                        property_data_before=property_data_before,
+                        property_data_after={},
+                        notes=f"تم الحذف المجمع من Django Admin بواسطة {request.user.username}",
+                        ip_address=self._get_client_ip(request)
+                    )
+                except Exception as e:
+                    print(f"خطأ في تسجيل حذف العقار: {str(e)}")
+                
+                deleted_count += 1
+            except Exception as e:
+                self.message_user(request, f"خطأ في حذف العقار: {str(e)}", level='error')
+        
+        self.message_user(
+            request, 
+            f'✅ تم حذف {deleted_count} عقار بنجاح.',
+            level='success'
+        )
+    
+    soft_delete_selected.short_description = "🗑️ حذف العناصر المختارة (حذف ناعم)"
 
 
 @admin.register(Area)
@@ -225,6 +346,27 @@ class AreaAdmin(admin.ModelAdmin):
     def property_count(self, obj):
         return obj.properties.count()
     property_count.short_description = "عدد العقارات"
+
+
+@admin.register(Amenity)
+class AmenityAdmin(admin.ModelAdmin):
+    list_display = ('name', 'icon', 'is_active', 'created_at')
+    list_filter = ('is_active', 'created_at')
+    search_fields = ('name', 'description')
+    ordering = ('name',)
+    readonly_fields = ('created_at', 'updated_at')
+    
+    fieldsets = (
+        ('المعلومات الأساسية', {
+            'fields': ('name', 'icon', 'description')
+        }),
+        ('الحالة', {
+            'fields': ('is_active',)
+        }),
+        ('التواريخ', {
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
 
 
 @admin.register(Offer)
@@ -301,15 +443,16 @@ class ContactMessageAdmin(admin.ModelAdmin):
     list_display = (
         'name',
         'email',
+        'phone',
         'subject',
         'created_at',
     )
     list_filter = ('created_at',)
-    search_fields = ('name', 'email', 'subject', 'message')
+    search_fields = ('name', 'email', 'phone', 'subject', 'message')
     readonly_fields = ('created_at',)
     fieldsets = (
         ('معلومات المرسل', {
-            'fields': ('name', 'email')
+            'fields': ('name', 'email', 'phone')
         }),
         ('الرسالة', {
             'fields': ('subject', 'message')

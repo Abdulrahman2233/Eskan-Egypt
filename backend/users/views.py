@@ -5,14 +5,18 @@ from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
+from django.core.mail import send_mail
+from django.conf import settings
 from .serializers import (
     UserSerializer,
     UserProfileSerializer,
     RegisterSerializer,
     LoginSerializer,
     ChangePasswordSerializer,
+    RequestPasswordResetSerializer,
+    ResetPasswordSerializer,
 )
-from .models import UserProfile
+from .models import UserProfile, PasswordResetToken
 from django.db.models import Q
 from django.utils import timezone
 from datetime import timedelta
@@ -222,4 +226,208 @@ class AuthViewSet(viewsets.ViewSet):
                 'count': len(accounts),
             },
             status=status.HTTP_200_OK
+        )
+
+    # ----------- REQUEST PASSWORD RESET ----------------
+    @action(
+        detail=False,
+        methods=['post'],
+        permission_classes=[AllowAny],
+        url_path='request-password-reset'
+    )
+    def request_password_reset(self, request):
+        """
+        Request a password reset token via email.
+        """
+        serializer = RequestPasswordResetSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data.get('email')
+            try:
+                user = User.objects.get(email=email)
+                
+                # Delete previous reset tokens
+                PasswordResetToken.objects.filter(user=user).delete()
+                
+                # Generate new token
+                token = PasswordResetToken.generate_token()
+                reset_token = PasswordResetToken.objects.create(
+                    user=user,
+                    token=token
+                )
+                
+                # Print token to console for development
+                print(f"\n{'='*60}")
+                print(f"🔑 PASSWORD RESET TOKEN FOR {user.email}")
+                print(f"🔑 الرمز: {token}")
+                print(f"{'='*60}\n")
+                
+                # Send email with token
+                subject = "استعادة كلمة المرور - Eskan"
+                message = f"""
+                مرحبا {user.get_full_name() or user.username},
+                
+                لقد طلبت استعادة كلمة المرور. استخدم الرمز التالي لإعادة تعيين كلمتك:
+                
+                الرمز: {token}
+                
+                ينتهي الرمز بعد 3 دقائق.
+                
+                إذا لم تطلب هذا، يرجى تجاهل هذا البريد.
+                
+                ---
+                Hello {user.get_full_name() or user.username},
+                
+                You requested to reset your password. Use the following code to reset your password:
+                
+                Code: {token}
+                
+                This code expires in 3 minutes.
+                
+                If you didn't request this, please ignore this email.
+                """
+                
+                try:
+                    send_mail(
+                        subject,
+                        message,
+                        settings.DEFAULT_FROM_EMAIL,
+                        [user.email],
+                        fail_silently=False,
+                    )
+                    # In development, include token in response
+                    token_in_response = token if settings.DEBUG else None
+                    return Response(
+                        {
+                            'success': True,
+                            'message': 'تم إرسال رمز إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
+                            'token': token_in_response  # Only in development
+                        },
+                        status=status.HTTP_200_OK
+                    )
+                except Exception as e:
+                    reset_token.delete()
+                    return Response(
+                        {
+                            'success': False,
+                            'error': 'حدث خطأ في إرسال البريد الإلكتروني'
+                        },
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
+            except User.DoesNotExist:
+                # Don't reveal if email exists for security
+                return Response(
+                    {
+                        'success': True,
+                        'message': 'إذا كان البريد الإلكتروني مسجلاً، ستتلقى رمز إعادة تعيين'
+                    },
+                    status=status.HTTP_200_OK
+                )
+        
+        return Response(
+            {'success': False, 'errors': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # ----------- RESET PASSWORD ----------------
+    @action(
+        detail=False,
+        methods=['post'],
+        permission_classes=[AllowAny],
+        url_path='reset-password'
+    )
+    def reset_password(self, request):
+        """
+        Reset password using token.
+        """
+        serializer = ResetPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data.get('email')
+            token = serializer.validated_data.get('token')
+            new_password = serializer.validated_data.get('new_password')
+            
+            try:
+                user = User.objects.get(email=email)
+                
+                # Get reset token
+                try:
+                    reset_token = PasswordResetToken.objects.get(user=user)
+                except PasswordResetToken.DoesNotExist:
+                    return Response(
+                        {
+                            'success': False,
+                            'error': 'لا يوجد طلب استعادة كلمة مرور نشط. الرجاء طلب واحد جديد.'
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Verify token matches exactly
+                if reset_token.token != token:
+                    reset_token.attempts += 1
+                    reset_token.save()
+                    return Response(
+                        {
+                            'success': False,
+                            'error': 'الرمز غير صحيح'
+                        },
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                # Check if token is valid
+                if not reset_token.is_valid():
+                    reset_token.attempts += 1
+                    reset_token.save()
+                    
+                    if reset_token.is_used:
+                        return Response(
+                            {
+                                'success': False,
+                                'error': 'تم استخدام هذا الرمز بالفعل'
+                            },
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    else:
+                        return Response(
+                            {
+                                'success': False,
+                                'error': 'انتهت صلاحية الرمز'
+                            },
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                
+                # Reset password
+                user.set_password(new_password)
+                user.save()
+                
+                # Mark token as used
+                reset_token.is_used = True
+                reset_token.save()
+                
+                return Response(
+                    {
+                        'success': True,
+                        'message': 'تم تغيير كلمة المرور بنجاح'
+                    },
+                    status=status.HTTP_200_OK
+                )
+                
+            except User.DoesNotExist:
+                return Response(
+                    {
+                        'success': False,
+                        'error': 'لم يتم العثور على حساب'
+                    },
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            except PasswordResetToken.DoesNotExist:
+                return Response(
+                    {
+                        'success': False,
+                        'error': 'الرمز غير صحيح'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        return Response(
+            {'success': False, 'errors': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
         )

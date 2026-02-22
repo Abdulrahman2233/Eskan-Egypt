@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import PropertyGallery from "@/components/PropertyGallery";
@@ -14,15 +14,27 @@ import {
   ChevronLeft, Home, Calendar,
   Building2, MessageCircle, CheckCircle2,
   ArrowRight, Shield, Clock, Sparkles,
-  User, Eye, Ruler, Sofa, DoorOpen, Share2, Percent
+  User, Eye, Ruler, Sofa, Share2, Percent, DoorOpen,
+  Wind, Coffee, Wifi, Car, Droplets, Tv, ChevronDown,
+  Zap, Droplet, FileText, Thermometer, Flame,
+  Filter, UtensilsCrossed, Waves, Dumbbell, Leaf,
+  Refrigerator, Fuel
 } from "lucide-react";
 import { fetchProperty } from "@/api";
 import { useErrorHandler } from "@/hooks/use-error-handler";
+
+interface Amenity {
+  id: number;
+  name: string;
+  icon: string;
+  description?: string;
+}
 
 interface Property {
   id: string;
   name: string;
   price: number;
+  daily_price?: number;
   original_price?: number;
   discount?: number;
   address: string;
@@ -34,8 +46,13 @@ interface Property {
   description?: string;
   latitude?: string | number;
   longitude?: string | number;
+  usage_type?: string;
   images?: Array<{ image_url: string }>;
   videos?: Array<{ video_url: string }>;
+  price_unit?: string;
+  display_price?: number;
+  is_daily_pricing?: boolean;
+  amenities?: Amenity[];
   [key: string]: unknown;
 }
 
@@ -47,6 +64,44 @@ const PropertyDetails = () => {
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAllAmenities, setShowAllAmenities] = useState(false);
+
+  // خريطة الأيقونات (احترافية وحديثة)
+  const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } = {
+    wind: Wind,                    // تكييف مركزي
+    coffee: UtensilsCrossed,        // مطبخ مجهز
+    wifi: Wifi,                     // إنترنت فائق
+    car: Car,                       // موقف سيارات
+    shield: Shield,                 // أمن 24 ساعة
+    dooropen: Building2,            // مصعد
+    droplets: Droplets,             // غسالة ملابس
+    tv: Tv,                         // تلفزيون ذكي
+    sofa: Sofa,                     // أثاث
+    bath: Droplet,                  // حمام نظيف
+    washing: Droplets,              // آلة غسيل
+    microwave: Coffee,              // ميكروويف
+    fridge: Refrigerator,           // ثلاجة
+    ac: Wind,                       // مكيف هواء
+    heater: Flame,                  // دفاية
+    balcony: Building2,             // شرفة
+    garden: Leaf,                   // حديقة
+    parking: Car,                   // موقف خاص
+    gym: Dumbbell,                  // صالة رياضية
+    pool: Waves,                    // حمام سباحة
+    zap: Zap,                       // عداد كهرباء كارت
+    water_card: Droplets,           // عداد مياه كارت
+    droplet: Droplet,               // (backup)
+    receipt: FileText,              // عداد كهرباء فاتورة
+    thermometer: Thermometer,       // سخان مياه
+    filter: Filter,                 // فلتر مياه
+    flame: Flame,                   // غاز طبيعي
+    bottle: Fuel,                   // اسطوانة غاز
+  };
+
+  const amenities = property?.amenities || [];
+  const displayedAmenities = showAllAmenities
+    ? amenities
+    : amenities.slice(0, 6);
 
   useEffect(() => {
     const loadProperty = async () => {
@@ -73,17 +128,14 @@ const PropertyDetails = () => {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-background" dir="rtl">
         <Navbar />
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center p-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center"
         >
-          <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">جاري تحميل العقار...</h2>
+          <div className="w-12 h-12 border-3 border-primary/30 border-t-primary rounded-full animate-spin" />
         </motion.div>
       </div>
     );
@@ -94,23 +146,93 @@ const PropertyDetails = () => {
     return (
       <div className="min-h-screen flex flex-col bg-background" dir="rtl">
         <Navbar />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center px-4 py-12 pt-20">
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center p-8"
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full max-w-md"
           >
-            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-              <Home className="h-12 w-12 text-primary" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">العقار غير موجود</h2>
-            <p className="text-muted-foreground mb-6">{error || "عذراً، لم نتمكن من العثور على هذا العقار"}</p>
-            <Button asChild size="lg" className="gap-2">
-              <Link to="/properties">
-                <ArrowRight className="h-4 w-4" />
-                العودة للعقارات
-              </Link>
-            </Button>
+            {/* Main Card */}
+            <Card className="border-0 shadow-none overflow-hidden bg-transparent">
+              <CardContent className="p-8 sm:p-12 text-center space-y-6">
+                {/* Icon with animation */}
+                <motion.div
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 3, repeat: Infinity }}
+                  className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-primary/20 via-primary/10 to-transparent flex items-center justify-center relative"
+                >
+                  <Home className="h-12 w-12 text-primary" />
+                </motion.div>
+
+                {/* Title */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  className="space-y-2"
+                >
+                  <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    العقار غير موجود
+                  </h2>
+                  <p className="text-base text-muted-foreground leading-relaxed">
+                    {error ? error : "للأسف، لم نتمكن من العثور على العقار المطلوب. قد يكون تم حذفه أو قد يكون الرابط غير صحيح"}
+                  </p>
+                </motion.div>
+
+                {/* Divider */}
+                <motion.div
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: 1 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+                  className="h-1 w-16 mx-auto bg-gradient-to-r from-primary/0 via-primary to-primary/0 origin-center"
+                ></motion.div>
+
+                {/* Helpful info */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="bg-muted/20 rounded-lg p-4 space-y-2"
+                >
+                  <p className="text-sm font-medium text-foreground">جرب أحد الخيارات التالية:</p>
+                  <ul className="text-sm text-muted-foreground space-y-1 text-right">
+                    <li>✓ البحث عن عقارات أخرى</li>
+                    <li>✓ العودة لقائمة جميع العقارات</li>
+                    <li>✓ التواصل مع فريق الدعم</li>
+                  </ul>
+                </motion.div>
+
+                {/* Action Buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                  className="space-y-3 pt-2"
+                >
+                  {/* Primary Button */}
+                  <Button asChild size="lg" className="w-full gap-2 group">
+                    <Link to="/properties">
+                      <span>العودة للعقارات</span>
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                    </Link>
+                  </Button>
+
+                  {/* Secondary Button */}
+                  <Button asChild variant="outline" size="lg" className="w-full gap-2">
+                    <Link to="/">
+                      <Home className="h-4 w-4" />
+                      <span>الصفحة الرئيسية</span>
+                    </Link>
+                  </Button>
+                </motion.div>
+
+                {/* Error Code */}
+                <div className="text-xs text-muted-foreground/50 pt-2">
+                  كود الخطأ: 404 | الوقت: {new Date().toLocaleTimeString('ar-EG')}
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
         </div>
         <Footer />
@@ -119,7 +241,7 @@ const PropertyDetails = () => {
   }
 
   const savingsAmount = property.original_price 
-    ? property.original_price - property.price 
+    ? property.original_price - (property.display_price || property.price) 
     : 0;
 
   return (
@@ -251,6 +373,63 @@ const PropertyDetails = () => {
 
               <Separator />
 
+              {/* Amenities Section */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="space-y-4"
+              >
+                <h2 className="text-lg font-bold flex items-center gap-2">
+                  <div className="w-1 h-5 bg-primary rounded-full" />
+                  المميزات والخدمات
+                </h2>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <AnimatePresence>
+                    {displayedAmenities.map((amenity, index) => {
+                      const IconComponent = iconMap[amenity.icon.toLowerCase()] || Wind;
+                      return (
+                        <motion.div
+                          key={amenity.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.05 * index }}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <IconComponent className="h-4 w-4 text-primary" />
+                          </div>
+                          <span className="text-sm font-medium">
+                            {amenity.name}
+                          </span>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+
+                {amenities.length > 6 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setShowAllAmenities(!showAllAmenities)}
+                  >
+                    <span>
+                      {showAllAmenities ? "عرض أقل" : `عرض الكل (${amenities.length})`}
+                    </span>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${
+                        showAllAmenities ? "rotate-180" : ""
+                      }`}
+                    />
+                  </Button>
+                )}
+              </motion.div>
+
+              <Separator />
+
               {/* Location */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -319,14 +498,18 @@ const PropertyDetails = () => {
                     <CardContent className="p-6 space-y-5">
                       {/* Price Display with Discount */}
                       <div className="text-center space-y-3">
-                        <div className="text-sm text-muted-foreground font-medium">الإيجار الشهري</div>
+                        <div className="text-sm text-muted-foreground font-medium">
+                          الإيجار {property.is_daily_pricing ? 'اليومي' : 'الشهري'}
+                        </div>
                         
                         {/* Current Price (Price after discount) */}
                         <div className="flex items-baseline justify-center gap-2">
                           <span className="text-4xl font-bold text-primary">
-                            {property.price.toLocaleString()}
+                            {(property.display_price || property.price).toLocaleString()}
                           </span>
-                          <span className="text-lg text-muted-foreground">جنيه</span>
+                          <span className="text-lg text-muted-foreground">
+                            جنيه/{property.price_unit || (property.is_daily_pricing ? 'يوم' : 'شهر')}
+                          </span>
                         </div>
 
                         {/* Discount Badge with Original Price */}
@@ -472,12 +655,12 @@ const PropertyDetails = () => {
       >
         <div className="flex items-center gap-4">
           <div className="flex-1 min-w-0">
-            <div className="text-xs text-muted-foreground">الإيجار الشهري</div>
+            <div className="text-xs text-muted-foreground">الإيجار {property.is_daily_pricing ? 'اليومي' : 'الشهري'}</div>
             <div className="flex items-baseline gap-1">
               <span className="text-xl font-bold text-primary">
-                {property.price.toLocaleString()}
+                {(property.display_price || property.price).toLocaleString()}
               </span>
-              <span className="text-sm text-muted-foreground">جنيه</span>
+              <span className="text-sm text-muted-foreground">جنيه/{property.price_unit || (property.is_daily_pricing ? 'يوم' : 'شهر')}</span>
             </div>
           </div>
           <div className="flex gap-2">

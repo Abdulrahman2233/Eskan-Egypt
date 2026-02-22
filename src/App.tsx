@@ -28,12 +28,12 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 /* ===== Dashboard Pages (Lazy Loaded) ===== */
 const Dashboard = lazy(() => import("./pages/dashboard/Dashboard"));
 const AddProperty = lazy(() => import("./pages/dashboard/AddProperty"));
-const EditProperty = lazy(() => import("./pages/dashboard/EditProperty"));
 const MyProperties = lazy(() => import("./pages/dashboard/MyProperties"));
 const Settings = lazy(() => import("./pages/dashboard/Settings"));
 const AdminApprovalPanel = lazy(() => import("./pages/dashboard/AdminApprovalPanel"));
 const MyRejectedProperties = lazy(() => import("./pages/dashboard/MyRejectedProperties"));
 const Notes = lazy(() => import("./pages/dashboard/Notes"));
+const Earnings = lazy(() => import("./pages/dashboard/Earnings"));
 
 /* ===== Analytics Pages (Lazy Loaded) ===== */
 const Profits = lazy(() => import("./pages/profits"));
@@ -43,6 +43,7 @@ const AdminUsers = lazy(() => import("./pages/admin/Users"));
 const AdminOffers = lazy(() => import("./pages/admin/Offers"));
 const AdminNotifications = lazy(() => import("./pages/admin/Notifications"));
 const AdminMessages = lazy(() => import("./pages/admin/Messages"));
+const CustomerData = lazy(() => import("./pages/admin/CustomerData"));
 
 /* ===== Protection ===== */
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -93,10 +94,6 @@ const App = () => (
               element={<ProtectedRoute element={<AddProperty />} />}
             />
             <Route
-              path="/dashboard/edit-property/:propertyId"
-              element={<ProtectedRoute element={<EditProperty />} />}
-            />
-            <Route
               path="/dashboard/my-properties"
               element={<ProtectedRoute element={<MyProperties />} />}
             />
@@ -115,6 +112,10 @@ const App = () => (
             <Route
               path="/dashboard/notes"
               element={<ProtectedRoute element={<Notes />} />}
+            />
+            <Route
+              path="/dashboard/earnings"
+              element={<ProtectedRoute element={<Earnings />} />}
             />
 
             {/* Analytics - Removed */}
@@ -149,6 +150,10 @@ const App = () => (
             <Route
               path="/admin/messages"
               element={<ProtectedRoute element={<AdminMessages />} requiredRole="admin" />}
+            />
+            <Route
+              path="/admin/customer-data"
+              element={<ProtectedRoute element={<CustomerData />} requiredRole="admin" />}
             />
 
             {/* 404 */}

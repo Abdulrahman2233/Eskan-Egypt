@@ -11,6 +11,7 @@ from .properties import PropertyViewSet
 # Basic ViewSets
 from .basic import (
     AreaViewSet,
+    AmenityViewSet,
     OfferViewSet,
     ContactMessageViewSet,
 )
@@ -33,6 +34,7 @@ __all__ = [
     'PropertyViewSet',
     # Basic
     'AreaViewSet',
+    'AmenityViewSet',
     'OfferViewSet',
     'ContactMessageViewSet',
     # Analytics

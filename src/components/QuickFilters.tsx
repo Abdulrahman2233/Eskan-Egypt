@@ -1,3 +1,4 @@
+import React from "react";
 import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { Users, Home, Radio, Waves } from "lucide-react";
@@ -46,7 +47,7 @@ const QUICK_FILTER_OPTIONS = [
   },
 ];
 
-export const QuickFilters: React.FC<QuickFiltersProps> = ({
+const QuickFiltersComponent: React.FC<QuickFiltersProps> = ({
   onFilterSelect,
   activeFilter,
 }) => {
@@ -58,27 +59,28 @@ export const QuickFilters: React.FC<QuickFiltersProps> = ({
           const isActive = activeFilter === filter.id;
 
           return (
-            <motion.div
+            <motion.button
               key={filter.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
+              transition={{ delay: index * 0.05, duration: 0.2 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => onFilterSelect(filter.id)}
+              className={`w-full h-auto flex flex-col items-center justify-center gap-1.5 py-3 px-3 rounded-lg transition-all duration-200 font-medium text-xs ${
+                isActive
+                  ? `${filter.activeColor} ${filter.activeTextColor} shadow-md`
+                  : `${filter.inactiveColor} ${filter.textColor}`
+              }`}
             >
-              <Button
-                onClick={() => onFilterSelect(filter.id)}
-                className={`w-full h-auto flex flex-col items-center justify-center gap-1.5 py-3 px-3 rounded-lg transition-all duration-200 font-medium text-xs ${
-                  isActive
-                    ? `${filter.activeColor} ${filter.activeTextColor} shadow-md`
-                    : `${filter.inactiveColor} ${filter.textColor}`
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="text-xs">{filter.label}</span>
-              </Button>
-            </motion.div>
+              <Icon className="h-4 w-4" />
+              <span className="text-xs">{filter.label}</span>
+            </motion.button>
           );
         })}
       </div>
     </div>
   );
 };
+
+export const QuickFilters = React.memo(QuickFiltersComponent);

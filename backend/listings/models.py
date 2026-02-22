@@ -15,7 +15,61 @@ class Area(models.Model):
         return self.name
 
 
+class Amenity(models.Model):
+    """نموذج المميزات والخدمات"""
+    ICON_CHOICES = [
+        ('wind', 'تكييف مركزي'),
+        ('coffee', 'مطبخ مجهز'),
+        ('wifi', 'إنترنت فائق السرعة'),
+        ('car', 'موقف سيارات'),
+        ('shield', 'أمن 24 ساعة'),
+        ('dooropen', 'مصعد'),
+        ('droplets', 'غسالة ملابس'),
+        ('tv', 'تلفزيون ذكي'),
+        ('sofa', 'أثاث'),
+        ('bath', 'حمام نظيف'),
+        ('washing', 'آلة غسيل'),
+        ('microwave', 'ميكروويف'),
+        ('fridge', 'ثلاجة'),
+        ('ac', 'مكيف هواء'),
+        ('heater', 'دفاية'),
+        ('balcony', 'شرفة'),
+        ('garden', 'حديقة'),
+        ('parking', 'موقف سيارات خاص'),
+        ('gym', 'صالة رياضية'),
+        ('pool', 'حمام السباحة'),
+        ('zap', 'عداد كهرباء كارت'),
+        ('water_card', 'عداد مياه كارت'),
+        ('receipt', 'عداد كهرباء فاتورة'),
+        ('thermometer', 'سخان مياه'),
+        ('filter', 'فلتر مياه'),
+        ('flame', 'غاز طبيعي'),
+        ('bottle', 'اسطوانة غاز'),
+    ]
+    
+    name = models.CharField(max_length=100, unique=True, verbose_name='اسم الميزة')
+    icon = models.CharField(
+        max_length=20,
+        choices=ICON_CHOICES,
+        verbose_name='رمز الميزة'
+    )
+    description = models.TextField(blank=True, verbose_name='وصف الميزة')
+    is_active = models.BooleanField(default=True, verbose_name='فعال')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ الإنشاء')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='تاريخ التعديث')
+    
+    class Meta:
+        verbose_name = 'ميزة'
+        verbose_name_plural = 'المميزات'
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+
+
 class Property(models.Model):
+    """نموذج العقارات - يحتوي على معلومات العقار الأساسية والإحصائيات والموافقات"""
+    
     STATUS_CHOICES = [
         ('pending', 'معلق'),
         ('approved', 'موافق عليه'),
@@ -30,56 +84,93 @@ class Property(models.Model):
         ('daily', 'حجز يومي'),
     ]
 
+    # ==================== Basic Information ====================
     id = models.UUIDField(primary_key=True, default=generate_uuid, editable=False)
-    name = models.CharField(max_length=200)
-    area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name='properties')
-    address = models.CharField(max_length=300)
-    price = models.DecimalField(max_digits=12, decimal_places=2)
-    original_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='السعر الأصلي')
-    discount = models.IntegerField(default=0, null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(100)], verbose_name='نسبة الخصم (%)')
-    rooms = models.IntegerField(default=1)
-    beds = models.IntegerField(default=1)
-    bathrooms = models.IntegerField(default=1)
-    size = models.IntegerField()
-    floor = models.IntegerField()
-    furnished = models.BooleanField(default=False)
-    usage_type = models.CharField(max_length=20, choices=USAGE_TYPES, blank=True)
-    description = models.TextField()
+    name = models.CharField(max_length=200, verbose_name='اسم العقار')
+    area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name='properties', verbose_name='المنطقة')
+    address = models.CharField(max_length=300, verbose_name='العنوان')
     contact = models.CharField(
         max_length=15,
+        verbose_name='رقم التواصل',
         validators=[
             MinLengthValidator(11),
             MaxLengthValidator(15),
             RegexValidator(r'^[0-9]+$', 'رقم التواصل يجب أن يحتوي على أرقام فقط')
         ]
     )
-    featured = models.BooleanField(default=False)
+    original_contact = models.CharField(
+        max_length=15,
+        verbose_name='رقم التواصل الأصلي',
+        null=True,
+        blank=True,
+        help_text='رقم التواصل الذي تم إدخاله عند إنشاء العقار (لا يتغير)'
+    )
+    description = models.TextField(verbose_name='الوصف')
     
-    # الإحداثيات الجغرافية
+    # ==================== Physical Characteristics ====================
+    rooms = models.IntegerField(default=1, verbose_name='عدد الغرف')
+    beds = models.IntegerField(default=1, verbose_name='عدد الأسرة')
+    bathrooms = models.IntegerField(default=1, verbose_name='عدد الحمامات')
+    size = models.IntegerField(verbose_name='المساحة (متر مربع)')
+    floor = models.IntegerField(verbose_name='الدور')
+    furnished = models.BooleanField(default=False, verbose_name='مفروش')
+    amenities = models.ManyToManyField(
+        Amenity,
+        blank=True,
+        related_name='properties',
+        verbose_name='المميزات والخدمات'
+    )
+    
+    # ==================== Usage Type & Pricing ====================
+    usage_type = models.CharField(max_length=20, choices=USAGE_TYPES, blank=True, verbose_name='نوع الاستخدام')
+    price = models.DecimalField(max_digits=12, decimal_places=2, verbose_name='السعر الشهري')
+    daily_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='السعر اليومي')
+    original_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True, verbose_name='السعر الأصلي')
+    discount = models.IntegerField(default=0, null=True, blank=True, verbose_name='نسبة الخصم (%)', validators=[MinValueValidator(0), MaxValueValidator(100)])
+    featured = models.BooleanField(default=False, verbose_name='مميز')
+    
+    # ==================== Geographic Information ====================
     latitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True, verbose_name='خط العرض')
     longitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True, verbose_name='خط الطول')
     
-    # المشاهدات والزيارات
+    # ==================== Analytics ====================
     views = models.IntegerField(default=0, verbose_name='عدد المشاهدات')
-    visitors = models.IntegerField(default=0, verbose_name='عدد الزيارات')
-    visited_ips = models.JSONField(default=dict, blank=True, verbose_name='IP Addresses التي زارت العقار')
+    visitors = models.IntegerField(default=0, verbose_name='عدد الزيارات الفريدة')
+    visited_ips = models.JSONField(default=dict, blank=True, verbose_name='عناوين IP التي زارت العقار')
     
-    # Approval Fields
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    owner = models.ForeignKey('users.UserProfile', on_delete=models.CASCADE, null=True, blank=True, related_name='properties')
-    submitted_at = models.DateTimeField(null=True, blank=True)
-    approved_by = models.ForeignKey('users.UserProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_properties')
+    # ==================== Status & Approval Workflow ====================
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name='الحالة')
+    owner = models.ForeignKey('users.UserProfile', on_delete=models.CASCADE, null=True, blank=True, related_name='properties', verbose_name='المالك')
+    submitted_at = models.DateTimeField(null=True, blank=True, verbose_name='تاريخ الإرسال')
+    approved_by = models.ForeignKey('users.UserProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_properties', verbose_name='موافق عليه من')
     approved_at = models.DateTimeField(null=True, blank=True, verbose_name='تاريخ الموافقة')
     rejected_at = models.DateTimeField(null=True, blank=True, verbose_name='تاريخ الرفض')
-    approval_notes = models.TextField(blank=True)
+    approval_notes = models.TextField(blank=True, verbose_name='ملاحظات الموافقة')
     
-    # حقول الحذف المنطقي
-    is_deleted = models.BooleanField(default=False, verbose_name='هل تم الحذف')
+    # ==================== Soft Delete ====================
+    is_deleted = models.BooleanField(default=False, verbose_name='محذوف')
     deleted_at = models.DateTimeField(null=True, blank=True, verbose_name='تاريخ الحذف')
-    deleted_by = models.ForeignKey('users.UserProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='deleted_properties', verbose_name='تم الحذف بواسطة')
+    deleted_by = models.ForeignKey('users.UserProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='deleted_properties', verbose_name='محذوف بواسطة')
     
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # ==================== Timestamps ====================
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='تاريخ الإنشاء')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='تاريخ التحديث')
+
+    def is_daily_pricing_category(self):
+        """التحقق إذا كانت الفئة تستخدم سعر يومي"""
+        return self.usage_type in ['vacation', 'daily']
+
+    def get_display_price(self):
+        """الحصول على السعر المناسب للعرض"""
+        if self.is_daily_pricing_category():
+            return self.daily_price if self.daily_price else self.price
+        return self.price
+
+    def get_price_unit(self):
+        """الحصول على وحدة السعر (شهري أو يومي)"""
+        if self.is_daily_pricing_category():
+            return 'يوم'
+        return 'شهر'
 
     def record_view(self, ip_address):
         """تسجيل مشاهدة جديدة للعقار"""
@@ -419,7 +510,6 @@ class Visitor(models.Model):
             visitor.visit_count += 1
             visitor.user_agent = user_agent  # تحديث بيانات المتصفح
             visitor.device_type = device_type  # تحديث نوع الجهاز
-            visitor.user_agent = user_agent  # تحديث بيانات المتصفح
             visitor.save()
         return visitor
 

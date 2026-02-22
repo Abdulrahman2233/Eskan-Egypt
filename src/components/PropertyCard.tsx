@@ -1,4 +1,5 @@
-import { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
+import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
@@ -8,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 const backendUrl = "https://abdo238923.pythonanywhere.com";
 
-// 🔹 دالة تحويل نوع الاستخدام من الإنجليزية إلى العربية
+// 🔹 Memoized function for usage type conversion
 const getUsageTypeInArabic = (type: string | null | undefined): string => {
   if (!type) return "";
   const typeMapping: Record<string, string> = {
@@ -26,6 +27,7 @@ interface PropertyCardProps {
     id: string;
     name: string;
     price: number;
+    daily_price?: number;
     original_price?: number;
     discount?: number;
     images?: Array<{ image_url: string }>;
@@ -39,6 +41,9 @@ interface PropertyCardProps {
     featured?: boolean;
     furnished?: boolean;
     floor?: number;
+    price_unit?: string;
+    display_price?: number;
+    is_daily_pricing?: boolean;
   };
   variant?: "grid" | "list";
 }
@@ -46,23 +51,42 @@ interface PropertyCardProps {
 export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const isListView = variant === "list";
-  const areaName =
-    typeof property.area_data === "object" && property.area_data !== null
-      ? property.area_data.name
-      : typeof property.area === "object" && property.area !== null
-      ? property.area.name
-      : property.area || "غير محدد";
-  
-  // دالة لاستخراج رابط الصورة الصحيح
-  const getImageUrl = () => {
+
+  // Memoize area name calculation
+  const areaName = useMemo(() => {
+    if (typeof property.area_data === "object" && property.area_data !== null)
+      return property.area_data.name;
+    if (typeof property.area === "object" && property.area !== null)
+      return property.area.name;
+    return property.area || "غير محدد";
+  }, [property.area, property.area_data]);
+
+  // Memoize image URL
+  const imageUrl = useMemo(() => {
     const img = property.images?.[0]?.image_url;
     if (!img) return "/default.jpg";
     if (img.startsWith("http")) return img;
     return `${backendUrl}${img}`;
-  };
+  }, [property.images]);
+
+  // Memoize Arabic usage type
+  const usageTypeAr = useMemo(
+    () => getUsageTypeInArabic(property.usage_type),
+    [property.usage_type]
+  );
+
+  const handleImageLoad = useCallback(() => {
+    setIsImageLoaded(true);
+  }, []);
 
   return (
-    <div className="h-full">
+    <motion.div
+      className="h-full"
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      transition={{ duration: 0.3 }}
+    >
       <Card className={cn(
         "group overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-300 bg-card h-full hover:-translate-y-1",
         isListView && "flex flex-col sm:flex-row"
@@ -78,14 +102,14 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
           )}
           
           <img 
-            src={getImageUrl()}
+            src={imageUrl}
             alt={property.name}
             className={cn(
-              "w-full h-full object-cover transition-all duration-700 group-hover:scale-110",
+              "w-full h-full object-cover transition-transform duration-300 group-hover:scale-105",
               isImageLoaded ? "opacity-100" : "opacity-0"
             )}
             loading="lazy"
-            onLoad={() => setIsImageLoaded(true)}
+            onLoad={handleImageLoad}
           />
           
           {/* Gradient Overlay */}
@@ -119,7 +143,7 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
               {/* Usage Type Badge */}
               {property.usage_type && (
                 <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg px-2.5 py-1 text-xs font-bold rounded-full">
-                  {getUsageTypeInArabic(property.usage_type)}
+                  {usageTypeAr}
                 </Badge>
               )}
             </div>
@@ -154,9 +178,11 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
                     "text-2xl sm:text-3xl font-bold",
                     property.discount ? "text-red-500" : "text-primary"
                   )}>
-                    {property.price?.toLocaleString()}
+                    {(property.display_price || property.price)?.toLocaleString()}
                   </span>
-                  <span className="text-sm text-muted-foreground">جنيه/شهر</span>
+                  <span className="text-sm text-muted-foreground">
+                    جنيه/{property.price_unit || (property.is_daily_pricing ? 'يوم' : 'شهر')}
+                  </span>
                 </div>
               </div>
               
@@ -164,7 +190,7 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
               {property.original_price && property.discount && (
                 <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-2.5 py-1 rounded-lg">
                   <span className="text-xs text-green-600 dark:text-green-400 font-semibold">
-                    وفّر {(property.original_price - property.price).toLocaleString()} جنيه
+                    وفّر {(property.original_price - (property.display_price || property.price)).toLocaleString()} جنيه
                   </span>
                 </div>
               )}
@@ -249,6 +275,12 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
           </div>
         </div>
       </Card>
-    </div>
+    </motion.div>
   );
 };
+
+// Wrap component with React.memo to prevent unnecessary re-renders
+export default React.memo(PropertyCard, (prevProps, nextProps) => {
+  return prevProps.property.id === nextProps.property.id && 
+         prevProps.variant === nextProps.variant;
+});

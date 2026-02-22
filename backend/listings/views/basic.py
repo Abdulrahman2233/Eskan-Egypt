@@ -8,17 +8,57 @@ from rest_framework.permissions import AllowAny, IsAdminUser
 from django.utils import timezone
 from django.db import models
 
-from ..models import Area, Offer, ContactMessage
-from ..serializers import AreaSerializer, OfferSerializer, ContactMessageSerializer
+from ..models import Area, Offer, ContactMessage, Amenity
+from ..serializers import AreaSerializer, OfferSerializer, ContactMessageSerializer, AmenitySerializer
 
 
 class AreaViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet لإدارة عرض المناطق الجغرافية
+    
+    المميزات:
+    - عرض قائمة بجميع المناطق
+    - البحث والفلترة حسب الاسم
+    - Pagination مدمج
+    
+    الأذونات: AllowAny (للعموم)
+    """
     queryset = Area.objects.all()
     serializer_class = AreaSerializer
 
 
+class AmenityViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ViewSet لإدارة عرض المميزات والخدمات
+    
+    المميزات:
+    - عرض قائمة بجميع المميزات النشطة
+    - البحث والفلترة
+    - محسنة للأداء
+    
+    الأذونات: AllowAny (للعموم)
+    """
+    queryset = Amenity.objects.filter(is_active=True)
+    serializer_class = AmenitySerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'description']
+    ordering = ['name']
+
+
 class OfferViewSet(viewsets.ReadOnlyModelViewSet):
-    """عرض العروض النشطة"""
+    """
+    ViewSet لإدارة العروض الترويجية والخصومات
+    
+    المميزات:
+    - عرض العروض النشطة فقط (ضمن التواريخ المحددة)
+    - فلترة العروض حسب الفئة المستهدفة (طلاب، عائلات، الكل)
+    - Endpoints خاصة:
+        - /offers/active/ - جميع العروض النشطة
+        - /offers/by_audience/?audience=students - عروض حسب الفئة
+    
+    الأذونات: AllowAny (للعموم)
+    المراتب: حسب التاريخ أو نسبة الخصم
+    """
     serializer_class = OfferSerializer
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['created_at', 'discount_percentage']
@@ -54,7 +94,21 @@ class OfferViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ContactMessageViewSet(viewsets.ModelViewSet):
-    """إدارة رسائل التواصل"""
+    """
+    ViewSet لإدارة رسائل التواصل من العملاء
+    
+    العمليات المدعومة:
+    - POST /contact-messages/ - إرسال رسالة جديدة (بدون مصادقة)
+    - GET /contact-messages/ - عرض الرسائل (للأدمن فقط)
+    - PATCH /contact-messages/{id}/mark_as_read/ - تحديد الرسالة كمقروءة
+    - PATCH /contact-messages/{id}/mark_as_archived/ - تأرشيف الرسالة
+    - GET /contact-messages/unread/ - جلب الرسائل غير المقروءة
+    
+    البريد الإلكتروني: يتم إرسال بريد تلقائي عند استقبال رسالة
+    الأذونات: 
+    - POST: AllowAny (لأي شخص)
+    - للعمليات الأخرى: IsAdminUser (الأدمن فقط)
+    """
     queryset = ContactMessage.objects.all()
     serializer_class = ContactMessageSerializer
     ordering = ['-created_at']

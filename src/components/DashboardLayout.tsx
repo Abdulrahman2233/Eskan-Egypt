@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   CheckCircle2,
   BookOpen,
+  DollarSign,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
@@ -56,6 +57,12 @@ const menuItems = [
     label: "ملاحظات",
     icon: BookOpen,
     description: "خطة التسويق والعمل",
+  },
+  {
+    path: "/dashboard/earnings",
+    label: "إدارة الأرباح",
+    icon: DollarSign,
+    description: "تتبع صفقاتك وأرباحك",
   },
   {
     path: "/dashboard/settings",

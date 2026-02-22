@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    PropertyViewSet, AreaViewSet, OfferViewSet, ContactMessageViewSet,
+    PropertyViewSet, AreaViewSet, AmenityViewSet, OfferViewSet, ContactMessageViewSet,
     ActivityLogViewSet, DashboardAnalyticsViewSet, TransactionViewSet, VisitorViewSet, NotificationViewSet
 )
 
@@ -10,6 +10,7 @@ app_name = 'listings'
 router = DefaultRouter()
 router.register(r'properties', PropertyViewSet, basename='property')
 router.register(r'areas', AreaViewSet, basename='area')
+router.register(r'amenities', AmenityViewSet, basename='amenity')
 router.register(r'offers', OfferViewSet, basename='offer')
 router.register(r'contact-messages', ContactMessageViewSet, basename='contact-message')
 router.register(r'activity-logs', ActivityLogViewSet, basename='activity-log')

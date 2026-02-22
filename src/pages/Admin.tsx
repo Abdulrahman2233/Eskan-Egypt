@@ -23,6 +23,7 @@ interface Property {
   name: string;
   address: string;
   price: number;
+  daily_price?: number;
   owner: {
     user: {
       first_name: string;
@@ -30,8 +31,12 @@ interface Property {
     };
   };
   status: string;
+  usage_type?: string;
   rooms?: number;
   images?: { image_url: string }[];
+  price_unit?: string;
+  display_price?: number;
+  is_daily_pricing?: boolean;
 }
 
 interface Statistics {
@@ -253,7 +258,7 @@ const Admin = () => {
                           <h3 className="font-semibold text-lg">{property.name}</h3>
                           <p className="text-sm text-muted-foreground">{property.address}</p>
                           <div className="flex gap-4 mt-2 text-sm">
-                            <span>السعر: {property.price.toLocaleString()} ج.م</span>
+                            <span>السعر: {(property.display_price || property.price).toLocaleString()} ج.م/{property.price_unit || (property.is_daily_pricing ? 'يوم' : 'شهر')}</span>
                             {property.rooms && <span>غرف: {property.rooms}</span>}
                           </div>
                           {property.owner?.user && (

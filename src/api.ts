@@ -147,6 +147,31 @@ export async function changePassword(data: {
   }
 }
 
+export async function requestPasswordReset(email: string): Promise<Record<string, unknown>> {
+  try {
+    const response = await API.post("/users/auth/request-password-reset/", { email });
+    return response.data;
+  } catch (error) {
+    handleError(error, "Request Password Reset");
+    throw error;
+  }
+}
+
+export async function resetPassword(data: {
+  email: string;
+  token: string;
+  new_password: string;
+  new_password_confirm: string;
+}): Promise<Record<string, unknown>> {
+  try {
+    const response = await API.post("/users/auth/reset-password/", data);
+    return response.data;
+  } catch (error) {
+    handleError(error, "Reset Password");
+    throw error;
+  }
+}
+
 export async function updateProfile(profileData: Record<string, unknown>): Promise<Record<string, unknown>> {
   try {
     const response = await API.put("/users/auth/me/", profileData);
@@ -262,6 +287,16 @@ export async function fetchAreas() {
     return data;
   } catch (error) {
     console.error("Error fetching areas:", error);
+    throw error;
+  }
+}
+
+export async function fetchAmenities() {
+  try {
+    const { data } = await API.get("/amenities/");
+    return data;
+  } catch (error) {
+    console.error("Error fetching amenities:", error);
     throw error;
   }
 }
