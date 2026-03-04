@@ -1,25 +1,70 @@
-import { Building2, TrendingUp, Eye, Clock } from "lucide-react";
+import { Building2, TrendingUp, Eye, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import API from "@/api";
 
 interface RegionData {
   name: string;
   totalProperties: number;
-  growth: number;
-  views: number;
-  avgSellTime: string;
+  avgPrice: number;
+  totalValue: number;
   color: string;
 }
 
-const regionsData: RegionData[] = [
-  { name: "الرياض", totalProperties: 450, growth: 15, views: 12500, avgSellTime: "18 يوم", color: "from-blue-500 to-cyan-500" },
-  { name: "جدة", totalProperties: 320, growth: 12, views: 8900, avgSellTime: "22 يوم", color: "from-emerald-500 to-teal-500" },
-  { name: "الدمام", totalProperties: 180, growth: 8, views: 4500, avgSellTime: "25 يوم", color: "from-purple-500 to-pink-500" },
-  { name: "مكة", totalProperties: 150, growth: 20, views: 6200, avgSellTime: "15 يوم", color: "from-amber-500 to-orange-500" },
-  { name: "المدينة", totalProperties: 120, growth: 10, views: 3800, avgSellTime: "28 يوم", color: "from-rose-500 to-red-500" },
-  { name: "الخبر", totalProperties: 95, growth: 18, views: 2900, avgSellTime: "20 يوم", color: "from-indigo-500 to-violet-500" },
+const colorPalette = [
+  "from-blue-500 to-cyan-500",
+  "from-emerald-500 to-teal-500",
+  "from-purple-500 to-pink-500",
+  "from-amber-500 to-orange-500",
+  "from-rose-500 to-red-500",
+  "from-indigo-500 to-violet-500",
 ];
 
 export function RegionalAnalysisCards() {
+  const [regions, setRegions] = useState<RegionData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAreaStats = async () => {
+      try {
+        const response = await API.get("/analytics/areas/");
+        const areas = response.data || [];
+        const mapped: RegionData[] = areas.slice(0, 6).map((area: any, index: number) => ({
+          name: area.name,
+          totalProperties: area.property_count || 0,
+          avgPrice: Math.round(area.avg_price || 0),
+          totalValue: Math.round(area.total_value || 0),
+          color: colorPalette[index % colorPalette.length],
+        }));
+        setRegions(mapped);
+      } catch (error) {
+        console.error("Error fetching area stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAreaStats();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="card-glow rounded-xl bg-card p-4 lg:p-6 border border-border">
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
+  if (regions.length === 0) {
+    return (
+      <div className="card-glow rounded-xl bg-card p-4 lg:p-6 border border-border">
+        <h3 className="text-lg font-semibold mb-2">🏢 تحليل العقارات حسب المنطقة</h3>
+        <p className="text-sm text-muted-foreground">لا توجد بيانات متاحة</p>
+      </div>
+    );
+  }
+
   return (
     <div className="card-glow rounded-xl bg-card p-4 lg:p-6 border border-border">
       <div className="mb-4 lg:mb-6">
@@ -28,7 +73,7 @@ export function RegionalAnalysisCards() {
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {regionsData.map((region) => (
+        {regions.map((region) => (
           <div
             key={region.name}
             className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-br from-background to-secondary/30 p-4 hover:shadow-lg transition-all duration-300"
@@ -57,8 +102,8 @@ export function RegionalAnalysisCards() {
                     <TrendingUp className="h-4 w-4 text-emerald-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">النمو</p>
-                    <p className="font-semibold text-sm text-emerald-600">+{region.growth}%</p>
+                    <p className="text-xs text-muted-foreground">متوسط السعر</p>
+                    <p className="font-semibold text-sm text-emerald-600">{region.avgPrice.toLocaleString()} ج.م</p>
                   </div>
                 </div>
                 
@@ -67,18 +112,8 @@ export function RegionalAnalysisCards() {
                     <Eye className="h-4 w-4 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground">المشاهدات</p>
-                    <p className="font-semibold text-sm">{region.views.toLocaleString()}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center">
-                    <Clock className="h-4 w-4 text-amber-600" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">متوسط البيع</p>
-                    <p className="font-semibold text-sm">{region.avgSellTime}</p>
+                    <p className="text-xs text-muted-foreground">إجمالي القيمة</p>
+                    <p className="font-semibold text-sm">{region.totalValue.toLocaleString()} ج.م</p>
                   </div>
                 </div>
               </div>

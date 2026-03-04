@@ -1,5 +1,5 @@
 import { Menu, User, LogOut, ChevronDown, Settings, Home, Building2, BarChart3, ArrowLeft, Users } from "lucide-react";
-import logo from "../assets/logo1.png";
+import Logo from "./Logo";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 
 const Navbar = () => {
@@ -56,22 +56,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link
-            to="/"
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          >
-            <img
-              src={logo}
-              alt="Eskan Egypt Logo"
-              className="h-11 w-8 object-contain"
-            />
-            <div className="flex flex-col">
-              <span className="font-bold text-xl text-primary">
-                Eskan Egypt
-              </span>
-              <span className="text-xs text-muted-foreground">اسكان مصر</span>
-            </div>
-          </Link>
+          <Logo size="md" />
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
@@ -253,4 +238,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default React.memo(Navbar);

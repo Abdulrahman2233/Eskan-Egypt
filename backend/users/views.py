@@ -3,10 +3,12 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.authtoken.models import Token
+from rest_framework.throttling import AnonRateThrottle
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from django.core.mail import send_mail
 from django.conf import settings
+import logging
 from .serializers import (
     UserSerializer,
     UserProfileSerializer,
@@ -21,6 +23,18 @@ from django.db.models import Q
 from django.utils import timezone
 from datetime import timedelta
 
+logger = logging.getLogger(__name__)
+
+
+class AuthRateThrottle(AnonRateThrottle):
+    """Rate limiting for auth endpoints"""
+    rate = '20/minute'
+
+
+class ContactRateThrottle(AnonRateThrottle):
+    """Rate limiting for contact message endpoints"""
+    rate = '3/minute'
+
 class AuthViewSet(viewsets.ViewSet):
     """
     Authentication ViewSet for Register/Login/Logout/Profile/ChangePassword.
@@ -28,7 +42,7 @@ class AuthViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated]
 
     # ----------- REGISTER ----------------
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], throttle_classes=[AuthRateThrottle])
     def register(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -56,14 +70,16 @@ class AuthViewSet(viewsets.ViewSet):
         )
 
     # ----------- LOGIN ----------------
-    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny], throttle_classes=[AuthRateThrottle])
     def login(self, request):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data.get('user')
+            # Prefetch profile in a single query to avoid N+1
+            user = User.objects.select_related('profile').get(pk=user.pk)
             token, _ = Token.objects.get_or_create(user=user)
-            profile = user.profile
-            profile.update_last_login()
+            # Update last login timestamp efficiently
+            UserProfile.objects.filter(user=user).update(last_login_at=timezone.now())
             user_data = UserSerializer(user).data
             return Response(
                 {
@@ -78,6 +94,31 @@ class AuthViewSet(viewsets.ViewSet):
             {'success': False, 'errors': serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+    # ----------- LOGOUT ----------------
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def logout(self, request):
+        """
+        Logout user by deleting their auth token.
+        """
+        try:
+            # حذف التوكن لتسجيل الخروج
+            request.user.auth_token.delete()
+            return Response(
+                {
+                    'success': True,
+                    'message': 'تم تسجيل الخروج بنجاح'
+                },
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {
+                    'success': False,
+                    'error': 'حدث خطأ أثناء تسجيل الخروج'
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     # ----------- CHECK USERNAME ----------------
     @action(
@@ -233,6 +274,7 @@ class AuthViewSet(viewsets.ViewSet):
         detail=False,
         methods=['post'],
         permission_classes=[AllowAny],
+        throttle_classes=[AuthRateThrottle],
         url_path='request-password-reset'
     )
     def request_password_reset(self, request):
@@ -255,11 +297,8 @@ class AuthViewSet(viewsets.ViewSet):
                     token=token
                 )
                 
-                # Print token to console for development
-                print(f"\n{'='*60}")
-                print(f"🔑 PASSWORD RESET TOKEN FOR {user.email}")
-                print(f"🔑 الرمز: {token}")
-                print(f"{'='*60}\n")
+                # Log token generation (never print to stdout)
+                logger.info(f"Password reset token generated for {user.email}")
                 
                 # Send email with token
                 subject = "استعادة كلمة المرور - Eskan"
@@ -294,13 +333,11 @@ class AuthViewSet(viewsets.ViewSet):
                         [user.email],
                         fail_silently=False,
                     )
-                    # In development, include token in response
-                    token_in_response = token if settings.DEBUG else None
+                    # Never include token in response (even in development)
                     return Response(
                         {
                             'success': True,
                             'message': 'تم إرسال رمز إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
-                            'token': token_in_response  # Only in development
                         },
                         status=status.HTTP_200_OK
                     )
@@ -333,6 +370,7 @@ class AuthViewSet(viewsets.ViewSet):
         detail=False,
         methods=['post'],
         permission_classes=[AllowAny],
+        throttle_classes=[AuthRateThrottle],
         url_path='reset-password'
     )
     def reset_password(self, request):

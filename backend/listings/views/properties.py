@@ -1,10 +1,12 @@
 """
 Property ViewSet - جميع عمليات إدارة العقارات
 """
+import logging
+
 from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from django.utils import timezone
 from django.db.models import Q
 from datetime import timedelta
@@ -17,6 +19,8 @@ from ..notifications import (
     send_property_submitted_email,
 )
 from .utils import get_client_ip
+
+logger = logging.getLogger(__name__)
 
 
 class PropertyViewSet(viewsets.ModelViewSet):
@@ -51,6 +55,14 @@ class PropertyViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'address', 'area__name', 'description']
     ordering_fields = ['price', 'created_at', 'size']
     ordering = ['-created_at']
+
+    def get_permissions(self):
+        """تحديد الأذونات حسب الفعل"""
+        if self.action in ['list', 'retrieve', 'featured']:
+            return [AllowAny()]
+        elif self.action in ['pending', 'rejected', 'deleted', 'audit_trail', 'approve', 'reject', 'statistics']:
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         """
@@ -102,7 +114,7 @@ class PropertyViewSet(viewsets.ModelViewSet):
             # فلتر نوع العقار
             prop_type = params.get('propertyType')
             if prop_type:
-                queryset = queryset.filter(type__icontains=prop_type)
+                queryset = queryset.filter(usage_type__icontains=prop_type)
 
             # باقي الفلاتر
             usage_type_mapping = {
@@ -138,7 +150,7 @@ class PropertyViewSet(viewsets.ModelViewSet):
 
             return queryset
         except Exception as e:
-            print(f"Error in get_queryset: {e}")
+            logger.error(f"Error in get_queryset: {e}")
             # في حالة الخطأ، عرض العقارات المُوافق عليها فقط (غير المحذوفة)
             return Property.objects.select_related('area', 'owner', 'approved_by').prefetch_related('images', 'videos').filter(status='approved', is_deleted=False)
 
@@ -169,15 +181,12 @@ class PropertyViewSet(viewsets.ModelViewSet):
             )
 
         # طباعة البيانات المُستقبلة للـ debugging
-        print(f"\n=== CREATE PROPERTY DEBUG ===")
-        print(f"POST Data: {request.data}")
-        print(f"Latitude from POST: {request.data.get('latitude')}")
-        print(f"Longitude from POST: {request.data.get('longitude')}")
-        print(f"=== END DEBUG ===\n")
+        logger.debug(f"CREATE PROPERTY - POST Data: {request.data}")
+        logger.debug(f"Latitude: {request.data.get('latitude')}, Longitude: {request.data.get('longitude')}")
 
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
-            print(f"Validation Errors: {serializer.errors}")
+            logger.warning(f"Validation Errors: {serializer.errors}")
             return Response(
                 {'detail': 'خطأ في البيانات المرسلة', 'errors': serializer.errors},
                 status=status.HTTP_400_BAD_REQUEST
@@ -219,15 +228,18 @@ class PropertyViewSet(viewsets.ModelViewSet):
         
         instance = self.get_object()
         
-        # السماح فقط بتعديل حقول معينة (رقم الاتصال مثلا)
+        # السماح فقط بتعديل حقول معينة مع استخدام serializer للتحقق
         allowed_fields = ['contact', 'name', 'address']
-        for field in allowed_fields:
-            if field in request.data:
-                setattr(instance, field, request.data[field])
+        filtered_data = {k: v for k, v in request.data.items() if k in allowed_fields}
         
-        instance.save()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        serializer = self.get_serializer(instance, data=filtered_data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(
+            {'detail': 'خطأ في البيانات المرسلة', 'errors': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     def partial_update(self, request, *args, **kwargs):
         """التعديل الجزئي للعقار (محدود - الإدمن فقط)"""
@@ -240,15 +252,18 @@ class PropertyViewSet(viewsets.ModelViewSet):
         
         instance = self.get_object()
         
-        # السماح فقط بتعديل حقول معينة
+        # السماح فقط بتعديل حقول معينة مع استخدام serializer للتحقق
         allowed_fields = ['contact', 'name', 'address']
-        for field in allowed_fields:
-            if field in request.data:
-                setattr(instance, field, request.data[field])
+        filtered_data = {k: v for k, v in request.data.items() if k in allowed_fields}
         
-        instance.save()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        serializer = self.get_serializer(instance, data=filtered_data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(
+            {'detail': 'خطأ في البيانات المرسلة', 'errors': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     def destroy(self, request, *args, **kwargs):
         """حذف عقار (حذف منطقي) - يمكن للمالك والإدمن فقط"""
@@ -509,6 +524,45 @@ class PropertyViewSet(viewsets.ModelViewSet):
             'data': serializer.data
         }, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='submit-for-approval')
+    def submit_for_approval(self, request, pk=None):
+        """إرسال عقار للمراجعة - يحول حالة العقار إلى pending"""
+        property_obj = self.get_object()
+        user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+
+        if property_obj.owner != user_profile and not request.user.is_staff:
+            return Response(
+                {'detail': 'ليس لديك صلاحية إرسال هذا العقار'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if property_obj.is_deleted:
+            return Response(
+                {'detail': 'لا يمكن إرسال عقار محذوف'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if property_obj.status == 'approved':
+            return Response(
+                {'detail': 'هذا العقار موافق عليه بالفعل'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        property_obj.status = 'pending'
+        property_obj.submitted_at = timezone.now()
+        property_obj.approved_by = None
+        property_obj.approval_notes = ''
+        property_obj.save()
+
+        # إرسال بريد تأكيد الاستقبال
+        send_property_submitted_email(property_obj)
+
+        serializer = self.get_serializer(property_obj)
+        return Response({
+            'detail': 'تم إرسال العقار للمراجعة بنجاح',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """الحصول على العقارات المميزة"""
@@ -530,6 +584,6 @@ class PropertyViewSet(viewsets.ModelViewSet):
             'pending': Property.objects.filter(status='pending', is_deleted=False).count(),
             'approved': Property.objects.filter(status='approved', is_deleted=False).count(),
             'rejected': Property.objects.filter(status='rejected', is_deleted=False).count(),
-            'draft': Property.objects.filter(status='draft', is_deleted=False).count(),
+            'draft': 0,  # لا يوجد حالة draft في النظام الحالي
         }
         return Response(stats)

@@ -102,30 +102,17 @@ const captureWarning = (message: string, data?: unknown): void => {
 
 /**
  * Send log to backend logging endpoint
+ * Currently disabled - enable when backend logging endpoint is implemented
  */
-const sendToBackend = async (payload: {
+const sendToBackend = async (_payload: {
   level: string;
   message: string;
   error?: string;
   data?: unknown;
 }): Promise<void> => {
-  try {
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-    await fetch(`${apiUrl}/logs/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...payload,
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        url: window.location.href,
-      }),
-    });
-  } catch (_e) {
-    // Silent fail - don't break app if logging fails
-  }
+  // Logging to backend is disabled
+  // To enable, implement /api/logs/ endpoint in backend
+  return;
 };
 
 // Type augmentation for Sentry

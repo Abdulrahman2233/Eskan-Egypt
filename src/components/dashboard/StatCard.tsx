@@ -14,58 +14,80 @@ interface StatCardProps {
 }
 
 export function StatCard({ title, value, change, icon: Icon, color = "blue", loading = false }: StatCardProps) {
-  const colorClasses = {
-    blue: "bg-blue-50 text-blue-600 border-blue-200",
-    green: "bg-green-50 text-green-600 border-green-200",
-    purple: "bg-purple-50 text-purple-600 border-purple-200",
-    orange: "bg-orange-50 text-orange-600 border-orange-200",
-    red: "bg-red-50 text-red-600 border-red-200",
-    cyan: "bg-cyan-50 text-cyan-600 border-cyan-200",
+  const gradientClasses = {
+    blue: "from-blue-500 to-blue-600",
+    green: "from-emerald-500 to-emerald-600",
+    purple: "from-purple-500 to-purple-600",
+    orange: "from-orange-500 to-amber-500",
+    red: "from-red-500 to-red-600",
+    cyan: "from-cyan-500 to-cyan-600",
   };
 
-  const iconClasses = {
-    blue: "bg-blue-100 text-blue-600",
-    green: "bg-green-100 text-green-600",
-    purple: "bg-purple-100 text-purple-600",
-    orange: "bg-orange-100 text-orange-600",
-    red: "bg-red-100 text-red-600",
-    cyan: "bg-cyan-100 text-cyan-600",
+  const glowClasses = {
+    blue: "shadow-blue-500/20",
+    green: "shadow-emerald-500/20",
+    purple: "shadow-purple-500/20",
+    orange: "shadow-orange-500/20",
+    red: "shadow-red-500/20",
+    cyan: "shadow-cyan-500/20",
   };
 
-  const trendClasses = {
-    blue: "text-blue-600",
-    green: "text-green-600",
-    purple: "text-purple-600",
-    orange: "text-orange-600",
-    red: "text-red-600",
-    cyan: "text-cyan-600",
+  const iconBgClasses = {
+    blue: "bg-white/20",
+    green: "bg-white/20",
+    purple: "bg-white/20",
+    orange: "bg-white/20",
+    red: "bg-white/20",
+    cyan: "bg-white/20",
   };
 
   return (
-    <div className={cn("rounded-lg p-6 lg:p-8 bg-white border", colorClasses[color])}>
-      <div className="flex items-start justify-between">
-        <div className="text-left">
-          <p className="text-sm text-gray-600 font-normal">{title}</p>
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-2xl p-5 lg:p-6 bg-gradient-to-br text-white shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5",
+        gradientClasses[color],
+        glowClasses[color]
+      )}
+    >
+      {/* Decorative background circles */}
+      <div className="absolute -top-4 -left-4 h-24 w-24 rounded-full bg-white/10 blur-sm" />
+      <div className="absolute -bottom-6 -right-6 h-32 w-32 rounded-full bg-white/[0.07]" />
+
+      <div className="relative flex items-start justify-between">
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-white/80">{title}</p>
           {loading ? (
-            <div className="h-10 w-24 mt-3 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-9 w-20 mt-1 bg-white/20 rounded-lg animate-pulse" />
           ) : (
-            <p className="text-3xl lg:text-4xl font-bold mt-3 text-gray-900">{value}</p>
+            <p className="text-3xl lg:text-4xl font-extrabold tracking-tight">{value}</p>
           )}
           {change && !loading && (
-            <div className={cn("mt-2 flex items-center gap-1", change.trend === "up" ? trendClasses[color] : "text-red-600")}>
-              {change.trend === "up" ? (
-                <TrendingUp className="h-4 w-4" />
-              ) : (
-                <TrendingDown className="h-4 w-4" />
+            <div
+              className={cn(
+                "mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold",
+                change.trend === "up"
+                  ? "bg-white/20 text-white"
+                  : "bg-red-400/30 text-red-100"
               )}
-              <span className="text-xs lg:text-sm font-medium">
+            >
+              {change.trend === "up" ? (
+                <TrendingUp className="h-3 w-3" />
+              ) : (
+                <TrendingDown className="h-3 w-3" />
+              )}
+              <span>
                 {change.trend === "up" ? "+" : "-"}{change.value}%
               </span>
             </div>
           )}
         </div>
-        <div className={cn("flex h-10 w-10 lg:h-12 lg:w-12 items-center justify-center rounded-xl", iconClasses[color])}>
-          <Icon className="h-5 w-5 lg:h-6 lg:w-6" />
+        <div
+          className={cn(
+            "flex h-12 w-12 lg:h-14 lg:w-14 items-center justify-center rounded-2xl backdrop-blur-sm",
+            iconBgClasses[color]
+          )}
+        >
+          <Icon className="h-6 w-6 lg:h-7 lg:w-7 text-white" />
         </div>
       </div>
     </div>

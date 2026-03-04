@@ -30,7 +30,7 @@ const CustomerData = () => {
       try {
         setLoading(true);
         const { data } = await API.get('/properties/', {
-          params: { limit: 1000 }
+          params: { limit: 100 }
         });
         
         // Handle both single item and list responses

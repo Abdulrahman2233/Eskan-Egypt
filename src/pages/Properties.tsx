@@ -1,80 +1,44 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import React, { useEffect, useState, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { useSearchParams } from "react-router-dom";
-import { API_URL } from "@/config";
-import { fetchProperties } from "@/api";
+import { fetchProperties, fetchAreas } from "@/api";
+import type { ApiArea } from "@/api";
 
 import HeroSection from "@/components/sections/HeroSection";
 import PropertiesGrid from "@/components/sections/PropertiesGrid";
-import CtaSection from "@/components/sections/CtaSection";
 
-// ----------- Simple Interfaces -----------
-interface Area {
-  id: number;
-  name: string;
-}
-
-interface Property {
-  id: string;
-  name: string;
-  address: string;
-  price: number;
-  area?: Area | string;
-  area_data?: Area;
-  rooms?: number;
-  bathrooms?: number;
-  size?: number;
-  type?: string;
-  usage_type?: string;
-  usage_type_ar?: string;
-  furnished?: boolean;
-  floor?: number;
-  featured?: boolean;
-  images: { image_url: string }[];
-}
+// Lazy load below-the-fold section
+const ContactCtaSection = React.lazy(() => import("@/components/sections/ContactCtaSection"));
 
 const Properties: React.FC = () => {
   const [searchParams] = useSearchParams();
   const initialArea = searchParams.get("area") || "";
 
-  const [properties, setProperties] = useState<Property[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [properties, setProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [areasCount, setAreasCount] = useState(0);
+  const [areas, setAreas] = useState<ApiArea[]>([]);
 
-  // Fetch properties
+  // Fetch properties + areas in parallel
   useEffect(() => {
-    const loadProperties = async () => {
+    const loadData = async () => {
       setLoading(true);
       try {
-        const data = await fetchProperties();
-        setProperties(data);
+        const [propertiesData, areasData] = await Promise.all([
+          fetchProperties(),
+          fetchAreas(),
+        ]);
+        setProperties(propertiesData);
+        setAreas(areasData);
       } catch (error) {
-        console.error("Error fetching properties:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadProperties();
-  }, []);
-
-  // Fetch areas count  
-  useEffect(() => {
-    const fetchAreasCount = async () => {
-      try {
-        const response = await axios.get(`${API_URL}/areas/`);
-        const areas = Array.isArray(response.data)
-          ? response.data
-          : response.data.results || [];
-        setAreasCount(areas.length);
-      } catch (error) {
-        console.error("Error fetching areas count:", error);
-      }
-    };
-
-    fetchAreasCount();
+    loadData();
   }, []);
 
   return (
@@ -86,7 +50,7 @@ const Properties: React.FC = () => {
         <HeroSection
           initialArea={initialArea}
           propertiesCount={properties.length}
-          areasCount={areasCount}
+          areasCount={areas.length}
         />
 
         {/* Properties Grid Section */}
@@ -94,10 +58,13 @@ const Properties: React.FC = () => {
           properties={properties}
           initialArea={initialArea}
           loading={loading}
+          areas={areas}
         />
 
-        {/* CTA Section */}
-        <CtaSection />
+        {/* Contact CTA Section */}
+        <Suspense fallback={null}>
+          <ContactCtaSection />
+        </Suspense>
       </main>
 
       <Footer />

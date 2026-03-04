@@ -1,20 +1,17 @@
-import {  Mail, Phone, MapPin, Facebook, Instagram, Linkedin } from "lucide-react";
-import logo from "../assets/logo1.png";
+import { Mail, Phone, MapPin, Facebook, Instagram } from "lucide-react";
+import Logo from "./Logo";
 import { Link } from "react-router-dom";
 
-export const Footer = () => {
+import React from "react";
+
+export const Footer = React.memo(() => {
   return (
     <footer className="bg-card border-t border-border mt-20">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* About */}
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
- <img src={logo} alt="Eskan Egypt Logo" className="h-11 w-8 object-contain" />              <div className="flex flex-col">
-                <span className="font-bold text-lg text-primary">Eskan Egypt</span>
-                <span className="text-xs text-muted-foreground">اسكان مصر</span>
-              </div>
-            </div>
+            <Logo size="sm" linkTo="/" />
             <p className="text-sm text-muted-foreground">
               منصتك الموثوقة للعثور على أفضل العقارات للإيجار في الإسكندرية
             </p>
@@ -110,6 +107,6 @@ export const Footer = () => {
       </div>
     </footer>
   );
-};
+});
 
 export default Footer;

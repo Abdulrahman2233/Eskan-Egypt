@@ -15,14 +15,8 @@ interface AnalyticsData {
   };
 }
 
-const salesImpactData = [
-  { name: "يناير", value: 80000, value2: 95000 },
-  { name: "فبراير", value: 85000, value2: 110000 },
-  { name: "مارس", value: 90000, value2: 125000 },
-  { name: "أبريل", value: 95000, value2: 140000 },
-  { name: "مايو", value: 88000, value2: 135000 },
-  { name: "يونيو", value: 100000, value2: 155000 },
-];
+// بيانات تأثير المبيعات - ستُجلب من API مستقبلاً
+const salesImpactData: { name: string; value: number; value2: number }[] = [];
 
 const Offers = () => {
   const [data, setData] = useState<AnalyticsData | null>(null);

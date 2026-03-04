@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from django.utils import timezone
 from django.db.models import Sum, Count, Avg, Q
 from datetime import datetime, timedelta
+import calendar
 from .models import UserEarning
 from .serializers import UserEarningSerializer, EarningsSummarySerializer
 
@@ -105,12 +106,19 @@ class UserEarningViewSet(viewsets.ModelViewSet):
         الحصول على الأرباح مجمعة حسب نوع العقار
         """
         queryset = self.get_queryset()
-        result = queryset.values('property_type', 'get_property_type_display').annotate(
+        result = queryset.values('property_type').annotate(
             total=Sum('earnings'),
             count=Count('id')
         ).order_by('-total')
         
-        return Response(result)
+        # إضافة اسم العرض لكل نوع
+        type_display_map = dict(UserEarning.PROPERTY_TYPES)
+        data = []
+        for item in result:
+            item['property_type_display'] = type_display_map.get(item['property_type'], item['property_type'])
+            data.append(item)
+        
+        return Response(data)
     
     @action(detail=False, methods=['get'])
     def by_area(self, request):
@@ -133,16 +141,19 @@ class UserEarningViewSet(viewsets.ModelViewSet):
         queryset = self.get_queryset()
         months_data = []
         
+        now = timezone.now()
+        
         for i in range(11, -1, -1):
-            d = timezone.now() - timedelta(days=30*i)
-            month_start = d.replace(day=1, hour=0, minute=0, second=0, microsecond=0).date()
+            # حساب الشهر بدقة باستخدام الحساب على الأشهر والسنوات
+            month = now.month - i
+            year = now.year
+            while month <= 0:
+                month += 12
+                year -= 1
             
-            if i > 0:
-                month_end = (d - timedelta(days=30*(i-1))).replace(
-                    day=1, hour=23, minute=59, second=59, microsecond=999999
-                ).date()
-            else:
-                month_end = timezone.now().date()
+            month_start = timezone.datetime(year, month, 1).date()
+            last_day = calendar.monthrange(year, month)[1]
+            month_end = timezone.datetime(year, month, last_day).date()
             
             month_earnings = queryset.filter(
                 deal_date__gte=month_start,
@@ -150,8 +161,8 @@ class UserEarningViewSet(viewsets.ModelViewSet):
             ).aggregate(Sum('earnings'))['earnings__sum'] or 0
             
             months_data.append({
-                'month': d.strftime('%Y-%m'),
-                'month_ar': d.strftime('%b'),
+                'month': f'{year}-{month:02d}',
+                'month_ar': month_start.strftime('%b'),
                 'earnings': month_earnings
             })
         

@@ -43,7 +43,7 @@ useEffect(() => {
     const loadAccounts = async () => {
       try {
         setLoading(true);
-        const data = await fetchRecentAccounts(1000);
+        const data = await fetchRecentAccounts(50);
         setAccounts(data.accounts || []);
       } catch (err) {
         console.error("Failed to load accounts:", err);

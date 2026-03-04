@@ -173,8 +173,11 @@ class Property(models.Model):
         return 'شهر'
 
     def record_view(self, ip_address):
-        """تسجيل مشاهدة جديدة للعقار"""
-        self.views += 1
+        """تسجيل مشاهدة جديدة للعقار (بشكل atomic)"""
+        from django.db.models import F
+        
+        # تحديث atomic لعداد المشاهدات
+        Property.objects.filter(pk=self.pk).update(views=F('views') + 1)
         
         # تتبع عناوين IP الفريدة للعقار
         if not self.visited_ips:
@@ -183,11 +186,18 @@ class Property(models.Model):
         # إذا كان هذا IP جديداً، زد عداد الزيارات الفريدة
         if ip_address not in self.visited_ips:
             self.visited_ips[ip_address] = 1
-            self.visitors += 1
+            Property.objects.filter(pk=self.pk).update(
+                visitors=F('visitors') + 1,
+                visited_ips=self.visited_ips
+            )
         else:
             self.visited_ips[ip_address] += 1
+            Property.objects.filter(pk=self.pk).update(
+                visited_ips=self.visited_ips
+            )
         
-        self.save()
+        # Refresh from DB
+        self.refresh_from_db()
 
     def __str__(self):
         return self.name

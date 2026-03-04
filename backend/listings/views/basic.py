@@ -5,11 +5,17 @@ from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.throttling import AnonRateThrottle
 from django.utils import timezone
 from django.db import models
 
 from ..models import Area, Offer, ContactMessage, Amenity
 from ..serializers import AreaSerializer, OfferSerializer, ContactMessageSerializer, AmenitySerializer
+
+
+class ContactRateThrottle(AnonRateThrottle):
+    """Rate limiting for contact message submissions"""
+    rate = '3/minute'
 
 
 class AreaViewSet(viewsets.ReadOnlyModelViewSet):
@@ -25,6 +31,18 @@ class AreaViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = Area.objects.all()
     serializer_class = AreaSerializer
+    permission_classes = [AllowAny]
+    pagination_class = None  # لا حاجة للـ Pagination للمناطق
+
+    def get_queryset(self):
+        """Annotate property counts to avoid N+1 queries"""
+        from django.db.models import Count, Q
+        return Area.objects.annotate(
+            annotated_property_count=Count(
+                'properties',
+                filter=Q(properties__is_deleted=False, properties__status='approved')
+            )
+        )
 
 
 class AmenityViewSet(viewsets.ReadOnlyModelViewSet):
@@ -40,6 +58,8 @@ class AmenityViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = Amenity.objects.filter(is_active=True)
     serializer_class = AmenitySerializer
+    permission_classes = [AllowAny]
+    pagination_class = None  # لا حاجة للـ Pagination للمميزات
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'description']
     ordering = ['name']
@@ -63,7 +83,7 @@ class OfferViewSet(viewsets.ReadOnlyModelViewSet):
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['created_at', 'discount_percentage']
     ordering = ['-created_at']
-    permission_classes = []
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         """جلب العروض النشطة"""
@@ -119,6 +139,11 @@ class ContactMessageViewSet(viewsets.ModelViewSet):
             return [AllowAny()]
         else:
             return [IsAdminUser()]
+    def get_throttles(self):
+        """إضافة throttling للإنشاء فقط"""
+        if self.action == 'create':
+            return [ContactRateThrottle()]
+        return []
 
     def create(self, request, *args, **kwargs):
         """إنشاء رسالة تواصل جديدة"""

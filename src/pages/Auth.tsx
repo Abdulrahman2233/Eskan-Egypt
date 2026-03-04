@@ -20,22 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import ForgotPasswordModal from "@/components/ForgotPasswordModal";
-
-const API_BASE = 
-  (import.meta.env.VITE_API_BASE_URL || "https://abdo238923.pythonanywhere.com/api").replace('/api', '');
-
-interface AuthUser {
-  id: string;
-  email: string;
-  username: string;
-  full_name?: string;
-  phone?: string;
-  account_type?: "owner" | "agent" | "agency";
-  is_staff?: boolean;
-  is_superuser?: boolean;
-}
-
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import { loginUser, registerUser, ApiAuthResponse } from "@/api";
+import AuthHeroBackground from "@/components/sections/AuthHeroBackground";
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -94,39 +80,29 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        // Login API call with username and password
-        const response = await fetch(`${API_BASE}/api/users/auth/login/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: loginUsername,
-            password: loginPassword,
-          }),
-        });
-
-        const data = await response.json();
+        // Login API call using Axios API instance
+        const data: ApiAuthResponse = await loginUser(loginUsername, loginPassword);
 
         if (data.success) {
-          localStorage.setItem("access_token", data.token);
-          localStorage.setItem("auth_token", data.token); // For backward compatibility
-          
-          // Save user data with profile information
+          // Save all auth data at once before navigating
           const profile = data.user?.profile || {};
-          const userData: AuthUser = {
+          const userData = {
             id: data.user?.id || "user-1",
             email: data.user?.email || loginUsername,
             username: loginUsername,
-            full_name: profile.full_name || data.user?.full_name || loginUsername,
-            phone: profile.phone_number || "",
-            account_type: profile.user_type || "tenant",
+            full_name: (profile as any)?.full_name || data.user?.full_name || loginUsername,
+            phone: (profile as any)?.phone_number || "",
+            account_type: (profile as any)?.user_type || "tenant",
             is_staff: data.user?.is_staff || false,
             is_superuser: data.user?.is_superuser || false,
           };
+          const userRole = (data.user?.is_superuser || data.user?.is_staff) ? "admin" : "user";
+
+          // Batch all localStorage writes together
+          localStorage.setItem("access_token", data.token!);
+          localStorage.setItem("auth_token", data.token!);
           localStorage.setItem("user", JSON.stringify(userData));
           localStorage.setItem("user_profile", JSON.stringify(profile));
-          
-          // حفظ الدور (role) بناءً على is_staff أو is_superuser
-          const userRole = (data.user?.is_superuser || data.user?.is_staff) ? "admin" : "user";
           localStorage.setItem("user_role", userRole);
 
           toast.success("تم تسجيل الدخول بنجاح!");
@@ -135,55 +111,40 @@ const Auth = () => {
           toast.error(data.error || "فشل تسجيل الدخول");
         }
       } else {
-        // Register API call
+        // Register API call using Axios API instance
         if (formData.password !== formData.passwordConfirm) {
           toast.error("كلمات المرور غير متطابقة");
           setLoading(false);
           return;
         }
 
-        const response = await fetch(`${API_BASE}/api/users/auth/register/`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: formData.username,
-            email: formData.email,
-            password: formData.password,
-            password_confirm: formData.passwordConfirm,
-            first_name: formData.fullName.split(" ")[0] || "",
-            last_name: formData.fullName.split(" ")[1] || "",
-            phone_number: formData.phone,
-            user_type: formData.accountType === "owner" ? "landlord" : (formData.accountType === "agent" ? "agent" : "office"),
-          }),
+        const data: ApiAuthResponse = await registerUser({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          password_confirm: formData.passwordConfirm,
+          first_name: formData.fullName.split(" ")[0] || "",
+          last_name: formData.fullName.split(" ")[1] || "",
+          phone_number: formData.phone,
+          user_type: formData.accountType === "owner" ? "landlord" : (formData.accountType === "agent" ? "agent" : "office"),
         });
-
-        const data = await response.json();
 
         if (data.success) {
           // Auto-login after registration
-          const loginResponse = await fetch(`${API_BASE}/api/users/auth/login/`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              username: formData.username,
-              password: formData.password,
-            }),
-          });
-
-          const loginData = await loginResponse.json();
+          const loginData: ApiAuthResponse = await loginUser(formData.username, formData.password);
           if (loginData.success) {
-            localStorage.setItem("access_token", loginData.token);
-            localStorage.setItem("auth_token", loginData.token); // For backward compatibility
+            localStorage.setItem("access_token", loginData.token!);
+            localStorage.setItem("auth_token", loginData.token!); // For backward compatibility
 
             // Save user data with profile information
             const profile = loginData.user?.profile || {};
-            const userData: AuthUser = {
+            const userData = {
               id: loginData.user?.id || "user-" + Date.now(),
               email: loginData.user?.email || formData.email,
               username: formData.username,
-              full_name: profile.full_name || loginData.user?.full_name || formData.fullName,
-              phone: profile.phone_number || formData.phone,
-              account_type: profile.user_type || formData.accountType,
+              full_name: (profile as any)?.full_name || loginData.user?.full_name || formData.fullName,
+              phone: (profile as any)?.phone_number || formData.phone,
+              account_type: (profile as any)?.user_type || formData.accountType,
               is_staff: loginData.user?.is_staff || false,
               is_superuser: loginData.user?.is_superuser || false,
             };
@@ -226,8 +187,45 @@ const Auth = () => {
         }
       }
     } catch (error: any) {
-      toast.error("خطأ في الاتصال بالخادم");
-      console.error(error);
+      // Extract error message from various error formats
+      let errorMessage = "خطأ في الاتصال بالخادم";
+      
+      if (error?.response?.data) {
+        const data = error.response.data;
+        if (data.error) {
+          errorMessage = data.error;
+        } else if (data.errors) {
+          // Handle validation errors
+          const errors = data.errors;
+          if (errors.non_field_errors) {
+            errorMessage = errors.non_field_errors[0] || "بيانات الدخول غير صحيحة";
+          } else if (errors.username) {
+            errorMessage = errors.username[0];
+          } else if (errors.email) {
+            errorMessage = errors.email[0];
+          } else if (errors.password) {
+            errorMessage = errors.password[0];
+          } else {
+            // Get first error
+            const firstKey = Object.keys(errors)[0];
+            if (firstKey && errors[firstKey]) {
+              errorMessage = Array.isArray(errors[firstKey]) ? errors[firstKey][0] : errors[firstKey];
+            }
+          }
+        } else if (data.message) {
+          errorMessage = data.message;
+        } else if (data.detail) {
+          errorMessage = data.detail;
+        }
+      } else if (error?.userMessage) {
+        // AppError object
+        errorMessage = error.userMessage;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+      console.error("Auth error:", error);
     } finally {
       setLoading(false);
     }
@@ -304,6 +302,7 @@ const Auth = () => {
                   passwordConfirm: "",
                   fullName: "",
                   phone: "",
+                  accountType: "owner",
                 });
               }}
               className={`flex-1 py-3 px-6 rounded-xl text-sm font-medium transition-all duration-300 ${
@@ -692,31 +691,15 @@ const Auth = () => {
       {/* Right Side - Hero Image */}
       <div className="hidden lg:flex flex-1 relative bg-primary">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-primary/80" />
-        <div
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          }}
-        />
+        
+        {/* Animated City Skyline Background */}
+        <AuthHeroBackground />
 
-        <div className="relative z-10 flex flex-col justify-center items-center p-12 text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="mb-8"
-          >
-            <img
-              src={logo}
-              alt="Eskan Egypt Logo"
-              className="h-32 w-auto object-contain"
-            />
-          </motion.div>
-
+        <div className="relative z-10 flex flex-col justify-start items-center p-12 pt-60 text-center w-full">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+            transition={{ delay: 0.3 }}
             className="text-4xl font-bold text-white mb-4"
           >
             ابحث عن منزل أحلامك
@@ -725,30 +708,11 @@ const Auth = () => {
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.4 }}
             className="text-xl text-white/80 max-w-md leading-relaxed"
           >
             منصة Eskan Egypt توفر لك أفضل العقارات في الإسكندرية مع خدمة متميزة وموثوقة
           </motion.p>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="grid grid-cols-3 gap-8 mt-12"
-          >
-            {[
-              { value: "500+", label: "عقار" },
-              { value: "50+", label: "منطقة" },
-              { value: "1000+", label: "عميل سعيد" },
-            ].map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="text-3xl font-bold text-white">{stat.value}</div>
-                <div className="text-white/60 text-sm mt-1">{stat.label}</div>
-              </div>
-            ))}
-          </motion.div>
         </div>
       </div>
 

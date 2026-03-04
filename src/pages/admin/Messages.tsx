@@ -408,9 +408,31 @@ export default function Messages() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-card">
-                      <DropdownMenuItem>تحديد كغير مقروءة</DropdownMenuItem>
-                      <DropdownMenuItem>نقل إلى الأرشيف</DropdownMenuItem>
-                      <DropdownMenuItem>الإبلاغ عن بريد مزعج</DropdownMenuItem>
+                      <DropdownMenuItem onClick={async () => {
+                        try {
+                          await updateContactMessage(selectedMessage.id, { is_read: false });
+                          setMessageList(prev =>
+                            prev.map(msg => msg.id === selectedMessage.id ? { ...msg, isRead: false, is_read: false } : msg)
+                          );
+                          setSelectedMessage({ ...selectedMessage, isRead: false, is_read: false });
+                          toast({ title: "تم بنجاح", description: "تم تحديد الرسالة كغير مقروءة" });
+                        } catch {
+                          toast({ title: "خطأ", description: "حدث خطأ", variant: "destructive" });
+                        }
+                      }}>تحديد كغير مقروءة</DropdownMenuItem>
+                      <DropdownMenuItem onClick={async () => {
+                        try {
+                          await updateContactMessage(selectedMessage.id, { is_archived: true });
+                          setMessageList(prev => prev.filter(msg => msg.id !== selectedMessage.id));
+                          setSelectedMessage(null);
+                          toast({ title: "تم بنجاح", description: "تم نقل الرسالة إلى الأرشيف" });
+                        } catch {
+                          toast({ title: "خطأ", description: "حدث خطأ", variant: "destructive" });
+                        }
+                      }}>نقل إلى الأرشيف</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        deleteMessage(selectedMessage.id);
+                      }}>الإبلاغ عن بريد مزعج</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>

@@ -68,24 +68,24 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate_username(self, value):
         """Validate username format and uniqueness."""
         if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Username already exists.")
+            raise serializers.ValidationError("اسم المستخدم موجود بالفعل")
         if not re.match(r'^[a-zA-Z0-9_.-]+$', value):
             raise serializers.ValidationError(
-                "Username must contain only letters, numbers, and underscores."
+                "اسم المستخدم يجب أن يحتوي على حروف وأرقام وشرطات فقط"
             )
         return value
 
     def validate_email(self, value):
         """Validate email uniqueness."""
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Email already registered.")
+            raise serializers.ValidationError("البريد الإلكتروني مسجل بالفعل")
         return value
 
     def validate(self, data):
         """Validate password fields match."""
         if data.get('password') != data.get('password_confirm'):
             raise serializers.ValidationError(
-                {"password": "Passwords do not match."}
+                {"password": "كلمات المرور غير متطابقة"}
             )
         return data
 
@@ -96,17 +96,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         phone_number = validated_data.pop('phone_number', '')
         password = validated_data.pop('password')
 
-        # Create user using create_user
+        # Create user using create_user (handles password hashing)
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data.get('email', ''),
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
+            password=password,
         )
-
-        # Set password properly (this hashes it)
-        user.set_password(password)
-        user.save()
 
         # Create full_name from first_name and last_name
         full_name = f"{validated_data.get('first_name', '')} {validated_data.get('last_name', '')}".strip()
@@ -139,11 +136,11 @@ class LoginSerializer(serializers.Serializer):
             user = authenticate(username=username, password=password)
             if not user:
                 raise serializers.ValidationError(
-                    "Invalid username or password."
+                    "اسم المستخدم أو كلمة المرور غير صحيحة"
                 )
         else:
             raise serializers.ValidationError(
-                "Username and password are required."
+                "اسم المستخدم وكلمة المرور مطلوبان"
             )
 
         data['user'] = user
@@ -171,15 +168,15 @@ class ChangePasswordSerializer(serializers.Serializer):
         """Validate new password format."""
         if not re.search(r'[A-Z]', value):
             raise serializers.ValidationError(
-                "Password must contain at least one uppercase letter."
+                "كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل"
             )
         if not re.search(r'[a-z]', value):
             raise serializers.ValidationError(
-                "Password must contain at least one lowercase letter."
+                "كلمة المرور يجب أن تحتوي على حرف صغير واحد على الأقل"
             )
         if not re.search(r'[0-9]', value):
             raise serializers.ValidationError(
-                "Password must contain at least one digit."
+                "كلمة المرور يجب أن تحتوي على رقم واحد على الأقل"
             )
         return value
 
@@ -187,7 +184,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         """Validate password confirmation."""
         if data.get('new_password') != data.get('new_password_confirm'):
             raise serializers.ValidationError(
-                {"new_password": "Passwords do not match."}
+                {"new_password": "كلمات المرور غير متطابقة"}
             )
         return data
 
@@ -199,13 +196,7 @@ class RequestPasswordResetSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
 
     def validate_email(self, value):
-        """Validate that the email exists."""
-        try:
-            User.objects.get(email=value)
-        except User.DoesNotExist:
-            raise serializers.ValidationError(
-                "No account found with this email address."
-            )
+        """Validate email format (don't reveal if email exists for security)."""
         return value
 
 
@@ -229,15 +220,15 @@ class ResetPasswordSerializer(serializers.Serializer):
         """Validate new password format."""
         if not re.search(r'[A-Z]', value):
             raise serializers.ValidationError(
-                "Password must contain at least one uppercase letter."
+                "كلمة المرور يجب أن تحتوي على حرف كبير واحد على الأقل"
             )
         if not re.search(r'[a-z]', value):
             raise serializers.ValidationError(
-                "Password must contain at least one lowercase letter."
+                "كلمة المرور يجب أن تحتوي على حرف صغير واحد على الأقل"
             )
         if not re.search(r'[0-9]', value):
             raise serializers.ValidationError(
-                "Password must contain at least one digit."
+                "كلمة المرور يجب أن تحتوي على رقم واحد على الأقل"
             )
         return value
 
@@ -245,6 +236,6 @@ class ResetPasswordSerializer(serializers.Serializer):
         """Validate password confirmation and token."""
         if data.get('new_password') != data.get('new_password_confirm'):
             raise serializers.ValidationError(
-                {"new_password": "Passwords do not match."}
+                {"new_password": "كلمات المرور غير متطابقة"}
             )
         return data

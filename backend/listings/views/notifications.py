@@ -87,15 +87,10 @@ class NotificationViewSet(viewsets.ModelViewSet):
         POST /api/notifications/mark-all-as-read/
         """
         user_profile = request.user.profile
-        unread_notifications = Notification.objects.filter(
+        count = Notification.objects.filter(
             recipient=user_profile,
             is_read=False
-        )
-        
-        count = 0
-        for notification in unread_notifications:
-            notification.mark_as_read()
-            count += 1
+        ).update(is_read=True, read_at=timezone.now())
         
         return Response({
             'detail': f'تم تحديد {count} إشعار كمقروء',

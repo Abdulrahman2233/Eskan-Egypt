@@ -1,14 +1,142 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { handleError, isAuthError } from "@/utils/errorHandler";
 import { logger } from "@/utils/logger";
+import { API_BASE } from "@/config";
 
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://abdo238923.pythonanywhere.com/api";
+export { API_BASE };
+
+// ============ TypeScript Interfaces ============
+export interface ApiUser {
+  id: number | string;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  is_staff: boolean;
+  is_superuser: boolean;
+  profile: ApiUserProfile;
+}
+
+export interface ApiUserProfile {
+  user_type: string;
+  full_name: string;
+  email: string;
+  phone_number: string;
+  date_of_birth: string | null;
+  city: string;
+  is_email_verified: boolean;
+  is_phone_verified: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login_at: string | null;
+}
+
+export interface ApiAuthResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  errors?: Record<string, string[]>;
+  user?: ApiUser;
+  token?: string;
+}
+
+export interface ApiArea {
+  id: number;
+  name: string;
+  property_count: number;
+}
+
+export interface ApiPropertyImage {
+  id: number;
+  image_url: string;
+  order: number;
+}
+
+export interface ApiPropertyVideo {
+  id: number;
+  video_url: string;
+  order: number;
+}
+
+export interface ApiAmenity {
+  id: number;
+  name: string;
+  icon: string;
+  description: string;
+  is_active: boolean;
+}
+
+export interface ApiProperty {
+  id: string;
+  name: string;
+  area: number;
+  area_data: ApiArea | null;
+  address: string;
+  price: number;
+  daily_price: number | null;
+  original_price: number | null;
+  discount: number | null;
+  rooms: number;
+  beds: number;
+  bathrooms: number;
+  size: number;
+  floor: number;
+  furnished: boolean;
+  usage_type: string;
+  usage_type_ar: string;
+  description: string;
+  contact: string;
+  original_contact: string | null;
+  featured: boolean;
+  latitude: string | null;
+  longitude: string | null;
+  images: ApiPropertyImage[];
+  videos: ApiPropertyVideo[];
+  amenities: ApiAmenity[];
+  price_unit: string;
+  display_price: number;
+  is_daily_pricing: boolean;
+  owner_name: string;
+  owner_type: string;
+  status: string;
+  status_display: string;
+  views: number;
+  visitors: number;
+  created_at: string;
+  updated_at: string;
+  [key: string]: unknown;
+}
+
+export interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+export interface ApiContactMessage {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string;
+  message: string;
+  is_read: boolean;
+  is_archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 // Configuration
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // ms
 const REQUEST_TIMEOUT = 30000; // 30 seconds
+const AUTH_TIMEOUT = 15000; // 15 seconds for auth endpoints
 const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504];
+
+// Auth endpoints should not be retried (wrong credentials won't fix on retry)
+const NO_RETRY_URLS = ['/users/auth/login/', '/users/auth/register/'];
 
 // Track retry count per request
 const retryCount = new WeakMap<InternalAxiosRequestConfig, number>();
@@ -31,7 +159,12 @@ const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout
  * Check if request is retryable
  */
 const isRetryable = (error: AxiosError): boolean => {
-  // Don't retry if no response
+  const url = error.config?.url || '';
+
+  // Never retry auth endpoints - wrong credentials won't succeed on retry
+  if (NO_RETRY_URLS.some(authUrl => url.includes(authUrl))) return false;
+
+  // Don't retry if no response (network error) - only retry once for these
   if (!error.response) return true;
 
   // Only retry specific status codes
@@ -133,6 +266,39 @@ API.interceptors.response.use(
 export default API;
 
 // ============ Authentication ============
+export async function loginUser(username: string, password: string): Promise<ApiAuthResponse> {
+  try {
+    const response = await API.post("/users/auth/login/", { username, password }, {
+      timeout: AUTH_TIMEOUT, // Shorter timeout for login
+    });
+    return response.data;
+  } catch (error: any) {
+    // Don't show toast here - let the calling component handle it
+    logger.error("Login error", error);
+    throw error;
+  }
+}
+
+export async function registerUser(data: {
+  username: string;
+  email: string;
+  password: string;
+  password_confirm: string;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  user_type?: string;
+}): Promise<ApiAuthResponse> {
+  try {
+    const response = await API.post("/users/auth/register/", data);
+    return response.data;
+  } catch (error: any) {
+    // Don't show toast here - let the calling component handle it
+    logger.error("Register error", error);
+    throw error;
+  }
+}
+
 export async function changePassword(data: {
   old_password: string;
   new_password: string;
@@ -183,17 +349,28 @@ export async function updateProfile(profileData: Record<string, unknown>): Promi
 }
 
 // ============ Properties ============
-export async function fetchProperties() {
+export async function fetchProperties(): Promise<ApiProperty[]> {
   try {
     const { data } = await API.get("/properties/");
-    return data;
+    // Handle both paginated and non-paginated responses
+    return Array.isArray(data) ? data : (data.results || []);
   } catch (error) {
     console.error("Error fetching properties:", error);
     throw error;
   }
 }
 
-export async function fetchProperty(id: string) {
+export async function fetchFeaturedProperties(): Promise<ApiProperty[]> {
+  try {
+    const { data } = await API.get("/properties/featured/");
+    return Array.isArray(data) ? data : (data.results || []);
+  } catch (error) {
+    console.error("Error fetching featured properties:", error);
+    throw error;
+  }
+}
+
+export async function fetchProperty(id: string): Promise<ApiProperty> {
   try {
     const { data } = await API.get(`/properties/${id}/`);
     return data;
@@ -281,20 +458,20 @@ export async function resubmitRejectedProperty(id: string) {
 }
 
 // ============ Areas ============
-export async function fetchAreas() {
+export async function fetchAreas(): Promise<ApiArea[]> {
   try {
     const { data } = await API.get("/areas/");
-    return data;
+    return Array.isArray(data) ? data : (data.results || []);
   } catch (error) {
     console.error("Error fetching areas:", error);
     throw error;
   }
 }
 
-export async function fetchAmenities() {
+export async function fetchAmenities(): Promise<ApiAmenity[]> {
   try {
     const { data } = await API.get("/amenities/");
-    return data;
+    return Array.isArray(data) ? data : (data.results || []);
   } catch (error) {
     console.error("Error fetching amenities:", error);
     throw error;
@@ -591,7 +768,7 @@ export async function fetchAccountTypes() {
 export async function fetchTransactions(): Promise<any[]> {
   try {
     const { data } = await API.get("/transactions/");
-    return data;
+    return Array.isArray(data) ? data : data.results || [];
   } catch (error) {
     console.error("Error fetching transactions:", error);
     throw error;
@@ -707,6 +884,23 @@ export async function fetchTransactionsByRegion(): Promise<any[]> {
   } catch (error) {
     console.error("Error fetching transactions by region:", error);
     throw error;
+  }
+}
+
+// ============ Auth: Logout ============
+export async function logoutUser(): Promise<any> {
+  try {
+    const { data } = await API.post("/users/auth/logout/", {});
+    // مسح بيانات المستخدم المحلية
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    return data;
+  } catch (error) {
+    // حتى لو فشل الطلب، نمسح البيانات المحلية
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    console.error("Error logging out:", error);
+    return null;
   }
 }
 

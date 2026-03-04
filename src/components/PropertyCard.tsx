@@ -6,8 +6,7 @@ import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { Bed, Bath, Maximize2, MapPin, Tag, Eye, Calendar, ChevronLeft, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const backendUrl = "https://abdo238923.pythonanywhere.com";
+import { BACKEND_URL } from "@/config";
 
 // 🔹 Memoized function for usage type conversion
 const getUsageTypeInArabic = (type: string | null | undefined): string => {
@@ -66,7 +65,7 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
     const img = property.images?.[0]?.image_url;
     if (!img) return "/default.jpg";
     if (img.startsWith("http")) return img;
-    return `${backendUrl}${img}`;
+    return `${BACKEND_URL}${img}`;
   }, [property.images]);
 
   // Memoize Arabic usage type
@@ -84,7 +83,6 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
       className="h-full"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
       transition={{ duration: 0.3 }}
     >
       <Card className={cn(
@@ -104,6 +102,8 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
           <img 
             src={imageUrl}
             alt={property.name}
+            width={400}
+            height={224}
             className={cn(
               "w-full h-full object-cover transition-transform duration-300 group-hover:scale-105",
               isImageLoaded ? "opacity-100" : "opacity-0"
@@ -120,7 +120,7 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
             {/* Right Side: Discount & Featured */}
             <div className="flex flex-col gap-2">
               {/* Discount Badge */}
-              {property.discount && property.discount > 0 && (
+              {property.discount != null && property.discount > 0 && (
                 <div>
                   <Badge className="bg-gradient-to-r from-red-500 to-rose-600 text-white border-0 shadow-lg px-2.5 py-1 text-xs font-bold flex items-center gap-1.5 rounded-full">
                     <Tag className="h-3 w-3" />
@@ -168,7 +168,7 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
             <div className="flex items-start justify-between gap-2">
               <div>
                 {/* Original Price if discount exists */}
-                {property.original_price && property.discount && (
+                {property.original_price && property.discount != null && property.discount > 0 && (
                   <span className="text-sm text-muted-foreground line-through block">
                     {property.original_price.toLocaleString()} جنيه
                   </span>
@@ -176,7 +176,7 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
                 <div className="flex items-baseline gap-1.5">
                   <span className={cn(
                     "text-2xl sm:text-3xl font-bold",
-                    property.discount ? "text-red-500" : "text-primary"
+                    property.discount && property.discount > 0 ? "text-red-500" : "text-primary"
                   )}>
                     {(property.display_price || property.price)?.toLocaleString()}
                   </span>
@@ -187,7 +187,7 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
               </div>
               
               {/* Savings Badge */}
-              {property.original_price && property.discount && (
+              {property.original_price && property.discount != null && property.discount > 0 && (
                 <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-2.5 py-1 rounded-lg">
                   <span className="text-xs text-green-600 dark:text-green-400 font-semibold">
                     وفّر {(property.original_price - (property.display_price || property.price)).toLocaleString()} جنيه
@@ -246,8 +246,8 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
 
           {/* Tags */}
           <div className="flex flex-wrap gap-1.5 mb-4">
-            {property.discount && (
-              <Badge variant="destructive" className="text-xs rounded-full px-2.5 animate-pulse">
+            {property.discount != null && property.discount > 0 && (
+              <Badge variant="destructive" className="text-xs rounded-full px-2.5">
                 عرض خاص
               </Badge>
             )}

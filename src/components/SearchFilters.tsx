@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useState } from "react";
 import { Card, CardContent } from "./ui/card";
 import { Label } from "./ui/label";
 import { Button } from "./ui/button";
@@ -12,12 +11,11 @@ import {
 } from "./ui/select";
 import { Slider } from "./ui/slider";
 import { Search, X, MapPin, Home, DoorOpen, Sofa, Coins } from "lucide-react";
-import { motion } from "framer-motion";
-import { API_URL } from "@/config";
 
 interface SearchFiltersProps {
   onSearch: (filters: Record<string, unknown> | Filters) => void;
   initialArea?: string;
+  areas?: { id: number; name: string }[];
 }
 
 interface Filters {
@@ -37,29 +35,12 @@ const USAGE_TYPES = [
   { value: "daily", label: "حجز يومي" },
 ];
 
-export const SearchFilters = ({ onSearch, initialArea }: SearchFiltersProps) => {
+export const SearchFilters = React.memo(({ onSearch, initialArea, areas = [] }: SearchFiltersProps) => {
   const [area, setArea] = useState(initialArea || "");
   const [priceRange, setPriceRange] = useState([0, 20000]);
   const [rooms, setRooms] = useState("");
   const [usageType, setUsageType] = useState("");   // بدل propertyType
   const [furnished, setFurnished] = useState("");
-  const [areas, setAreas] = useState<{ id: number; name: string }[]>([]);
-  const [loadingAreas, setLoadingAreas] = useState(true);
-
-  // 🔹 جلب المناطق من Django
-  useEffect(() => {
-    axios
-      .get(`${API_URL}/areas/`)
-      .then((res) => {
-        if (Array.isArray(res.data)) {
-          setAreas(res.data);
-        } else if (res.data.results) {
-          setAreas(res.data.results);
-        }
-      })
-      .catch((err) => console.error("❌ خطأ أثناء جلب المناطق:", err))
-      .finally(() => setLoadingAreas(false));
-  }, []);
 
   const handleSearch = () => {
     onSearch({
@@ -101,20 +82,15 @@ export const SearchFilters = ({ onSearch, initialArea }: SearchFiltersProps) => 
               <h3 className="text-lg font-bold">بحث متقدم</h3>
             </div>
             {hasActiveFilters && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleReset}
+                className="text-destructive hover:text-destructive"
               >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleReset}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <X className="h-4 w-4 ml-1" />
-                  مسح الكل
-                </Button>
-              </motion.div>
+                <X className="h-4 w-4 ml-1" />
+                مسح الكل
+              </Button>
             )}
           </div>
 
@@ -126,7 +102,7 @@ export const SearchFilters = ({ onSearch, initialArea }: SearchFiltersProps) => 
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 المنطقة
               </Label>
-              {loadingAreas ? (
+              {areas.length === 0 ? (
                 <div className="h-11 bg-background/50 rounded-md flex items-center justify-center">
                   <p className="text-gray-500 text-sm">جارٍ تحميل المناطق...</p>
                 </div>
@@ -136,17 +112,12 @@ export const SearchFilters = ({ onSearch, initialArea }: SearchFiltersProps) => 
                     <SelectValue placeholder="اختر المنطقة" />
                   </SelectTrigger>
                   <SelectContent>
-                    {areas.length > 0 ? (
-                      areas.map((a) => (
+                    {areas.map((a) => (
                         <SelectItem key={a.id} value={a.name}>
                           {a.name}
                         </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="no-areas" disabled>
-                        لا توجد مناطق متاحة
-                      </SelectItem>
-                    )}
+                      ))}
+
                   </SelectContent>
                 </Select>
               )}
@@ -240,20 +211,15 @@ export const SearchFilters = ({ onSearch, initialArea }: SearchFiltersProps) => 
           </div>
 
           {/* زر البحث */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <Button
+            onClick={handleSearch}
+            className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            <Button
-              onClick={handleSearch}
-              className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
-            >
-              <Search className="h-5 w-5 ml-2" />
-              ابحث الآن
-            </Button>
-          </motion.div>
+            <Search className="h-5 w-5 ml-2" />
+            ابحث الآن
+          </Button>
         </div>
       </CardContent>
     </Card>
   );
-};
+});

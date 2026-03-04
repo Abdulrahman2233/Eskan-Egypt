@@ -68,12 +68,12 @@ const AdminApprovalPanel = () => {
       setLoading(true);
       
       // جلب العقارات بناءً على الحالة
-      const endpoint = `/listings/properties/${activeTab}/`;
+      const endpoint = `/properties/${activeTab}/`;
       const response = await API.get(endpoint);
       setProperties(response.data);
 
       // جلب الإحصائيات
-      const statsResponse = await API.get("/listings/properties/statistics/");
+      const statsResponse = await API.get("/properties/statistics/");
       setStats(statsResponse.data);
     } catch (error: any) {
       toast({
@@ -91,7 +91,7 @@ const AdminApprovalPanel = () => {
       setProcessingId(propertyId);
       const notes = approvalNotes[propertyId] || "";
 
-      await API.post(`/listings/properties/${propertyId}/approve/`, {
+      await API.post(`/properties/${propertyId}/approve/`, {
         approval_notes: notes,
       });
 
@@ -129,7 +129,7 @@ const AdminApprovalPanel = () => {
         return;
       }
 
-      await API.post(`/listings/properties/${propertyId}/reject/`, {
+      await API.post(`/properties/${propertyId}/reject/`, {
         approval_notes: notes,
       });
 

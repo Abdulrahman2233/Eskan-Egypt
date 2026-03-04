@@ -71,29 +71,21 @@ const WhyChooseUsSection: React.FC = () => {
           >
             {/* Geometric Shapes Background */}
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-blue-50 to-cyan-50 p-8 h-[300px] md:h-[400px] flex items-center justify-center">
-              <motion.div
+              <div
                 className="absolute top-0 right-0 w-48 h-48 rounded-full bg-gradient-to-br from-blue-200 to-blue-100 opacity-40"
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 8, repeat: Infinity }}
               />
 
-              <motion.div
+              <div
                 className="absolute bottom-0 left-0 w-40 h-40 rounded-full bg-gradient-to-tr from-cyan-200 to-cyan-100 opacity-30"
-                animate={{ scale: [1, 0.9, 1] }}
-                transition={{ duration: 10, repeat: Infinity, delay: 1 }}
               />
 
               {/* Center Content */}
               <div className="relative z-10 text-center">
-                <motion.div
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ duration: 4, repeat: Infinity }}
-                  className="mb-4"
-                >
+                <div className="mb-4">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-lg">
                     <Home className="h-8 w-8" />
                   </div>
-                </motion.div>
+                </div>
                 <div className="text-center max-w-xs">
                   <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
                     الإسكندرية

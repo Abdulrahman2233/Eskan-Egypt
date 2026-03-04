@@ -50,7 +50,7 @@ const MyRejectedProperties = () => {
   const fetchRejectedProperties = async () => {
     try {
       setLoading(true);
-      const response = await API.get("/listings/properties/rejected_by_me/");
+      const response = await API.get("/properties/rejected_by_me/");
       setRejectedProperties(response.data);
     } catch (error: any) {
       toast({
@@ -66,7 +66,7 @@ const MyRejectedProperties = () => {
   const handleResubmit = async (propertyId: string) => {
     try {
       setResubmittingId(propertyId);
-      await API.post(`/listings/properties/${propertyId}/resubmit/`);
+      await API.post(`/properties/${propertyId}/resubmit/`);
 
       toast({
         title: "نجح",

@@ -34,7 +34,7 @@ class DashboardAnalytics:
             'total': total_properties,
             'approved': approved_properties,
             'pending': pending_properties,
-            'draft': Property.objects.filter(status='draft', is_deleted=False).count(),
+            'draft': 0,  # لا يوجد حالة draft في النظام الحالي,
             'rejected': Property.objects.filter(status='rejected', is_deleted=False).count(),
             'deleted': deleted_properties,
             'total_value': float(total_value),

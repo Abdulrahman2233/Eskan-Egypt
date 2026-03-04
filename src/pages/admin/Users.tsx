@@ -10,14 +10,8 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-const registrationData = [
-  { name: "يناير", value: 120 },
-  { name: "فبراير", value: 150 },
-  { name: "مارس", value: 180 },
-  { name: "أبريل", value: 220 },
-  { name: "مايو", value: 190 },
-  { name: "يونيو", value: 250 },
-];
+// بيانات التسجيلات - ستُجلب من API مستقبلاً
+const registrationData: { name: string; value: number }[] = [];
 
 // سيتم تحديثها بالبيانات الحقيقية من الـ API
 const getAccountTypeData = (byType: Record<string, number> | undefined) => {
@@ -222,7 +216,6 @@ const UsersPage = () => {
         <StatCard 
           title="إجمالي المستخدمين" 
           value={stats?.total?.toString() || "0"} 
-          change={{ value: 12, trend: "up" }} 
           icon={UsersIcon}
           color="blue"
           loading={loading}
@@ -230,7 +223,6 @@ const UsersPage = () => {
         <StatCard 
           title="عدد الملاك" 
           value={ownerCount?.toString() || "0"} 
-          change={{ value: 8, trend: "up" }} 
           icon={Home}
           color="green"
           loading={loading}
@@ -238,7 +230,6 @@ const UsersPage = () => {
         <StatCard 
           title="عدد الوسطاء" 
           value={brokerCount?.toString() || "0"} 
-          change={{ value: 15, trend: "up" }} 
           icon={Users2}
           color="purple"
           loading={loading}
@@ -246,7 +237,6 @@ const UsersPage = () => {
         <StatCard 
           title="عدد المكاتب" 
           value={officeCount?.toString() || "0"} 
-          change={{ value: 5, trend: "up" }} 
           icon={Building2}
           color="orange"
           loading={loading}

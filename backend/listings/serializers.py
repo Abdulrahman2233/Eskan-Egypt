@@ -33,7 +33,9 @@ class AreaSerializer(serializers.ModelSerializer):
         model = Area
         fields = ('id', 'name', 'property_count')
     def get_property_count(self, obj):
-        # عدد العقارات المعتمدة فقط غير المحذوفة
+        # استخدام القيمة المحسوبة مسبقاً بالـ annotate إذا وجدت، وإلا fallback للاستعلام المباشر
+        if hasattr(obj, 'annotated_property_count'):
+            return obj.annotated_property_count
         return obj.properties.filter(is_deleted=False, status='approved').count()
 
 

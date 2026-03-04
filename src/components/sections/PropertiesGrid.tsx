@@ -56,6 +56,7 @@ interface PropertiesGridProps {
   initialArea: string;
   onFiltersChange?: (count: number) => void;
   loading?: boolean;
+  areas?: { id: number; name: string }[];
 }
 
 const USAGE_TYPE_LABELS: { [key: string]: string } = {
@@ -86,11 +87,13 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
   initialArea,
   onFiltersChange,
   loading = false,
+  areas = [],
 }) => {
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
   const [activeFilters, setActiveFilters] = React.useState(0);
   const [displayCount, setDisplayCount] = React.useState(6);
+  const [filterVersion, setFilterVersion] = React.useState(0);
   const [activeQuickFilter, setActiveQuickFilter] = React.useState<
     string | null
   >(null);
@@ -197,15 +200,17 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
     onFiltersChange?.(filterCount);
   }, [filterCount, onFiltersChange]);
 
-  const handleSearch = useCallback((filters: Filters) => {
-    if (!filters.area) {
+  const handleSearch = useCallback((filters: Record<string, unknown> | Filters) => {
+    const f = filters as Filters;
+    if (!f.area) {
       setAreaError("من فضلك اختر المنطقة أولاً");
       setCurrentFilters(null);
       return;
     }
 
     setAreaError(null);
-    setCurrentFilters(filters);
+    setCurrentFilters(f);
+    setFilterVersion(v => v + 1);
     setIsFilterOpen(false);
     setDisplayCount(6); // Reset pagination
   }, []);
@@ -304,8 +309,9 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
               </SheetHeader>
               <div className="mt-6">
                 <SearchFilters
-                  onSearch={(filters) => handleSearch(filters as Filters)}
+                  onSearch={handleSearch}
                   initialArea={initialArea}
+                  areas={areas}
                 />
               </div>
               {areaError && (
@@ -348,8 +354,9 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
         >
           <div className="sticky top-24">
             <SearchFilters
-              onSearch={(filters) => handleSearch(filters as Filters)}
+              onSearch={handleSearch}
               initialArea={initialArea}
+              areas={areas}
             />
           </div>
         </motion.aside>
@@ -371,10 +378,11 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
               {displayedProperties.length > 0 ? (
                 <AnimatePresence mode="wait">
                   <motion.div
-                    key={JSON.stringify(currentFilters)}
+                    key={filterVersion}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
                     className={`grid gap-4 sm:gap-6 ${
                       viewMode === "grid"
                         ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"

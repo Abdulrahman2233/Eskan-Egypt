@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, GraduationCap, Sparkles, Clock, BadgePercent, ArrowLeft, Gift, Star } from "lucide-react";
+import { X, GraduationCap, Sparkles, Clock, BadgePercent, ArrowLeft, Gift, Star, Percent, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { API_BASE } from "@/config";
 
 interface OfferData {
   id: number;
@@ -25,9 +26,7 @@ const OfferModal = () => {
     // جلب البيانات من API
     const fetchOffer = async () => {
       try {
-        // استخدام المسار الكامل للـ API
-        const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
-        const response = await fetch(`${apiBase}/offers/active/`);
+        const response = await fetch(`${API_BASE}/offers/active/`);
         if (response.ok) {
           const data = await response.json();
           // أخذ أول عرض نشط
@@ -85,14 +84,14 @@ const OfferModal = () => {
   const getIcon = () => {
     switch (offer.icon_type) {
       case 'graduation':
-        return <GraduationCap className="h-3.5 w-3.5 text-yellow-300" />;
+        return <GraduationCap className="h-4 w-4 text-primary" />;
       case 'gift':
-        return <Gift className="h-3.5 w-3.5 text-yellow-300" />;
+        return <Gift className="h-4 w-4 text-primary" />;
       case 'star':
-        return <Star className="h-3.5 w-3.5 text-yellow-300" fill="currentColor" />;
+        return <Star className="h-4 w-4 text-yellow-500" fill="currentColor" />;
       case 'sparkles':
       default:
-        return <Sparkles className="h-3.5 w-3.5 text-yellow-300" />;
+        return <Percent className="h-4 w-4 text-primary" />;
     }
   };
 
@@ -100,160 +99,139 @@ const OfferModal = () => {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop with blur */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 bg-black/50 z-50"
+            className="fixed inset-0 bg-gradient-to-br from-gray-900/80 via-gray-900/70 to-gray-900/80 backdrop-blur-md z-50"
           />
 
           {/* Modal */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ type: "spring", damping: 30, stiffness: 400 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ willChange: 'transform' }}
           >
-            <div className="relative w-full max-w-sm md:max-w-md lg:max-w-lg overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary/95 to-primary/85 shadow-2xl">
-              {/* Transparent bottom gradient */}
-              <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-b from-transparent to-black/10 pointer-events-none z-20" />
-              
-              {/* Decorative elements */}
-              <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                <div className="absolute -top-16 -right-16 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-                <div className="absolute -bottom-16 -left-16 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-              </div>
-
-              {/* Close button */}
-              <button
-                onClick={handleClose}
-                className="absolute top-3 left-3 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors z-10"
+            <div className="relative w-full max-w-[320px] sm:max-w-[360px] md:max-w-[380px] overflow-visible">
+              {/* Floating discount badge - positioned outside card */}
+              <motion.div
+                initial={{ scale: 0, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
+                className="absolute -top-6 left-1/2 -translate-x-1/2 z-20"
               >
-                <X className="h-4 w-4 text-white" />
-              </button>
-
-              {/* Content */}
-              <div className="relative p-5 md:p-8 text-center text-white">
-                {/* Badge */}
-                <motion.div
-                  initial={{ y: -10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.1 }}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-yellow-400/20 border border-yellow-400/30 mb-4"
-                  style={{ willChange: 'opacity, transform' }}
-                >
-                  {getIcon()}
-                  <span className="text-xs md:text-sm font-medium text-yellow-100">{offer.target_audience === 'students' ? 'عرض حصري للطلاب' : offer.title}</span>
-                </motion.div>
-
-                {/* Discount percentage */}
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.15, duration: 0.3 }}
-                  className="mb-4"
-                  style={{ willChange: 'transform' }}
-                >
-                  <div className="relative inline-block">
-                    <div className="absolute inset-0 bg-yellow-400/20 rounded-full blur-xl scale-125" />
-                    <div className="relative flex items-center justify-center w-28 h-28 md:w-32 md:h-32 mx-auto rounded-full bg-gradient-to-br from-yellow-400 to-yellow-500 shadow-lg shadow-yellow-500/20">
-                      <div className="text-center">
-                        <div className="flex items-start justify-center">
-                          <span className="text-4xl md:text-5xl font-black text-primary">{offer.discount_percentage}</span>
-                          <span className="text-xl md:text-2xl font-bold text-primary mt-0.5">%</span>
-                        </div>
-                        <span className="text-xs md:text-sm font-semibold text-primary/80">خصم</span>
-                      </div>
+                <div className="relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full blur-lg opacity-60" />
+                  <div className="relative w-20 h-20 sm:w-22 sm:h-22 md:w-24 md:h-24 rounded-full bg-gradient-to-br from-amber-400 via-orange-500 to-red-500 p-[3px] shadow-2xl">
+                    <div className="w-full h-full rounded-full bg-white flex flex-col items-center justify-center">
+                      <span className="text-2xl sm:text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-br from-amber-500 to-orange-600">
+                        {offer.discount_percentage}%
+                      </span>
+                      <span className="text-[10px] sm:text-xs font-bold text-gray-500 uppercase tracking-wider">خصم</span>
                     </div>
                   </div>
-                </motion.div>
+                </div>
+              </motion.div>
 
-                {/* Title */}
-                <motion.h2
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-lg md:text-2xl font-bold mb-2 flex items-center justify-center gap-2"
+              {/* Main Card */}
+              <div className="relative bg-white rounded-2xl shadow-2xl overflow-hidden pt-12 sm:pt-14">
+                {/* Decorative top pattern */}
+                <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-primary/5 to-transparent" />
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-amber-100/50 to-transparent rounded-bl-full" />
+                <div className="absolute top-0 left-0 w-24 h-24 bg-gradient-to-br from-primary/10 to-transparent rounded-br-full" />
+                
+                {/* Close button */}
+                <button
+                  onClick={handleClose}
+                  className="absolute top-4 left-4 w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all z-10 group"
                 >
-                  {offer.title}
-                  <span>🎉</span>
-                </motion.h2>
+                  <X className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+                </button>
 
-                {/* Divider */}
-                <motion.div
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{ delay: 0.25, duration: 0.3 }}
-                  className="h-0.5 bg-gradient-to-r from-transparent via-yellow-400/50 to-transparent mb-3 w-2/3 mx-auto"
-                  style={{ willChange: 'transform' }}
-                />
-
-                {/* Description */}
-                <motion.p
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-white/80 text-sm md:text-base mb-4 leading-relaxed"
-                >
-                  {offer.description} ✨
-                </motion.p>
-
-                {/* Features */}
-                <motion.div
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.35 }}
-                  className="flex flex-wrap justify-center gap-2 mb-4"
-                >
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-xs md:text-sm">
-                    <Gift className="h-4 w-4 md:h-5 md:w-5 text-yellow-300" />
-                    <span>عروض إضافية</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 text-xs md:text-sm">
-                    <Clock className="h-4 w-4 md:h-5 md:w-5 text-yellow-300" />
-                    <span>عرض محدود</span>
-                  </div>
-                </motion.div>
-
-                {/* CTA Buttons */}
-                <motion.div
-                  initial={{ y: 10, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="flex flex-col gap-3 mt-6"
-                >
+                {/* Content */}
+                <div className="relative px-5 sm:px-6 pb-5 sm:pb-6 pt-3 sm:pt-4">
+                  {/* Offer type badge */}
                   <motion.div
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="flex justify-center mb-5"
+                  >
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-primary/10 via-blue-50 to-primary/10 border border-primary/10">
+                      {getIcon()}
+                      <span className="text-sm font-semibold text-primary">
+                        {offer.target_audience === 'students' ? 'عرض حصري للطلاب' : 'عرض خاص'}
+                      </span>
+                    </div>
+                  </motion.div>
+
+                  {/* Title */}
+                  <motion.h2
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 }}
+                    className="text-xl sm:text-2xl font-bold text-center text-gray-900 mb-3"
+                  >
+                    {offer.title}
+                  </motion.h2>
+
+                  {/* Description */}
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-gray-500 text-xs sm:text-sm text-center mb-4 sm:mb-5 leading-relaxed"
+                  >
+                    {offer.description}
+                  </motion.p>
+
+                  {/* Features */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                    className="flex justify-center gap-2 sm:gap-3 mb-4 sm:mb-5"
+                  >
+                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 text-emerald-600">
+                      <Gift className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="text-xs sm:text-sm font-medium">عروض إضافية</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-50 text-amber-600">
+                      <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="text-xs sm:text-sm font-medium">لفترة محدودة</span>
+                    </div>
+                  </motion.div>
+
+                  {/* CTA Button */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
                   >
                     <Button
                       asChild
-                      size="sm"
-                      className="w-full bg-white text-primary hover:bg-white/90 font-bold shadow-lg gap-1.5 h-10 md:h-12 md:text-base transition-all"
+                      className="w-full h-11 sm:h-12 bg-gradient-to-r from-primary via-blue-600 to-primary hover:opacity-90 text-white font-bold text-sm sm:text-base rounded-xl shadow-lg shadow-primary/30 transition-all"
                       onClick={handleClose}
                     >
-                      <Link to="/properties?discount=true">
-                        <BadgePercent className="h-4 w-4 md:h-5 md:w-5" />
-                        تصفح العروض الآن
-                        <ArrowLeft className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                      <Link to="/properties?discount=true" className="flex items-center justify-center gap-2">
+                        <Sparkles className="h-4 w-4" />
+                        <span>اكتشف العروض</span>
+                        <ArrowLeft className="h-3.5 w-3.5" />
                       </Link>
                     </Button>
+                    
+                    <button
+                      onClick={handleClose}
+                      className="w-full mt-3 text-gray-400 hover:text-gray-600 text-sm py-2 transition-colors"
+                    >
+                      ليس الآن
+                    </button>
                   </motion.div>
-                  
-                  <motion.button
-                    onClick={handleClose}
-                    className="text-white/60 hover:text-white text-xs md:text-sm py-2 transition-colors"
-                    whileHover={{ scale: 1.05 }}
-                  >
-                    ← تصفح لاحقاً
-                  </motion.button>
-                </motion.div>
-
-
+                </div>
               </div>
             </div>
           </motion.div>
@@ -263,4 +241,4 @@ const OfferModal = () => {
   );
 };
 
-export default OfferModal;
+export default React.memo(OfferModal);

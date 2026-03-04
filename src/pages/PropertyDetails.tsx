@@ -59,8 +59,6 @@ interface Property {
 const PropertyDetails = () => {
   const { id } = useParams();
   const { onError, onSuccess } = useErrorHandler();
-  const [_isFavorite, _setIsFavorite] = useState(false);
-  const [_isContactOpen, _setIsContactOpen] = useState(false);
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -513,7 +511,7 @@ const PropertyDetails = () => {
                         </div>
 
                         {/* Discount Badge with Original Price */}
-                        {property.original_price && property.discount && property.discount > 0 && (
+                        {property.original_price && property.discount != null && property.discount > 0 && (
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -530,7 +528,7 @@ const PropertyDetails = () => {
                         )}
 
                         {/* Savings Highlight */}
-                        {property.original_price && property.discount && property.discount > 0 && (
+                        {property.original_price && property.discount != null && property.discount > 0 && (
                           <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}

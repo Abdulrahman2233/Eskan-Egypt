@@ -386,9 +386,6 @@ const AddProperty = () => {
         }
       });
 
-      // استخدام API محلي عند التطوير
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
-      
       // Create FormData to send images and videos along with property data
       const formDataMultipart = new FormData();
       
@@ -426,7 +423,7 @@ const AddProperty = () => {
       });
       
       console.log("=== DEBUG INFO ===");
-      console.log("Sending to:", `${apiUrl}/properties/`);
+      console.log("Sending to: /properties/");
       console.log("With images:", images.length);
       console.log("With videos:", videos.length);
       console.log("Selected Amenities (state):", selectedAmenities);
@@ -449,29 +446,7 @@ const AddProperty = () => {
       console.log(`Total amenity_ids sent: ${amenityCount}`);
       console.log("=== END DEBUG ===");
       
-      const response = await fetch(`${apiUrl}/properties/`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Token ${token}`,
-        },
-        body: formDataMultipart,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Backend Error Response:", errorData);
-        
-        // معالجة الأخطاء المفصلة
-        if (errorData.errors) {
-          const errorMessages = Object.entries(errorData.errors)
-            .map(([key, value]: any) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
-            .join('\n');
-          throw new Error(errorMessages);
-        }
-        throw new Error(errorData.detail || "خطأ في إضافة العقار");
-      }
-
-      const data = await response.json();
+      const data = await createProperty(formDataMultipart);
       setSuccessProperty(data);
     } catch (error: any) {
       console.error("Error:", error);

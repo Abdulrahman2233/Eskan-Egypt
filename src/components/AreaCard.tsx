@@ -1,3 +1,4 @@
+import React from "react";
 import { Card, CardContent } from "./ui/card";
 import { MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -12,7 +13,7 @@ interface AreaCardProps {
   area: Area;
 }
 
-export const AreaCard = ({ area }: AreaCardProps) => {
+export const AreaCard = React.memo(({ area }: AreaCardProps) => {
   return (
     <Link to={`/properties?area=${encodeURIComponent(area.name)}`}>
       <Card className="property-card overflow-hidden hover:shadow-lg transition-all cursor-pointer">
@@ -35,4 +36,4 @@ export const AreaCard = ({ area }: AreaCardProps) => {
       </Card>
     </Link>
   );
-};
+});

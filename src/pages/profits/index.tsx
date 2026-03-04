@@ -38,7 +38,7 @@ export default function Profits() {
     try {
       setIsLoading(true);
       const data = await fetchTransactions();
-      setTransactions(data);
+      setTransactions(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error loading transactions:", error);
       toast.error("خطأ في تحميل الصفقات");

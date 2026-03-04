@@ -85,18 +85,12 @@ export const propertyMarketingSteps = [
   },
 ];
 
-// Stats
-export const stats = [
-  { value: "1000+", label: "عميل سعيد", icon: Users },
-  { value: "200+", label: "وسيط معتمد", icon: BadgeCheck },
-];
-
 // Advantages
 export const advantages = [
   {
     icon: BadgeCheck,
     title: "موثوقية عالية",
-    desc: "تحقق دوري من الإعلانات ومراجعة مستمرة للمحتوى.",
+    desc: "عقارات موثوقة ومميزة لجميع المستخدمين.",
   },
   {
     icon: TrendingUp,
@@ -106,7 +100,7 @@ export const advantages = [
   {
     icon: ThumbsUp,
     title: "سهولة الاستخدام",
-    desc: "واجهة عربية بسيطة ومريحة للطلاب والعائلات.",
+    desc: "واجهة سهلة ومريحة لتسهيل  الاستخدام .",
   },
   {
     icon: Users,

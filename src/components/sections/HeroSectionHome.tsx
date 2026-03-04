@@ -1,9 +1,17 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Search, Star, ChevronDown, ArrowLeft } from "lucide-react";
+import { Search, Star, ChevronDown, ArrowLeft, Shield, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { stats } from "@/data/homeConstants";
+
+import HeroChartBackground from "./HeroChartBackground";
+
+// Quick features for hero section
+const heroFeatures = [
+  { icon: Shield, label: "عقارات موثوقة" },
+  { icon: MapPin, label: "أفضل المناطق" },
+  { icon: Clock, label: "حجز سريع" },
+];
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -18,44 +26,15 @@ const staggerContainer = {
   },
 };
 
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.8 },
-  visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
-};
-
 const HeroSection: React.FC<{ onScrollDown?: () => void }> = ({
   onScrollDown,
 }) => {
   return (
     <section className="relative pt-20 md:pt-12 pb-16 md:pb-12 overflow-hidden min-h-[95vh] md:min-h-[70vh] flex items-center mt-16 bg-white">
-      {/* Simplified Background - Only 2 main shapes instead of 10+ */}
-      <motion.div
-        className="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-gradient-to-br from-blue-100 to-blue-50 opacity-60"
-        animate={{
-          scale: [1, 1.1, 1],
-        }}
-        transition={{
-          duration: 20,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        style={{ willChange: "transform" }}
-      />
+      {/* Professional Chart Background */}
+      <HeroChartBackground />
 
-      <motion.div
-        className="absolute -bottom-32 -left-32 w-80 h-80 rounded-full bg-gradient-to-tr from-cyan-100 to-blue-50 opacity-50"
-        animate={{
-          scale: [1, 1.15, 1],
-        }}
-        transition={{
-          duration: 25,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        style={{ willChange: "transform" }}
-      />
-
-      {/* Gradient Lines - CSS only, no animations */}
+      {/* Gradient Lines */}
       <div className="absolute top-0 right-0 w-1/2 h-1 bg-gradient-to-l from-primary/40 to-transparent opacity-50" />
       <div className="absolute bottom-0 left-0 w-2/3 h-1 bg-gradient-to-r from-cyan-400/30 to-transparent opacity-40" />
 
@@ -107,7 +86,7 @@ const HeroSection: React.FC<{ onScrollDown?: () => void }> = ({
           </motion.h1>
 
           <motion.p
-            className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto mb-8"
+            className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto mb-6"
             variants={fadeInUp}
           >
             آلاف الشقق والعقارات المتاحة للإيجار في أفضل مناطق الإسكندرية
@@ -115,34 +94,24 @@ const HeroSection: React.FC<{ onScrollDown?: () => void }> = ({
             بأسعار مناسبة وخدمة موثوقة
           </motion.p>
 
-          {/* Stats Grid */}
+          {/* Quick Features */}
           <motion.div
-            className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-6 max-w-xl mx-auto"
-            initial="hidden"
-            animate="visible"
-            variants={staggerContainer}
+            className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 mb-8"
+            variants={fadeInUp}
           >
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
+            {heroFeatures.map((feature, index) => {
+              const Icon = feature.icon;
               return (
                 <motion.div
                   key={index}
-                  className="relative group"
-                  variants={scaleIn}
-                  whileHover={{ y: -5, scale: 1.03 }}
+                  className="flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-gray-200/60 shadow-sm"
+                  whileHover={{ scale: 1.05, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <motion.div className="absolute -inset-0.5 bg-gradient-to-r from-blue-300/30 to-cyan-300/30 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative bg-white border border-gray-200 rounded-2xl px-4 py-2 md:px-4 md:py-3 text-center backdrop-blur-sm hover:border-blue-300 hover:shadow-md transition-all">
-                    <div className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-blue-100 text-blue-600 mb-1">
-                      <Icon className="h-3.5 w-3.5" />
-                    </div>
-                    <div className="text-base sm:text-lg md:text-xl font-bold text-gray-900">
-                      {stat.value}
-                    </div>
-                    <div className="text-xs md:text-sm text-gray-600">
-                      {stat.label}
-                    </div>
+                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Icon className="h-3.5 w-3.5 text-primary" />
                   </div>
+                  <span className="text-sm font-medium text-gray-700">{feature.label}</span>
                 </motion.div>
               );
             })}

@@ -63,14 +63,8 @@ const defaultRoomData: RoomDistribution[] = [
   { name: "4+ غرف", value: 200, color: "#f59e0b" },
 ];
 
-const revenueData = [
-  { name: "يناير", value: 40000, value2: 24000 },
-  { name: "فبراير", value: 30000, value2: 13980 },
-  { name: "مارس", value: 20000, value2: 98000 },
-  { name: "أبريل", value: 30000, value2: 39800 },
-  { name: "مايو", value: 20000, value2: 48000 },
-  { name: "يونيو", value: 30000, value2: 40000 },
-];
+// بيانات الإيرادات - ستُجلب من API مستقبلاً
+const revenueData: { name: string; value: number; value2: number }[] = [];
 
 const defaultPropertyTypeData: PropertyType[] = [
   { name: "طلاب", value: 0, color: "#0ea5e9" },
@@ -150,7 +144,7 @@ const PropertiesAdmin = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">إجمالي العقارات</p>
               <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mt-2">{data.properties.total.toLocaleString()}</p>
-              <p className="text-xs text-blue-600 mt-1">↑ 12%</p>
+
             </div>
             <div className="p-2 bg-blue-200 rounded-lg">
               <Building2 className="w-6 h-6 text-blue-600" />
@@ -162,7 +156,7 @@ const PropertiesAdmin = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">العقارات المعتمدة</p>
               <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mt-2">{data.properties.approved.toLocaleString()}</p>
-              <p className="text-xs text-green-600 mt-1">↑ 18%</p>
+
             </div>
             <div className="p-2 bg-green-200 rounded-lg">
               <CheckCircle className="w-6 h-6 text-green-600" />
@@ -174,7 +168,7 @@ const PropertiesAdmin = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">العقارات المعلقة</p>
               <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mt-2">{data.properties.pending.toLocaleString()}</p>
-              <p className="text-xs text-yellow-600 mt-1">↓ 5%</p>
+
             </div>
             <div className="p-2 bg-yellow-200 rounded-lg">
               <AlertIcon className="w-6 h-6 text-yellow-600" />
@@ -186,7 +180,7 @@ const PropertiesAdmin = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">العقارات المرفوضة</p>
               <p className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mt-2">{data.properties.rejected.toLocaleString()}</p>
-              <p className="text-xs text-red-600 mt-1">↑ 8%</p>
+
             </div>
             <div className="p-2 bg-red-200 rounded-lg">
               <XCircle className="w-6 h-6 text-red-600" />
@@ -206,8 +200,8 @@ const PropertiesAdmin = () => {
 
       {/* Additional Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-        <TopProperties properties={data.top_properties || []} />
-        <RegionHeatmap areas={data.areas} />
+        <TopProperties />
+        <RegionHeatmap />
       </div>
     </DashboardLayout>
   );

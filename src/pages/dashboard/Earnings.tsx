@@ -73,7 +73,7 @@ const Earnings = () => {
     queryFn: async () => {
       try {
         const { data } = await API.get("/earnings/deals/");
-        return data;
+        return Array.isArray(data) ? data : data.results || [];
       } catch (error) {
         handleError(error);
         return [];
