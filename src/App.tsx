@@ -67,7 +67,7 @@ const RouteTracker = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <RouteTracker />
         <Suspense fallback={<PageLoader />}>
           <Routes>
