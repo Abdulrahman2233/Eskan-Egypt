@@ -19,6 +19,7 @@ const PageLoader = () => (
 const Index = lazy(() => import("./pages/Index"));
 const Properties = lazy(() => import("./pages/Properties"));
 const PropertyDetails = lazy(() => import("./pages/PropertyDetails"));
+const UserProfile = lazy(() => import("./pages/UserProfile"));
 const About = lazy(() => import("./pages/About"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/properties" element={<Properties />} />
             <Route path="/property/:id" element={<PropertyDetails />} />
+            <Route path="/user/:username" element={<UserProfile />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/auth" element={<Auth />} />

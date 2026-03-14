@@ -229,7 +229,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['property_name', 'region']
+    search_fields = ['property_name', 'region', 'customer_name', 'customer_phone']
     ordering_fields = ['profit', 'created_at', 'rent_price']
     ordering = ['-created_at']
     

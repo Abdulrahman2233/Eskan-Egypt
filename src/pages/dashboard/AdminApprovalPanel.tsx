@@ -439,12 +439,12 @@ const AdminApprovalPanel = () => {
                                   {processingId === property.id ? (
                                     <>
                                       <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                                      جاري...
+                                      <span>جاري...</span>
                                     </>
                                   ) : (
                                     <>
                                       <XCircle className="w-4 h-4 ml-2" />
-                                      رفض
+                                      <span>رفض</span>
                                     </>
                                   )}
                                 </Button>
@@ -459,12 +459,12 @@ const AdminApprovalPanel = () => {
                                   {processingId === property.id ? (
                                     <>
                                       <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                                      جاري...
+                                      <span>جاري...</span>
                                     </>
                                   ) : (
                                     <>
                                       <CheckCircle2 className="w-4 h-4 ml-2" />
-                                      موافقة
+                                      <span>موافقة</span>
                                     </>
                                   )}
                                 </Button>

@@ -55,34 +55,44 @@ const Index = () => {
       try {
         setPropertiesLoading(true);
         
+        let allFeaturedAndDiscounted: any[] = [];
+        
         // Try to fetch featured first
-        let featured = [];
         try {
-          featured = await fetchFeaturedProperties();
+          const featured = await fetchFeaturedProperties();
           if (featured && featured.length > 0) {
-            setFeaturedProperties(featured.slice(0, 4));
-            setPropertiesLoading(false);
-            return;
+            allFeaturedAndDiscounted = [...featured];
           }
         } catch (err) {
           console.log("Featured endpoint not available, using fallback");
         }
         
-        // Fallback: fetch properties with limit to avoid fetching all
-        const allProperties = await fetchProperties();
-        if (allProperties && allProperties.length > 0) {
-          let filtered = allProperties.filter(
-            (p: any) => p.featured === true || (p.discount && Number(p.discount) > 0)
-          );
-          
-          if (filtered.length === 0) {
-            filtered = allProperties;
+        // Get all properties and filter for featured + discounted
+        try {
+          const allProperties = await fetchProperties();
+          if (allProperties && allProperties.length > 0) {
+            // Filter for featured OR discounted items
+            const discountedProperties = allProperties.filter(
+              (p: any) => (p.featured === true || (p.discount && Number(p.discount) > 0))
+            );
+            
+            // Combine featured from API with filtered properties, removing duplicates
+            for (const prop of discountedProperties) {
+              if (!allFeaturedAndDiscounted.some((p) => p.id === prop.id)) {
+                allFeaturedAndDiscounted.push(prop);
+              }
+            }
+            
+            // If still no results, use all properties
+            if (allFeaturedAndDiscounted.length === 0) {
+              allFeaturedAndDiscounted = allProperties.slice(0, 4);
+            }
           }
-          
-          setFeaturedProperties(filtered.slice(0, 4));
-        } else {
-          setFeaturedProperties([]);
+        } catch (err) {
+          console.log("Error fetching all properties:", err);
         }
+        
+        setFeaturedProperties(allFeaturedAndDiscounted.slice(0, 4));
       } catch (error) {
         console.error("Failed to load featured properties:", error);
         setFeaturedProperties([]);

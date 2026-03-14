@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate
 from .models import UserProfile, PasswordResetToken
 import re
 
+
 class UserProfileSerializer(serializers.ModelSerializer):
     """
     Serializer for UserProfile model.
@@ -19,6 +20,31 @@ class UserProfileSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['created_at', 'updated_at', 'last_login_at']
 
+
+class PublicUserProfileSerializer(serializers.ModelSerializer):
+    """
+    Serializer for public user profile - only shows safe public info.
+    """
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+    full_name = serializers.SerializerMethodField()
+    username = serializers.CharField(source='user.username', read_only=True)
+    member_since = serializers.DateTimeField(source='created_at', read_only=True)
+    properties_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            'user_id', 'username', 'full_name', 'user_type',
+            'city', 'member_since', 'properties_count', 'is_verified',
+        ]
+
+    def get_full_name(self, obj):
+        # Prefer User.get_full_name() (first_name + last_name) as it's the source of truth
+        return obj.user.get_full_name() or obj.full_name or obj.user.username
+
+    def get_properties_count(self, obj):
+        return obj.properties.filter(is_deleted=False, status='approved').count()
+
 class UserSerializer(serializers.ModelSerializer):
     """
     Serializer for User model with profile.
@@ -32,7 +58,13 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'is_staff', 'is_superuser']
 
     def get_full_name(self, obj):
-        return obj.get_full_name() or obj.username
+        # Consistent fallback: User first/last name → profile.full_name → username
+        full = obj.get_full_name()
+        if full:
+            return full
+        if hasattr(obj, 'profile') and obj.profile and obj.profile.full_name:
+            return obj.profile.full_name
+        return obj.username
 
 class RegisterSerializer(serializers.ModelSerializer):
     """

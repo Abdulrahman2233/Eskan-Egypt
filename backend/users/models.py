@@ -54,6 +54,7 @@ class UserProfile(models.Model):
     )
 
     # Account Status
+    is_verified = models.BooleanField(default=False, verbose_name='حساب موثّق')
     is_email_verified = models.BooleanField(default=False)
     is_phone_verified = models.BooleanField(default=False)
 

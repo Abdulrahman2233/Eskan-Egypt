@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Bed, Bath, Maximize2, MapPin, Tag, Eye, Calendar, ChevronLeft, Sparkles } from "lucide-react";
+import { Bed, Bath, Maximize2, MapPin, Tag, Eye, Calendar, ChevronLeft, Sparkles, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BACKEND_URL } from "@/config";
 
@@ -43,13 +43,25 @@ interface PropertyCardProps {
     price_unit?: string;
     display_price?: number;
     is_daily_pricing?: boolean;
+    owner_name?: string;
+    owner_username?: string;
+    owner_is_verified?: boolean;
   };
   variant?: "grid" | "list";
+  listImagePosition?: "start" | "end";
 }
 
-export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) => {
+export const PropertyCard = ({
+  property,
+  variant = "grid",
+  listImagePosition = "end",
+}: PropertyCardProps) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const isListView = variant === "list";
+  const listDirectionClass =
+    listImagePosition === "start"
+      ? "flex flex-col-reverse sm:flex-row"
+      : "flex flex-col-reverse sm:flex-row-reverse";
 
   // Memoize area name calculation
   const areaName = useMemo(() => {
@@ -74,6 +86,21 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
     [property.usage_type]
   );
 
+  const ownerInitial = useMemo(() => {
+    const ownerLabel = (property.owner_name || property.owner_username || "").trim();
+    return ownerLabel ? ownerLabel[0] : "؟";
+  }, [property.owner_name, property.owner_username]);
+
+  const verificationDot = property.owner_is_verified ? (
+    <span
+      className="absolute -bottom-1 -left-1 h-3 w-3 rounded-full bg-sky-500 ring-2 ring-background shadow-sm inline-flex items-center justify-center"
+      aria-label="حساب موثق"
+      title="حساب موثق"
+    >
+      <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+    </span>
+  ) : null;
+
   const handleImageLoad = useCallback(() => {
     setIsImageLoaded(true);
   }, []);
@@ -87,8 +114,8 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
     >
       <Card className={cn(
         "group overflow-hidden border-0 shadow-md hover:shadow-2xl transition-all duration-300 bg-card h-full hover:-translate-y-1",
-        isListView && "flex flex-col sm:flex-row"
-      )}>
+        isListView && listDirectionClass
+      )} dir="rtl">
         {/* Image Section */}
         <div className={cn(
           "relative overflow-hidden",
@@ -118,11 +145,11 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
           {/* Top Badges Row */}
           <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
             {/* Right Side: Discount & Featured */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 items-start">
               {/* Discount Badge */}
               {property.discount != null && property.discount > 0 && (
                 <div>
-                  <Badge className="bg-gradient-to-r from-red-500 to-rose-600 text-white border-0 shadow-lg px-2.5 py-1 text-xs font-bold flex items-center gap-1.5 rounded-full">
+                  <Badge className="bg-gradient-to-r from-red-500 to-rose-600 text-white border-0 shadow-lg px-2.5 py-1 text-xs font-bold flex items-center gap-1.5 rounded-full w-fit">
                     <Tag className="h-3 w-3" />
                     <span>خصم {property.discount}%</span>
                   </Badge>
@@ -131,7 +158,7 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
               
               {/* Featured Badge */}
               {property.featured && (
-                <Badge className="bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border-0 shadow-lg px-2.5 py-1 text-xs font-bold flex items-center gap-1.5 rounded-full">
+                <Badge className="bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border-0 shadow-lg px-2.5 py-1 text-xs font-bold flex items-center gap-1.5 rounded-full w-fit">
                   <Sparkles className="h-3 w-3" />
                   <span>مميز</span>
                 </Badge>
@@ -139,10 +166,10 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
             </div>
             
             {/* Left Side: Usage Type */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 items-start">
               {/* Usage Type Badge */}
               {property.usage_type && (
-                <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg px-2.5 py-1 text-xs font-bold rounded-full">
+                <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg px-2.5 py-1 text-xs font-bold rounded-full w-fit">
                   {usageTypeAr}
                 </Badge>
               )}
@@ -246,6 +273,28 @@ export const PropertyCard = ({ property, variant = "grid" }: PropertyCardProps) 
 
           {/* Tags */}
           <div className="flex flex-wrap gap-1.5 mb-4">
+            {property.owner_username ? (
+              <Link
+                to={`/user/${property.owner_username}`}
+                className="relative w-7 h-7 rounded-full bg-primary/10 text-primary inline-flex items-center justify-center text-xs font-bold leading-none border border-primary/20 hover:bg-primary/15 transition-colors"
+                title={property.owner_name || property.owner_username || "صاحب الحساب"}
+                aria-label="عرض حساب المالك"
+              >
+                {ownerInitial}
+                {verificationDot}
+              </Link>
+            ) : (
+              (property.owner_name || property.owner_username) && (
+                <span
+                  className="relative w-7 h-7 rounded-full bg-primary/10 text-primary inline-flex items-center justify-center text-xs font-bold leading-none border border-primary/20"
+                  title={property.owner_name || property.owner_username || "صاحب الحساب"}
+                  aria-label="صاحب الحساب"
+                >
+                  {ownerInitial}
+                  {verificationDot}
+                </span>
+              )
+            )}
             {property.discount != null && property.discount > 0 && (
               <Badge variant="destructive" className="text-xs rounded-full px-2.5">
                 عرض خاص

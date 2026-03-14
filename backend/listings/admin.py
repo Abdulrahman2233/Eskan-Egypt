@@ -564,6 +564,8 @@ class ActivityLogAdmin(admin.ModelAdmin):
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
     list_display = (
+        'customer_name',
+        'customer_phone',
         'property_name',
         'region',
         'account_type',
@@ -573,7 +575,7 @@ class TransactionAdmin(admin.ModelAdmin):
         'created_at',
         'get_user_info',
     )
-    search_fields = ('property_name', 'region', 'user__user__username')
+    search_fields = ('customer_name', 'customer_phone', 'property_name', 'region', 'user__user__username')
     list_filter = (
         'account_type',
         'property_type',
@@ -584,6 +586,8 @@ class TransactionAdmin(admin.ModelAdmin):
     fields = (
         'id',
         'user',
+        'customer_name',
+        'customer_phone',
         'property_name',
         'region',
         'account_type',

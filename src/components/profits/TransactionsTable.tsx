@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -24,9 +24,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Search, Download, MoreHorizontal, Pencil, Trash2, Filter } from "lucide-react";
 import { toast } from "sonner";
+import { fetchRegions } from "@/api";
 
 interface Transaction {
   id: string;
+  customerName: string;
+  customerPhone: string;
   propertyName: string;
   region: string;
   accountType: string;
@@ -43,7 +46,6 @@ interface TransactionsTableProps {
   onEdit: (transaction: Transaction) => void;
 }
 
-const regions = ["الكل", "سيدي جابر", "المنشية", "محطة الرمل", "سموحة", "كليوباترا", "العصافرة"];
 const propertyTypes = ["الكل", "طلاب", "عائلات", "مصيف", "حجز يومي", "استوديو"];
 
 export function TransactionsTable({ transactions, onDelete, onEdit }: TransactionsTableProps) {
@@ -51,13 +53,53 @@ export function TransactionsTable({ transactions, onDelete, onEdit }: Transactio
   const [regionFilter, setRegionFilter] = useState("الكل");
   const [typeFilter, setTypeFilter] = useState("الكل");
   const [currentPage, setCurrentPage] = useState(1);
+  const [regions, setRegions] = useState<string[]>(["الكل"]);
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    const buildTransactionRegions = () => {
+      return Array.from(
+        new Set(transactions.map((t) => t.region).filter((region) => Boolean(region && region.trim())))
+      ).sort((a, b) => a.localeCompare(b, "ar"));
+    };
+
+    const loadRegions = async () => {
+      try {
+        const dbRegions = await fetchRegions();
+        if (Array.isArray(dbRegions) && dbRegions.length > 0) {
+          const uniqueRegions = Array.from(new Set([...dbRegions, ...buildTransactionRegions()]))
+            .filter((region): region is string => Boolean(region && region.trim()))
+            .sort((a, b) => a.localeCompare(b, "ar"));
+
+          setRegions(["الكل", ...uniqueRegions]);
+          return;
+        }
+      } catch {
+        // Silent fallback to transactions-based regions below.
+      }
+
+      const transactionRegions = buildTransactionRegions();
+      setRegions(["الكل", ...transactionRegions]);
+    };
+
+    loadRegions();
+
+    // Live update: refresh areas periodically and when window regains focus.
+    const intervalId = window.setInterval(loadRegions, 15000);
+    window.addEventListener("focus", loadRegions);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", loadRegions);
+    };
+  }, [transactions]);
 
   const filteredTransactions = useMemo(() => {
     return transactions.filter((transaction) => {
-      const matchesSearch = transaction.propertyName
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
+      const normalizedQuery = searchQuery.toLowerCase();
+      const matchesSearch = transaction.propertyName.toLowerCase().includes(normalizedQuery) ||
+        transaction.customerName.toLowerCase().includes(normalizedQuery) ||
+        transaction.customerPhone.toLowerCase().includes(normalizedQuery);
       const matchesRegion =
         regionFilter === "الكل" || transaction.region === regionFilter;
       const matchesType =
@@ -72,12 +114,14 @@ export function TransactionsTable({ transactions, onDelete, onEdit }: Transactio
       return;
     }
 
-    const headers = ["التاريخ", "العقار", "المنطقة", "النوع", "الحساب", "السعر", "ربحك"];
+    const headers = ["التاريخ", "اسم العميل", "رقم الهاتف", "العقار", "المنطقة", "النوع", "الحساب", "السعر", "ربحك"];
     const csvContent = [
       headers.join(","),
       ...filteredTransactions.map((t) =>
         [
           new Date(t.date).toLocaleDateString("ar-EG"),
+          t.customerName,
+          t.customerPhone,
           t.propertyName,
           t.region,
           t.propertyType,
@@ -175,6 +219,8 @@ export function TransactionsTable({ transactions, onDelete, onEdit }: Transactio
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="text-right">التاريخ</TableHead>
+              <TableHead className="text-right">اسم العميل</TableHead>
+              <TableHead className="text-right">رقم الهاتف</TableHead>
               <TableHead className="text-right">العقار</TableHead>
               <TableHead className="text-right">المنطقة</TableHead>
               <TableHead className="text-right">النوع</TableHead>
@@ -186,7 +232,7 @@ export function TransactionsTable({ transactions, onDelete, onEdit }: Transactio
           <TableBody>
             {filteredTransactions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
                   لا توجد صفقات مسجلة
                 </TableCell>
               </TableRow>
@@ -196,6 +242,8 @@ export function TransactionsTable({ transactions, onDelete, onEdit }: Transactio
                   <TableCell className="text-muted-foreground">
                     {new Date(transaction.date).toLocaleDateString("ar-EG")}
                   </TableCell>
+                  <TableCell className="font-medium">{transaction.customerName}</TableCell>
+                  <TableCell className="text-muted-foreground">{transaction.customerPhone}</TableCell>
                   <TableCell className="font-medium">{transaction.propertyName}</TableCell>
                   <TableCell>
                     <span className="px-2 py-1 rounded-full bg-primary/10 text-primary text-xs">

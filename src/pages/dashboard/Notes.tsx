@@ -59,25 +59,21 @@ const marketingStrategies = [
     title: 'التسويق الرقمي',
     description: 'حملات إعلانية مدفوعة على Google و Facebook',
     icon: Globe,
-    stats: '+500K مشاهدة شهرياً',
   },
   {
     title: 'وسائل التواصل',
     description: 'تواجد قوي على Instagram و TikTok و Twitter',
     icon: Smartphone,
-    stats: '+50K متابع',
   },
   {
     title: 'التسويق بالبريد',
     description: 'نشرات دورية لقاعدة عملاء محدثة',
     icon: Mail,
-    stats: '+10K مشترك',
   },
   {
     title: 'تحليل البيانات',
     description: 'تحليل سلوك العملاء لتحسين الأداء',
     icon: BarChart3,
-    stats: 'تقارير أسبوعية',
   },
 ];
 

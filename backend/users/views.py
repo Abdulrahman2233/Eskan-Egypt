@@ -12,6 +12,7 @@ import logging
 from .serializers import (
     UserSerializer,
     UserProfileSerializer,
+    PublicUserProfileSerializer,
     RegisterSerializer,
     LoginSerializer,
     ChangePasswordSerializer,
@@ -22,6 +23,8 @@ from .models import UserProfile, PasswordResetToken
 from django.db.models import Q
 from django.utils import timezone
 from datetime import timedelta
+from listings.serializers import PropertySerializer
+from listings.models import Property
 
 logger = logging.getLogger(__name__)
 
@@ -214,8 +217,15 @@ class AuthViewSet(viewsets.ViewSet):
             
             # Update UserProfile fields
             profile = user.profile
-            if 'full_name' in request.data:
-                profile.full_name = request.data.get('full_name', profile.full_name)
+            # Always sync full_name from User model when first/last name change
+            if 'first_name' in request.data or 'last_name' in request.data or 'full_name' in request.data:
+                # Prefer explicit full_name if sent, otherwise build from first+last
+                if 'full_name' in request.data and request.data.get('full_name'):
+                    profile.full_name = request.data['full_name']
+                else:
+                    computed_name = user.get_full_name()
+                    if computed_name:
+                        profile.full_name = computed_name
             if 'email' in request.data:
                 profile.email = request.data.get('email', profile.email)
             if 'phone_number' in request.data:
@@ -236,6 +246,48 @@ class AuthViewSet(viewsets.ViewSet):
                 },
                 status=status.HTTP_200_OK
             )
+
+    # ----------- PUBLIC PROFILE ----------------
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=[AllowAny],
+        url_path=r'public-profile/(?P<username>[\w.-]+)'
+    )
+    def public_profile(self, request, username=None):
+        """
+        Get public profile for any user by username - shows safe public info + their approved properties.
+        """
+        try:
+            profile = UserProfile.objects.select_related('user').get(user__username=username)
+        except UserProfile.DoesNotExist:
+            return Response(
+                {'success': False, 'error': 'المستخدم غير موجود'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Public profile data
+        profile_data = PublicUserProfileSerializer(profile).data
+
+        # Get user's approved, non-deleted properties
+        properties = Property.objects.filter(
+            owner=profile,
+            status='approved',
+            is_deleted=False
+        ).select_related('area', 'owner', 'owner__user').prefetch_related(
+            'images', 'videos', 'amenities'
+        ).order_by('-created_at')
+
+        properties_data = PropertySerializer(
+            properties, many=True, context={'request': request}
+        ).data
+
+        return Response({
+            'success': True,
+            'profile': profile_data,
+            'properties': properties_data,
+        }, status=status.HTTP_200_OK)
+
     # ----------- RECENT ACCOUNTS ----------------
     @action(detail=False, methods=['get'], permission_classes=[IsAdminUser], url_path='recent-accounts')
     def recent_accounts(self, request):

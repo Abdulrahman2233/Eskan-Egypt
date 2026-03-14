@@ -6,15 +6,23 @@ export function Header({ title }: { title: string }) {
   const [userName, setUserName] = useState("حسابي");
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        const parsed = JSON.parse(storedUser);
-        setUserName(parsed?.full_name || parsed?.name || parsed?.username || "حسابي");
-      } catch {
-        setUserName("حسابي");
+    const loadUser = () => {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          setUserName(parsed?.full_name || parsed?.name || parsed?.username || "حسابي");
+        } catch {
+          setUserName("حسابي");
+        }
       }
-    }
+    };
+
+    loadUser();
+
+    const handleUserUpdate = () => loadUser();
+    window.addEventListener('user-updated', handleUserUpdate);
+    return () => window.removeEventListener('user-updated', handleUserUpdate);
   }, []);
 
   return (

@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
-import { changePassword, updateProfile } from "@/api";
+import { changePassword, updateProfile, fetchCurrentUser } from "@/api";
 
 interface UserType {
   id?: string;
@@ -72,18 +72,48 @@ const Settings = () => {
   }, []);
 
   const fetchProfile = async () => {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const storedUser = getStoredUser();
-    if (storedUser) {
-      setUser(storedUser);
-      setFormData({
-        full_name: storedUser.full_name || "",
-        email: storedUser.email || "",
-        phone: storedUser.phone || "",
-        birth_date: storedUser.birth_date || "",
-        city: storedUser.city || "",
-        country: storedUser.country || "مصر",
-      });
+    try {
+      // Fetch fresh data from API instead of stale localStorage
+      const apiData = await fetchCurrentUser() as any;
+      if (apiData) {
+        const profile = apiData.profile || {};
+        const freshUser: UserType = {
+          ...getStoredUser(),
+          id: apiData.id,
+          email: apiData.email || "",
+          full_name: apiData.full_name || profile.full_name || "",
+          phone: profile.phone_number || "",
+          birth_date: profile.date_of_birth || "",
+          city: profile.city || "",
+          account_type: profile.user_type || "tenant",
+        };
+        saveUser(freshUser);
+        // Notify other components (e.g. Navbar) of updated user data
+        window.dispatchEvent(new Event('user-updated'));
+        setUser(freshUser);
+        setFormData({
+          full_name: freshUser.full_name || "",
+          email: freshUser.email || "",
+          phone: freshUser.phone || "",
+          birth_date: freshUser.birth_date || "",
+          city: freshUser.city || "",
+          country: freshUser.country || "مصر",
+        });
+      }
+    } catch {
+      // Fallback to localStorage if API fails
+      const storedUser = getStoredUser();
+      if (storedUser) {
+        setUser(storedUser);
+        setFormData({
+          full_name: storedUser.full_name || "",
+          email: storedUser.email || "",
+          phone: storedUser.phone || "",
+          birth_date: storedUser.birth_date || "",
+          city: storedUser.city || "",
+          country: storedUser.country || "مصر",
+        });
+      }
     }
     setLoading(false);
   };
@@ -121,11 +151,14 @@ const Settings = () => {
           ...user,
           ...formData,
           email: result.user?.email || user.email,
-          full_name: profile.full_name || user.full_name,
+          // Use top-level full_name (from UserSerializer) as source of truth
+          full_name: result.user?.full_name || profile.full_name || formData.full_name || user.full_name,
           phone: profile.phone_number || user.phone,
         };
         saveUser(updatedUser);
         setUser(updatedUser);
+        // Notify other components (e.g. Navbar) of updated user data
+        window.dispatchEvent(new Event('user-updated'));
       }
 
       toast.success("تم حفظ التغييرات بنجاح");
@@ -356,6 +389,7 @@ const Settings = () => {
                           onChange={handleInputChange}
                           placeholder="أدخل اسمك الكامل"
                           className="text-sm"
+                          disabled
                         />
                       </div>
                       <div className="space-y-2">
@@ -386,6 +420,7 @@ const Settings = () => {
                           placeholder="01xxxxxxxxx"
                           dir="ltr"
                           className="text-sm"
+                          disabled
                         />
                       </div>
                       <div className="space-y-2">
@@ -478,12 +513,12 @@ const Settings = () => {
                   {saving ? (
                     <>
                       <Loader2 className="h-5 w-5 animate-spin" />
-                      جاري الحفظ...
+                      <span>جاري الحفظ...</span>
                     </>
                   ) : (
                     <>
                       <Save className="h-5 w-5" />
-                      حفظ التغييرات
+                      <span>حفظ التغييرات</span>
                     </>
                   )}
                 </Button>
@@ -625,12 +660,12 @@ const Settings = () => {
                 {saving ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    جاري التحديث...
+                    <span>جاري التحديث...</span>
                   </>
                 ) : (
                   <>
                     <Lock className="h-5 w-5" />
-                    تغيير كلمة المرور
+                    <span>تغيير كلمة المرور</span>
                   </>
                 )}
               </Button>

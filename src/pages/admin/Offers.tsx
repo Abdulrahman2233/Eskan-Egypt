@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { StatCard } from '@/components/dashboard/StatCard';
-import { AreaChart } from '@/components/dashboard/AreaChart';
 import { PropertiesWithDiscounts } from '@/components/dashboard/PropertiesWithDiscounts';
-import { Percent, DollarSign, TrendingUp, Clock } from 'lucide-react';
 import API from '@/api';
 import { AlertCircle } from 'lucide-react';
 
@@ -14,9 +11,6 @@ interface AnalyticsData {
     avg_discount: number;
   };
 }
-
-// بيانات تأثير المبيعات - ستُجلب من API مستقبلاً
-const salesImpactData: { name: string; value: number; value2: number }[] = [];
 
 const Offers = () => {
   const [data, setData] = useState<AnalyticsData | null>(null);
@@ -68,13 +62,6 @@ const Offers = () => {
 
   return (
     <DashboardLayout title="العروض والخصومات">
-      {/* Sales Impact Chart */}
-      <AreaChart 
-        title="📈 تأثير الخصومات على المبيعات" 
-        subtitle="مقارنة المبيعات بدون خصومات (الأزرق) ومع الخصومات (الأخضر)" 
-        data={salesImpactData} 
-      />
-
       {/* Properties with Discounts */}
       <PropertiesWithDiscounts />
     </DashboardLayout>

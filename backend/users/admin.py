@@ -36,7 +36,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("معلومات الحساب", {
-            "fields": ("user", "user_type", "is_phone_verified", "last_login_at")
+            "fields": ("user", "user_type", "is_verified", "is_phone_verified", "last_login_at")
         }),
         ("المعلومات الشخصية", {
             "fields": ("full_name", "email", "phone_number", "date_of_birth", "city")

@@ -20,6 +20,8 @@ import { toast } from "sonner";
 import { fetchRegions, fetchPropertyTypes, fetchAccountTypes } from "@/api";
 
 interface TransactionData {
+  customer_name: string;
+  customer_phone: string;
   property_name: string;
   region: string;
   account_type: string;
@@ -38,6 +40,8 @@ interface TransactionModalProps {
 
 export function TransactionModal({ open, onOpenChange, onSubmit, isSaving = false }: TransactionModalProps) {
   const [formData, setFormData] = useState({
+    customer_name: "",
+    customer_phone: "",
     property_name: "",
     region: "",
     account_type: "",
@@ -85,13 +89,15 @@ export function TransactionModal({ open, onOpenChange, onSubmit, isSaving = fals
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.property_name || !formData.region || !formData.account_type || 
+    if (!formData.customer_name || !formData.customer_phone || !formData.property_name || !formData.region || !formData.account_type || 
         !formData.property_type || !formData.rent_price || !formData.profit) {
       toast.error("يرجى ملء جميع الحقول");
       return;
     }
 
     const transaction: TransactionData = {
+      customer_name: formData.customer_name,
+      customer_phone: formData.customer_phone,
       property_name: formData.property_name,
       region: formData.region,
       account_type: formData.account_type,
@@ -105,6 +111,8 @@ export function TransactionModal({ open, onOpenChange, onSubmit, isSaving = fals
     
     // Reset form
     setFormData({
+      customer_name: "",
+      customer_phone: "",
       property_name: "",
       region: "",
       account_type: "",
@@ -127,6 +135,30 @@ export function TransactionModal({ open, onOpenChange, onSubmit, isSaving = fals
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="customer_name">اسم العميل</Label>
+              <Input
+                id="customer_name"
+                placeholder="أدخل اسم العميل"
+                value={formData.customer_name}
+                onChange={(e) => setFormData({ ...formData, customer_name: e.target.value })}
+                disabled={isLoading || isSaving}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="customer_phone">رقم الهاتف</Label>
+              <Input
+                id="customer_phone"
+                placeholder="01xxxxxxxxx"
+                value={formData.customer_phone}
+                onChange={(e) => setFormData({ ...formData, customer_phone: e.target.value })}
+                disabled={isLoading || isSaving}
+              />
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="property_name">اسم العقار</Label>
             <Input

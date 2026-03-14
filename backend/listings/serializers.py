@@ -66,8 +66,11 @@ class PropertySerializer(serializers.ModelSerializer):
     )
     usage_type_ar = serializers.SerializerMethodField()
     status_display = serializers.CharField(source='get_status_display', read_only=True)
+    owner_id = serializers.SerializerMethodField()
+    owner_username = serializers.SerializerMethodField()
     owner_name = serializers.SerializerMethodField()
     owner_type = serializers.SerializerMethodField()
+    owner_is_verified = serializers.SerializerMethodField()
     approved_by_name = serializers.SerializerMethodField()
     deleted_by_name = serializers.SerializerMethodField()
     price_unit = serializers.SerializerMethodField()
@@ -103,6 +106,18 @@ class PropertySerializer(serializers.ModelSerializer):
             return AreaSerializer(obj.area).data
         return None
     
+    def get_owner_id(self, obj):
+        """الحصول على معرف المالك"""
+        if obj.owner and obj.owner.user:
+            return obj.owner.user.id
+        return None
+
+    def get_owner_username(self, obj):
+        """الحصول على اسم المستخدم للمالك"""
+        if obj.owner and obj.owner.user:
+            return obj.owner.user.username
+        return None
+
     def get_owner_name(self, obj):
         """آمن - التعامل مع NULL values"""
         if obj.owner and obj.owner.user:
@@ -114,6 +129,12 @@ class PropertySerializer(serializers.ModelSerializer):
         if obj.owner and hasattr(obj.owner, 'user_type'):
             return obj.owner.user_type
         return 'landlord'
+
+    def get_owner_is_verified(self, obj):
+        """التحقق إذا كان المالك موثقا"""
+        if obj.owner and hasattr(obj.owner, 'is_verified'):
+            return bool(obj.owner.is_verified)
+        return False
     
     def get_approved_by_name(self, obj):
         """آمن - التعامل مع NULL values"""
@@ -209,14 +230,14 @@ class PropertySerializer(serializers.ModelSerializer):
             # حقول جديدة للسعر
             'price_unit', 'display_price', 'is_daily_pricing',
             # حقول الموافقات
-            'owner', 'owner_name', 'owner_type', 'status', 'status_display', 'submitted_at',
+            'owner', 'owner_id', 'owner_username', 'owner_name', 'owner_type', 'owner_is_verified', 'status', 'status_display', 'submitted_at',
             'approved_by', 'approved_by_name', 'approved_at', 'rejected_at', 'approval_notes',
             # حقول المشاهدات والزيارات
             'views', 'visitors',
             # حقول الحذف المنطقي
             'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name'
         )
-        read_only_fields = ('id', 'created_at', 'updated_at', 'submitted_at', 'approved_by', 'approved_at', 'rejected_at', 'approval_notes', 'status', 'status_display', 'owner', 'owner_name', 'owner_type', 'area_data', 'views', 'visitors', 'visited_ips', 'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name', 'price_unit', 'display_price', 'is_daily_pricing', 'original_contact')
+        read_only_fields = ('id', 'created_at', 'updated_at', 'submitted_at', 'approved_by', 'approved_at', 'rejected_at', 'approval_notes', 'status', 'status_display', 'owner', 'owner_id', 'owner_username', 'owner_name', 'owner_type', 'owner_is_verified', 'area_data', 'views', 'visitors', 'visited_ips', 'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name', 'price_unit', 'display_price', 'is_daily_pricing', 'original_contact')
         extra_kwargs = {
             'name': {'required': True},
             'area': {'required': True},
@@ -361,6 +382,8 @@ class TransactionSerializer(serializers.ModelSerializer):
             'id',
             'user',
             'user_name',
+            'customer_name',
+            'customer_phone',
             'property_name',
             'region',
             'account_type',

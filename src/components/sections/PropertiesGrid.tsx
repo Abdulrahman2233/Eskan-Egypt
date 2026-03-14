@@ -255,8 +255,52 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
 
   return (
     <section className="container mx-auto px-1 py-8 lg:py-12">
-      {/* Header with Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      {/* Header (mobile) */}
+      <div className="flex items-center justify-between gap-3 mb-4 pr-[2px] lg:hidden">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-bold">العقارات المتاحة</h2>
+          <Badge variant="secondary" className="text-sm">
+            {loading ? "جاري التحميل..." : `${filteredProperties.length} عقار`}
+          </Badge>
+        </div>
+
+        <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" className="relative">
+              <SlidersHorizontal className="h-4 w-4 ml-2" />
+              <span>الفلاتر</span>
+              {activeFilters > 0 && (
+                <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {activeFilters}
+                </span>
+              )}
+            </Button>
+          </SheetTrigger>
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-md overflow-y-auto"
+          >
+            <SheetHeader>
+              <SheetTitle className="text-right">فلترة البحث</SheetTitle>
+            </SheetHeader>
+            <div className="mt-6">
+              <SearchFilters
+                onSearch={handleSearch}
+                initialArea={initialArea}
+                areas={areas}
+              />
+            </div>
+            {areaError && (
+              <p className="text-red-600 text-sm mt-4 text-center">
+                {areaError}
+              </p>
+            )}
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      {/* Header (desktop) */}
+      <div className="hidden lg:grid lg:grid-cols-[auto_1fr_auto] lg:items-center mb-8 gap-4">
         <div className="flex items-center gap-3">
           <h2 className="text-xl sm:text-2xl font-bold">
             العقارات المتاحة
@@ -266,8 +310,20 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
           </Badge>
         </div>
 
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="hidden lg:block"
+        >
+          <QuickFilters
+            onFilterSelect={handleQuickFilter}
+            activeFilter={activeQuickFilter}
+            align="center"
+          />
+        </motion.div>
+
         <div className="flex items-center gap-2">
-          {/* View Mode Toggle */}
           <div className="hidden sm:flex items-center gap-1 bg-muted rounded-lg p-1">
             <Button
               variant={viewMode === "grid" ? "default" : "ghost"}
@@ -286,41 +342,6 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
               <LayoutList className="h-4 w-4" />
             </Button>
           </div>
-
-          {/* Mobile Filter Button */}
-          <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="lg:hidden relative">
-                <SlidersHorizontal className="h-4 w-4 ml-2" />
-                <span>الفلاتر</span>
-                {activeFilters > 0 && (
-                  <span className="absolute -top-2 -left-2 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {activeFilters}
-                  </span>
-                )}
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="w-full sm:max-w-md overflow-y-auto"
-            >
-              <SheetHeader>
-                <SheetTitle className="text-right">فلترة البحث</SheetTitle>
-              </SheetHeader>
-              <div className="mt-6">
-                <SearchFilters
-                  onSearch={handleSearch}
-                  initialArea={initialArea}
-                  areas={areas}
-                />
-              </div>
-              {areaError && (
-                <p className="text-red-600 text-sm mt-4 text-center">
-                  {areaError}
-                </p>
-              )}
-            </SheetContent>
-          </Sheet>
         </div>
       </div>
 
@@ -336,11 +357,12 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="mb-8"
+        className="mb-8 lg:hidden"
       >
         <QuickFilters
           onFilterSelect={handleQuickFilter}
           activeFilter={activeQuickFilter}
+          align="center"
         />
       </motion.div>
 
@@ -383,14 +405,19 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
-                    className={`grid gap-4 sm:gap-6 ${
+                    className={
                       viewMode === "grid"
-                        ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
-                        : "grid-cols-1"
-                    }`}
+                        ? "grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
+                        : "flex flex-col gap-4"
+                    }
                   >
                     {displayedProperties.map((property) => (
-                      <PropertyCard key={property.id} property={property} />
+                      <PropertyCard
+                        key={property.id}
+                        property={property}
+                        variant={viewMode === "list" ? "list" : "grid"}
+                        listImagePosition={viewMode === "list" ? "start" : undefined}
+                      />
                     ))}
                   </motion.div>
                 </AnimatePresence>

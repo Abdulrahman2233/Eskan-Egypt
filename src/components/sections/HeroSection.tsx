@@ -25,188 +25,70 @@ const HeroSection: React.FC<HeroSectionProps> = ({
   );
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-primary/80 py-12 sm:py-16 lg:py-20">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-72 h-72 bg-secondary rounded-full -translate-x-1/2 -translate-y-1/2 blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary rounded-full translate-x-1/2 translate-y-1/2 blur-3xl" />
-      </div>
+    <section className="relative isolate overflow-hidden bg-[linear-gradient(125deg,hsl(223_74%_23%)_0%,hsl(220_76%_31%)_48%,hsl(213_69%_40%)_100%)] pb-24 pt-12 sm:pb-28 sm:pt-16 lg:pb-32 lg:pt-20">
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_16%_22%,rgba(250,204,21,0.22),transparent_34%),radial-gradient(circle_at_82%_80%,rgba(148,163,184,0.2),transparent_38%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.09),transparent_52%)]" />
 
-      {/* ═══════ PREMIUM BACKGROUND DETAILS ═══════ */}
-      <div className="absolute inset-0 pointer-events-none select-none overflow-hidden" aria-hidden="true">
-
-        {/* Dot grid with radial fade */}
-        <svg className="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <radialGradient id="hs-dotFade" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="white" stopOpacity="1" />
-              <stop offset="60%" stopColor="white" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="white" stopOpacity="0" />
-            </radialGradient>
-            <mask id="hs-dotMask">
-              <rect width="100%" height="100%" fill="url(#hs-dotFade)" />
-            </mask>
-            <pattern id="hs-dots" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-              <circle cx="20" cy="20" r="0.8" fill="white" opacity="0.25" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#hs-dots)" mask="url(#hs-dotMask)" />
-        </svg>
-
-        {/* Flowing accent lines */}
-        <motion.svg
-          className="absolute inset-0 w-full h-full"
-          viewBox="0 0 1200 500"
-          preserveAspectRatio="xMidYMid slice"
-          fill="none"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1.5, delay: 0.2 }}
-        >
-          <defs>
-            <linearGradient id="hs-line1" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="white" stopOpacity="0" />
-              <stop offset="30%" stopColor="white" stopOpacity="0.07" />
-              <stop offset="70%" stopColor="white" stopOpacity="0.05" />
-              <stop offset="100%" stopColor="white" stopOpacity="0" />
-            </linearGradient>
-            <linearGradient id="hs-line2" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0%" stopColor="white" stopOpacity="0" />
-              <stop offset="40%" stopColor="white" stopOpacity="0.04" />
-              <stop offset="60%" stopColor="white" stopOpacity="0.06" />
-              <stop offset="100%" stopColor="white" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-
-          {/* Sweeping curve — top */}
-          <motion.path
-            d="M-50,120 C200,60 500,160 750,90 C1000,20 1100,100 1250,70"
-            stroke="url(#hs-line1)"
-            strokeWidth="1"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 2.5, delay: 0.4, ease: "easeOut" }}
-          />
-
-          {/* Sweeping curve — middle */}
-          <motion.path
-            d="M-50,280 C150,230 400,310 650,250 C900,190 1050,270 1250,230"
-            stroke="url(#hs-line2)"
-            strokeWidth="0.8"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 2.5, delay: 0.7, ease: "easeOut" }}
-          />
-
-          {/* Sweeping curve — bottom, dashed */}
-          <motion.path
-            d="M-50,400 C250,350 500,420 750,370 C1000,320 1150,380 1250,360"
-            stroke="url(#hs-line1)"
-            strokeWidth="0.6"
-            strokeDasharray="8 14"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 2, delay: 1, ease: "easeOut" }}
-          />
-        </motion.svg>
-
-        {/* Subtle geometric ring — top right */}
         <motion.div
-          className="absolute -top-10 -right-10 sm:top-4 sm:right-8 w-40 h-40 sm:w-56 sm:h-56 rounded-full border border-white/[0.06]"
-          initial={{ opacity: 0, scale: 0.7 }}
+          className="absolute -left-24 bottom-6 hidden h-72 w-72 rounded-full border border-white/10 lg:block"
+          initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, delay: 0.5, ease: "easeOut" }}
+          transition={{ duration: 1, ease: "easeOut" }}
         />
         <motion.div
-          className="absolute -top-6 -right-6 sm:top-8 sm:right-12 w-28 h-28 sm:w-40 sm:h-40 rounded-full border border-white/[0.04]"
-          initial={{ opacity: 0, scale: 0.7 }}
+          className="absolute -right-16 top-6 hidden h-56 w-56 rounded-full border border-white/15 lg:block"
+          initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1, delay: 0.7, ease: "easeOut" }}
-        />
-
-        {/* Subtle geometric ring — bottom left */}
-        <motion.div
-          className="absolute -bottom-12 -left-12 sm:bottom-2 sm:left-4 w-48 h-48 sm:w-60 sm:h-60 rounded-full border border-white/[0.05]"
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1.2, delay: 0.6, ease: "easeOut" }}
-        />
-
-        {/* Vertical accent lines */}
-        <motion.div
-          className="hidden md:block absolute top-[15%] left-[18%] w-px h-20 bg-gradient-to-b from-transparent via-white/[0.08] to-transparent"
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: 1 }}
-          transition={{ duration: 0.8, delay: 1.2 }}
-        />
-        <motion.div
-          className="hidden md:block absolute top-[25%] right-[22%] w-px h-16 bg-gradient-to-b from-transparent via-white/[0.06] to-transparent"
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: 1 }}
-          transition={{ duration: 0.8, delay: 1.5 }}
+          transition={{ duration: 1, delay: 0.15, ease: "easeOut" }}
         />
       </div>
 
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="relative z-10 container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center max-w-3xl mx-auto"
+          className="mx-auto max-w-3xl text-center"
         >
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
-            <Building2 className="h-5 w-5 text-secondary" />
-            <span className="text-white/90 text-sm font-medium">
-              اكتشف مكانك المناسب
-            </span>
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-5 py-2 backdrop-blur-sm">
+            <Building2 className="h-4 w-4 text-secondary" />
+            <span className="text-sm font-semibold text-white/95">اكتشف مكانك المناسب</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
-            عقارات للإيجار في{" "}
-            <span className="text-secondary">
-              {initialArea || "الإسكندرية"}
-            </span>
+          <h1 className="mb-4 text-3xl font-bold text-white sm:text-4xl lg:text-5xl">
+            عقارات متاحة للإيجار في
+            <span className="text-secondary"> {initialArea || "الإسكندرية"}</span>
           </h1>
 
-          <p className="text-white/80 text-base sm:text-lg max-w-2xl mx-auto mb-8">
+          <p className="mx-auto mb-8 max-w-2xl text-base text-white/80 sm:text-lg">
             {initialArea
               ? `استعرض أفضل العقارات المتاحة في ${initialArea} مع أسعار تنافسية`
               : "نقدم لك مجموعة متنوعة من الشقق والعقارات الفاخرة بأفضل الأسعار"}
           </p>
 
-          {/* Stats - بدون animations ثقيلة */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
+          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {stats.map((stat, index) => (
               <motion.div
-                key={index}
+                key={stat.label}
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 + index * 0.08, duration: 0.3 }}
-                className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/10 hover:bg-white/15 transition-colors"
+                className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm transition-colors hover:bg-white/15"
               >
-                <stat.icon className="h-6 w-6 text-secondary mx-auto mb-2" />
-                <div className="text-2xl sm:text-3xl font-bold text-white">
-                  {stat.value}
-                </div>
-                <div className="text-white/70 text-xs sm:text-sm">
-                  {stat.label}
-                </div>
+                <stat.icon className="mx-auto mb-2 h-6 w-6 text-secondary" />
+                <div className="text-2xl font-bold text-white sm:text-3xl">{stat.value}</div>
+                <div className="text-xs text-white/70 sm:text-sm">{stat.label}</div>
               </motion.div>
             ))}
           </div>
         </motion.div>
       </div>
 
-      {/* Wave Divider */}
       <div className="absolute bottom-0 left-0 right-0">
-        <svg
-          viewBox="0 0 1440 100"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-auto"
-        >
+        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-auto w-full">
           <path
-            d="M0 50L48 45.7C96 41.3 192 32.7 288 35.8C384 39 480 54 576 55.2C672 56.3 768 43.7 864 39.8C960 36 1056 41 1152 48.7C1248 56.3 1344 66.7 1392 71.8L1440 77V100H1392C1344 100 1248 100 1152 100C1056 100 960 100 864 100C768 100 672 100 576 100C480 100 384 100 288 100C192 100 96 100 48 100H0V50Z"
+            d="M0 74L90 67C180 60 360 46 540 49C720 52 900 72 1080 74C1260 76 1350 60 1440 44V120H0V74Z"
             className="fill-background"
           />
         </svg>

@@ -6,6 +6,7 @@ Analytics Views and Utilities for Dashboard
 from django.db.models import Count, Q, Avg, Sum, Max, Min
 from django.utils import timezone
 from datetime import timedelta
+import calendar
 from decimal import Decimal
 from .models import Property, Area, Offer, ContactMessage, ActivityLog
 from users.models import UserProfile
@@ -70,6 +71,30 @@ class DashboardAnalytics:
             last_visited__date=today
         ).count()
         
+        # آخر 6 أشهر من التسجيلات
+        monthly_registrations = []
+        now = timezone.now()
+        for i in range(5, -1, -1):
+            month = now.month - i
+            year = now.year
+            while month <= 0:
+                month += 12
+                year -= 1
+
+            month_start = timezone.datetime(year, month, 1).date()
+            last_day = calendar.monthrange(year, month)[1]
+            month_end = timezone.datetime(year, month, last_day).date()
+
+            month_count = UserProfile.objects.filter(
+                created_at__date__gte=month_start,
+                created_at__date__lte=month_end
+            ).count()
+
+            monthly_registrations.append({
+                'month': f'{year}-{month:02d}',
+                'count': month_count,
+            })
+
         return {
             'total': total_users,
             'new_today': new_users_today,
@@ -80,6 +105,7 @@ class DashboardAnalytics:
             'total_visits': total_visits,
             'total_unique_visitors': total_unique_visitors,
             'visitors_today': visitors_today,
+            'monthly_registrations': monthly_registrations,
         }
     
     @staticmethod

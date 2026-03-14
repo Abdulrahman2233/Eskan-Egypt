@@ -1,15 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { AreaChart } from '@/components/dashboard/AreaChart';
-import { BarChart } from '@/components/dashboard/BarChart';
 import { DonutChart } from '@/components/dashboard/DonutChart';
 import { TopProperties } from '@/components/dashboard/TopProperties';
 import { RegionHeatmap } from '@/components/dashboard/RegionHeatmap';
 import { PropertyStatusList } from '@/components/dashboard/PropertyStatusList';
-import { StatCard } from '@/components/dashboard/StatCard';
-import { Building2, Eye, Clock, TrendingUp, CheckCircle, AlertCircle as AlertIcon, XCircle } from 'lucide-react';
+import { Building2, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import API from '@/api';
-import { AlertCircle } from 'lucide-react';
 
 interface AreaData {
   name: string;
@@ -62,9 +58,6 @@ const defaultRoomData: RoomDistribution[] = [
   { name: "3 غرف", value: 350, color: "#22c55e" },
   { name: "4+ غرف", value: 200, color: "#f59e0b" },
 ];
-
-// بيانات الإيرادات - ستُجلب من API مستقبلاً
-const revenueData: { name: string; value: number; value2: number }[] = [];
 
 const defaultPropertyTypeData: PropertyType[] = [
   { name: "طلاب", value: 0, color: "#0ea5e9" },
@@ -135,6 +128,11 @@ const PropertiesAdmin = () => {
     );
   }
 
+  const approvalData = [
+    { name: "موافق", value: data.properties.approved, color: "#22c55e" },
+    { name: "معلق", value: data.properties.pending, color: "#f59e0b" },
+  ];
+
   return (
     <DashboardLayout title="تحليل العقارات">
       {/* Stats */}
@@ -171,7 +169,7 @@ const PropertiesAdmin = () => {
 
             </div>
             <div className="p-2 bg-yellow-200 rounded-lg">
-              <AlertIcon className="w-6 h-6 text-yellow-600" />
+              <AlertCircle className="w-6 h-6 text-yellow-600" />
             </div>
           </div>
         </div>
@@ -194,7 +192,13 @@ const PropertiesAdmin = () => {
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-        <AreaChart title="📈 تحليل الإيرادات" subtitle="مقارنة بالعام السابق" data={revenueData} />
+        <DonutChart
+          title="✅ نسبة الموافقات مقابل المعلّق"
+          subtitle="مقارنة العقارات المعتمدة بالمعلّقة"
+          data={approvalData}
+          centerValue={(data.properties.approved + data.properties.pending).toString()}
+          centerLabel="إجمالي"
+        />
         <DonutChart title="🏢 أنواع العقارات" subtitle="توزيع حسب النوع" data={propertyTypes} centerValue={data.properties.total.toString()} centerLabel="عقار" />
       </div>
 

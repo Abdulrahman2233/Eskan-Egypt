@@ -20,20 +20,29 @@ const Navbar = () => {
   const [userName, setUserName] = useState("");
 
   useEffect(() => {
-    const token = localStorage.getItem("auth_token");
-    const user = localStorage.getItem("user");
-    
-    if (token && user) {
-      setIsLoggedIn(true);
-      try {
-        const userData = JSON.parse(user);
-        setUserName(userData.full_name || "حسابي");
-      } catch {
-        setUserName("حسابي");
+    const loadUserData = () => {
+      const token = localStorage.getItem("auth_token");
+      const user = localStorage.getItem("user");
+      
+      if (token && user) {
+        setIsLoggedIn(true);
+        try {
+          const userData = JSON.parse(user);
+          setUserName(userData.full_name || "حسابي");
+        } catch {
+          setUserName("حسابي");
+        }
+      } else {
+        setIsLoggedIn(false);
       }
-    } else {
-      setIsLoggedIn(false);
-    }
+    };
+
+    loadUserData();
+
+    // Listen for user data changes from Settings or other pages
+    const handleUserUpdate = () => loadUserData();
+    window.addEventListener('user-updated', handleUserUpdate);
+    return () => window.removeEventListener('user-updated', handleUserUpdate);
   }, [location]);
 
   const handleLogout = () => {

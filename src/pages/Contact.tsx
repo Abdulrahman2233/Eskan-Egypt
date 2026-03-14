@@ -170,10 +170,10 @@ const Contact = () => {
                     {loading ? (
                       <>
                         <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                        جاري الإرسال...
+                        <span>جاري الإرسال...</span>
                       </>
                     ) : (
-                      "إرسال الرسالة"
+                      <span>إرسال الرسالة</span>
                     )}
                   </Button>
                 </form>

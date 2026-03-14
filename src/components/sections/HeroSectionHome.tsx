@@ -1,7 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Search, Star, ChevronDown, ArrowLeft, Shield, MapPin, Clock } from "lucide-react";
+import { Search, ChevronDown, ArrowLeft, Shield, MapPin, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import HeroChartBackground from "./HeroChartBackground";
@@ -45,20 +45,31 @@ const HeroSection: React.FC<{ onScrollDown?: () => void }> = ({
           animate="visible"
           variants={staggerContainer}
         >
-          <motion.span
-            className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 px-4 py-2 rounded-full text-primary text-sm font-medium backdrop-blur-sm"
-            animate={{
-              boxShadow: [
-                "0 0 0 0 rgba(var(--primary), 0)",
-                "0 0 0 10px rgba(var(--primary), 0.1)",
-                "0 0 0 0 rgba(var(--primary), 0)",
-              ],
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
+          <motion.div
+            className="inline-flex items-center gap-2 relative overflow-hidden bg-gradient-to-l from-primary/[0.08] via-secondary/[0.06] to-primary/[0.08] border border-primary/15 px-3.5 py-1.5 rounded-full backdrop-blur-md shadow-[0_2px_12px_-2px_rgba(var(--primary),0.15)]"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            whileHover={{ scale: 1.03, boxShadow: "0 4px 20px -4px rgba(var(--primary),0.25)" }}
           >
-            <Star className="h-4 w-4 fill-secondary text-secondary" />
-            <span>المنصة الأولى للإيجار في الإسكندرية</span>
-          </motion.span>
+            {/* Shine sweep effect */}
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-l from-transparent via-white/40 to-transparent -skew-x-12"
+              animate={{ x: ["-200%", "200%"] }}
+              transition={{ duration: 3, repeat: Infinity, repeatDelay: 2, ease: "easeInOut" }}
+              style={{ width: "50%" }}
+            />
+            <div className="relative w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_1px_rgba(52,211,153,0.5)]">
+              <motion.div
+                className="absolute inset-0 rounded-full bg-emerald-400"
+                animate={{ scale: [1, 1.8, 1], opacity: [0.6, 0, 0.6] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
+            </div>
+            <span className="relative text-xs font-semibold bg-gradient-to-l from-primary via-primary/90 to-primary/80 bg-clip-text text-transparent tracking-wide">
+              المنصة الأولى للإيجار في الإسكندرية
+            </span>
+          </motion.div>
 
           <motion.h1
             className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6"
@@ -67,7 +78,7 @@ const HeroSection: React.FC<{ onScrollDown?: () => void }> = ({
             اعثر على سكنك المثالي
             <br />
             <motion.span
-              className="text-primary inline-block"
+              className="text-primary inline-block relative"
               animate={{
                 backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
               }}
@@ -82,6 +93,39 @@ const HeroSection: React.FC<{ onScrollDown?: () => void }> = ({
               }}
             >
               في الإسكندرية
+              {/* Curved underline SVG */}
+              <motion.svg
+                className="absolute -bottom-2 md:-bottom-3 left-0 w-full"
+                viewBox="0 0 300 12"
+                fill="none"
+                preserveAspectRatio="none"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
+              >
+                <motion.path
+                  d="M2 8 C50 2, 100 2, 150 6 C200 10, 250 4, 298 6"
+                  stroke="hsl(var(--secondary))"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  fill="none"
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 1.2, delay: 0.6, ease: "easeInOut" }}
+                />
+                <motion.path
+                  d="M2 8 C50 2, 100 2, 150 6 C200 10, 250 4, 298 6"
+                  stroke="hsl(var(--secondary))"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  fill="none"
+                  opacity="0.3"
+                  style={{ filter: "blur(3px)" }}
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ duration: 1.2, delay: 0.6, ease: "easeInOut" }}
+                />
+              </motion.svg>
             </motion.span>
           </motion.h1>
 

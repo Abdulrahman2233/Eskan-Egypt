@@ -10,9 +10,6 @@ import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-// بيانات التسجيلات - ستُجلب من API مستقبلاً
-const registrationData: { name: string; value: number }[] = [];
-
 // سيتم تحديثها بالبيانات الحقيقية من الـ API
 const getAccountTypeData = (byType: Record<string, number> | undefined) => {
   if (!byType) {
@@ -37,6 +34,7 @@ interface UserStats {
   new_today: number;
   active_users: number;
   by_type?: Record<string, number>;
+  monthly_registrations?: Array<{ month: string; count: number }>;
 }
 
 interface Owner {
@@ -208,6 +206,10 @@ const UsersPage = () => {
   const ownerCount = stats?.by_type?.['landlord'] || 0;
   const brokerCount = stats?.by_type?.['agent'] || 0;
   const officeCount = stats?.by_type?.['office'] || 0;
+  const registrationData = (stats?.monthly_registrations || []).map((item) => ({
+    name: item.month,
+    value: item.count,
+  }));
 
   return (
     <DashboardLayout title="تحليل المستخدمين">

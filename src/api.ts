@@ -97,8 +97,12 @@ export interface ApiProperty {
   price_unit: string;
   display_price: number;
   is_daily_pricing: boolean;
+  owner: number | null;
+  owner_id: number | null;
+  owner_username: string | null;
   owner_name: string;
   owner_type: string;
+  owner_is_verified?: boolean;
   status: string;
   status_display: string;
   views: number;
@@ -338,12 +342,50 @@ export async function resetPassword(data: {
   }
 }
 
+export async function fetchCurrentUser(): Promise<Record<string, unknown>> {
+  try {
+    const { data } = await API.get("/users/auth/me/");
+    return data;
+  } catch (error) {
+    handleError(error, "Fetch Current User");
+    throw error;
+  }
+}
+
 export async function updateProfile(profileData: Record<string, unknown>): Promise<Record<string, unknown>> {
   try {
     const response = await API.put("/users/auth/me/", profileData);
     return response.data;
   } catch (error) {
     handleError(error, "Update Profile");
+    throw error;
+  }
+}
+
+// ============ Public User Profile ============
+export interface PublicUserProfile {
+  user_id: number;
+  username: string;
+  full_name: string;
+  user_type: string;
+  city: string | null;
+  member_since: string;
+  properties_count: number;
+  is_verified: boolean;
+}
+
+export interface PublicProfileResponse {
+  success: boolean;
+  profile: PublicUserProfile;
+  properties: ApiProperty[];
+}
+
+export async function fetchPublicProfile(username: string): Promise<PublicProfileResponse> {
+  try {
+    const { data } = await API.get(`/users/auth/public-profile/${username}/`);
+    return data;
+  } catch (error) {
+    console.error("Error fetching public profile:", error);
     throw error;
   }
 }
@@ -578,7 +620,15 @@ export async function sendContactMessage(messageData: {
 export async function fetchContactMessages() {
   try {
     const { data } = await API.get("/contact-messages/");
-    return data;
+    // معالجة الرسائل سواء كانت array مباشرة أو paginated response
+    if (Array.isArray(data)) {
+      return data;
+    } else if (data?.results && Array.isArray(data.results)) {
+      // إذا كانت البيانات مع pagination، أرجع النتائج مع بيانات pagination
+      return { ...data, _isPaginated: true };
+    } else {
+      return [];
+    }
   } catch (error) {
     console.error("Error fetching contact messages:", error);
     throw error;
@@ -792,6 +842,8 @@ export async function fetchTransaction(id: string): Promise<any> {
  * Create a new transaction
  */
 export async function createTransaction(transactionData: {
+  customer_name: string;
+  customer_phone: string;
   property_name: string;
   region: string;
   account_type: string;

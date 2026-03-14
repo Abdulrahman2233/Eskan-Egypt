@@ -551,6 +551,8 @@ class Transaction(models.Model):
         related_name='transactions',
         verbose_name='المستخدم'
     )
+    customer_name = models.CharField(max_length=200, verbose_name='اسم العميل')
+    customer_phone = models.CharField(max_length=30, verbose_name='رقم هاتف العميل')
     property_name = models.CharField(max_length=200, verbose_name='اسم العقار')
     region = models.CharField(max_length=100, verbose_name='المنطقة')
     account_type = models.CharField(
@@ -593,7 +595,7 @@ class Transaction(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.property_name} - {self.profit} ج.م - {self.created_at.strftime('%Y-%m-%d')}"
+        return f"{self.customer_name} - {self.property_name} - {self.profit} ج.م - {self.created_at.strftime('%Y-%m-%d')}"
 
 
 class Notification(models.Model):

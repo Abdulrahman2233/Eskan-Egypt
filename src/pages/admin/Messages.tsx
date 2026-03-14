@@ -76,31 +76,47 @@ export default function Messages() {
       setLoading(true);
       setError(null);
       const data = await fetchContactMessages();
+      
+      console.log("Contact Messages Data:", data);
+      
+      // معالجة الرسائل سواء كانت array مباشرة أو paginated response
+      const messages = Array.isArray(data) 
+        ? data 
+        : (data?.results && Array.isArray(data.results) 
+            ? data.results 
+            : []);
+      
+      console.log("Formatted Messages:", messages);
+      
       // تحويل البيانات من API إلى صيغة المكون
-      const formattedMessages = Array.isArray(data)
-        ? data.map((msg: Record<string, unknown>) => ({
-            id: msg.id as number,
-            sender: msg.name as string,
-            name: msg.name as string,
-            email: msg.email as string,
-            phone: msg.phone as string,
-            subject: msg.subject as string,
-            preview: (msg.message as string)?.substring(0, 100) || "",
-            content: msg.message as string,
-            message: msg.message as string,
-            time: new Date(msg.created_at as string).toLocaleString("ar-SA"),
-            date: new Date(msg.created_at as string).toLocaleDateString("ar-SA"),
-            isRead: msg.is_read as boolean,
-            is_read: msg.is_read as boolean,
-            isStarred: false,
-            created_at: msg.created_at as string,
-            updated_at: msg.updated_at as string,
-            is_archived: msg.is_archived as boolean,
-          }))
-        : [];
+      const formattedMessages = messages.map((msg: Record<string, unknown>) => ({
+        id: msg.id as number,
+        sender: msg.name as string,
+        name: msg.name as string,
+        email: msg.email as string,
+        phone: msg.phone as string,
+        subject: msg.subject as string,
+        preview: (msg.message as string)?.substring(0, 100) || "",
+        content: msg.message as string,
+        message: msg.message as string,
+        time: new Date(msg.created_at as string).toLocaleString("ar-SA"),
+        date: new Date(msg.created_at as string).toLocaleDateString("ar-SA"),
+        isRead: msg.is_read as boolean,
+        is_read: msg.is_read as boolean,
+        isStarred: false,
+        created_at: msg.created_at as string,
+        updated_at: msg.updated_at as string,
+        is_archived: msg.is_archived as boolean,
+      }));
+      
       setMessageList(formattedMessages);
+      
+      if (formattedMessages.length === 0) {
+        setError("لا توجد رسائل حالياً");
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "حدث خطأ في جلب الرسائل";
+      console.error("Error loading messages:", err);
       setError(errorMessage);
       toast({
         title: "خطأ",

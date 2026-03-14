@@ -13,10 +13,14 @@ import { fetchTransactions, deleteTransaction, createTransaction } from "@/api";
 
 interface Transaction {
   id: string;
+  customer_name: string;
+  customer_phone: string;
   property_name: string;
   region: string;
   account_type: string;
+  account_type_display?: string;
   property_type: string;
+  property_type_display?: string;
   rent_price: number;
   commission: number;
   profit: number;
@@ -54,6 +58,8 @@ export default function Profits() {
       console.log("📤 Sending transaction to API:", transaction);
       
       const newTransaction = await createTransaction({
+        customer_name: transaction.customer_name,
+        customer_phone: transaction.customer_phone,
         property_name: transaction.property_name,
         region: transaction.region,
         account_type: transaction.account_type,
@@ -103,13 +109,31 @@ export default function Profits() {
     toast.info("سيتم إضافة خاصية التعديل قريباً");
   };
 
+  const propertyTypeMap: Record<string, string> = {
+    students: "طلاب",
+    families: "عائلات",
+    studio: "استوديو",
+    vacation: "مصيفين",
+    vacationers: "مصيفين",
+    daily: "حجز يومي",
+  };
+
+  const accountTypeMap: Record<string, string> = {
+    owner: "مالك",
+    agent: "وسيط",
+    office: "مكتب عقارات",
+    tenant: "مستأجر",
+  };
+
   // Convert API response to component format
   const displayTransactions = transactions.map(t => ({
     id: t.id,
+    customerName: t.customer_name,
+    customerPhone: t.customer_phone,
     propertyName: t.property_name,
     region: t.region,
-    accountType: t.account_type,
-    propertyType: t.property_type,
+    accountType: t.account_type_display || accountTypeMap[t.account_type] || t.account_type,
+    propertyType: t.property_type_display || propertyTypeMap[t.property_type] || t.property_type,
     rentPrice: parseFloat(t.rent_price.toString()),
     commission: parseFloat(t.commission.toString()),
     profit: parseFloat(t.profit.toString()),
@@ -136,12 +160,14 @@ export default function Profits() {
             className="gap-2 shadow-lg hover:shadow-xl transition-shadow"
             disabled={isLoading || isSaving}
           >
-            {isLoading || isSaving ? (
-              <Loader className="h-5 w-5 animate-spin" />
-            ) : (
-              <Plus className="h-5 w-5" />
-            )}
-            إتمام صفقة
+            <span className="flex items-center gap-2">
+              {isLoading || isSaving ? (
+                <Loader className="h-5 w-5 animate-spin" />
+              ) : (
+                <Plus className="h-5 w-5" />
+              )}
+              <span>إتمام صفقة</span>
+            </span>
           </Button>
         </div>
 

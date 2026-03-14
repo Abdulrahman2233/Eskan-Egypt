@@ -249,12 +249,12 @@ const MyRejectedProperties = () => {
                                 {resubmittingId === property.id ? (
                                   <>
                                     <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                                    جاري...
+                                    <span>جاري...</span>
                                   </>
                                 ) : (
                                   <>
                                     <RefreshCw className="w-4 h-4 ml-2" />
-                                    إعادة الإرسال
+                                    <span>إعادة الإرسال</span>
                                   </>
                                 )}
                               </Button>

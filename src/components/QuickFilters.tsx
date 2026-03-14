@@ -1,17 +1,19 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Button } from "./ui/button";
 import { Users, Home, Radio, Waves } from "lucide-react";
 
 interface QuickFiltersProps {
   onFilterSelect: (usageType: string) => void;
   activeFilter?: string | null;
+  className?: string;
+  align?: "start" | "center";
 }
 
 const QUICK_FILTER_OPTIONS = [
   {
     id: "students",
     label: "طلاب",
+    mobileLabel: "طلاب",
     icon: Users,
     activeColor: "bg-blue-600 hover:bg-blue-700",
     inactiveColor: "bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50",
@@ -21,6 +23,7 @@ const QUICK_FILTER_OPTIONS = [
   {
     id: "families",
     label: "عائلات",
+    mobileLabel: "عائلات",
     icon: Home,
     activeColor: "bg-blue-600 hover:bg-blue-700",
     inactiveColor: "bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50",
@@ -30,6 +33,7 @@ const QUICK_FILTER_OPTIONS = [
   {
     id: "studio",
     label: "استوديو",
+    mobileLabel: "استوديو",
     icon: Radio,
     activeColor: "bg-blue-600 hover:bg-blue-700",
     inactiveColor: "bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50",
@@ -39,6 +43,7 @@ const QUICK_FILTER_OPTIONS = [
   {
     id: "vacation",
     label: "مصيفين / حجز يومي",
+    mobileLabel: "مصيفين/يومي",
     icon: Waves,
     activeColor: "bg-blue-600 hover:bg-blue-700",
     inactiveColor: "bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50",
@@ -50,10 +55,14 @@ const QUICK_FILTER_OPTIONS = [
 const QuickFiltersComponent: React.FC<QuickFiltersProps> = ({
   onFilterSelect,
   activeFilter,
+  className,
+  align = "start",
 }) => {
+  const justifyClass = align === "center" ? "justify-center" : "justify-start";
+
   return (
-    <div className="mb-10">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className={className}>
+      <div className={`flex flex-wrap items-center gap-2 ${justifyClass}`}>
         {QUICK_FILTER_OPTIONS.map((filter, index) => {
           const Icon = filter.icon;
           const isActive = activeFilter === filter.id;
@@ -67,14 +76,15 @@ const QuickFiltersComponent: React.FC<QuickFiltersProps> = ({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => onFilterSelect(filter.id)}
-              className={`w-full h-auto flex flex-col items-center justify-center gap-1.5 py-3 px-3 rounded-lg transition-all duration-200 font-medium text-xs ${
+              className={`inline-flex h-9 items-center justify-center gap-1.5 rounded-full border px-3 text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap ${
                 isActive
                   ? `${filter.activeColor} ${filter.activeTextColor} shadow-md`
                   : `${filter.inactiveColor} ${filter.textColor}`
               }`}
             >
-              <Icon className="h-4 w-4" />
-              <span className="text-xs">{filter.label}</span>
+              <Icon className="h-3.5 w-3.5" />
+              <span className="sm:hidden">{filter.mobileLabel}</span>
+              <span className="hidden sm:inline">{filter.label}</span>
             </motion.button>
           );
         })}

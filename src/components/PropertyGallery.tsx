@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Play, X, ZoomIn } from "lucide-react";
+import { ChevronLeft, ChevronRight, Play, X, ZoomIn, Tag, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -12,9 +12,11 @@ interface MediaItem {
 interface PropertyGalleryProps {
   images?: Array<{ image_url: string }>;
   videos?: Array<{ video_url: string }>;
+  discount?: number | null;
+  featured?: boolean;
 }
 
-const PropertyGallery = ({ images = [], videos = [] }: PropertyGalleryProps) => {
+const PropertyGallery = ({ images = [], videos = [], discount, featured }: PropertyGalleryProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState<number | null>(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
@@ -126,8 +128,24 @@ const PropertyGallery = ({ images = [], videos = [] }: PropertyGalleryProps) => 
                 </div>
               </motion.div>
 
-              {/* Badge with count */}
-              <div className="absolute top-4 right-4 z-10">
+              {/* Top Badges Row - Discount & Featured */}
+              <div className="absolute top-3 left-3 right-3 flex items-start justify-between z-10">
+                {/* Right Side - Discount & Featured */}
+                <div className="flex flex-col gap-2 items-start">
+                  {discount != null && discount > 0 && (
+                    <Badge className="bg-gradient-to-r from-red-500 to-rose-600 text-white border-0 shadow-lg px-2.5 py-1 text-xs font-bold flex items-center gap-1.5 rounded-full w-fit">
+                      <Tag className="h-3 w-3" />
+                      <span>خصم {discount}%</span>
+                    </Badge>
+                  )}
+                  {featured && (
+                    <Badge className="bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border-0 shadow-lg px-2.5 py-1 text-xs font-bold flex items-center gap-1.5 rounded-full w-fit">
+                      <Sparkles className="h-3 w-3" />
+                      <span>مميز</span>
+                    </Badge>
+                  )}
+                </div>
+                {/* Left Side - Image Count */}
                 <Badge className="bg-black/60 text-white shadow-lg gap-1 px-3 py-1.5">
                   <span>1/{mediaItems.length}</span>
                 </Badge>
@@ -330,7 +348,8 @@ const PropertyGallery = ({ images = [], videos = [] }: PropertyGalleryProps) => 
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="absolute inset-0"
+            className="absolute inset-0 cursor-pointer"
+            onClick={() => setSelectedMediaIndex(currentIndex)}
           >
             {mediaItems[currentIndex]?.type === "image" ? (
               <img
@@ -371,31 +390,28 @@ const PropertyGallery = ({ images = [], videos = [] }: PropertyGalleryProps) => 
           </>
         )}
 
-        {/* Counter and Fullscreen */}
-        <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10">
-          <div className="bg-black/60 text-white px-3 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm">
-            {currentIndex + 1} / {mediaItems.length}
-          </div>
-          <button
-            onClick={() => setSelectedMediaIndex(currentIndex)}
-            className="w-10 h-10 rounded-full bg-white/90 hover:bg-white text-foreground shadow-lg transition-all flex items-center justify-center"
-            aria-label="عرض ملء الشاشة"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"
-              />
-            </svg>
-          </button>
+        {/* Counter - Top Left */}
+        <div className="absolute top-4 left-4 bg-black/60 text-white px-3 py-1.5 rounded-full text-sm font-medium backdrop-blur-sm z-10">
+          {currentIndex + 1} / {mediaItems.length}
         </div>
+
+        {/* Badges Row - Top Right */}
+        {(discount != null && discount > 0 || featured) && (
+          <div className="absolute top-3 right-3 flex flex-col gap-2 z-10">
+            {discount != null && discount > 0 && (
+              <Badge className="bg-gradient-to-r from-red-500 to-rose-600 text-white border-0 shadow-lg px-2.5 py-1 text-xs font-bold flex items-center gap-1.5 rounded-full w-fit">
+                <Tag className="h-3 w-3" />
+                <span>خصم {discount}%</span>
+              </Badge>
+            )}
+            {featured && (
+              <Badge className="bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-950 border-0 shadow-lg px-2.5 py-1 text-xs font-bold flex items-center gap-1.5 rounded-full w-fit">
+                <Sparkles className="h-3 w-3" />
+                <span>مميز</span>
+              </Badge>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Thumbnail Dots */}

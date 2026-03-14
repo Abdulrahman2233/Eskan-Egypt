@@ -90,7 +90,7 @@ const Auth = () => {
             id: data.user?.id || "user-1",
             email: data.user?.email || loginUsername,
             username: loginUsername,
-            full_name: (profile as any)?.full_name || data.user?.full_name || loginUsername,
+              full_name: data.user?.full_name || (profile as any)?.full_name || loginUsername,
             phone: (profile as any)?.phone_number || "",
             account_type: (profile as any)?.user_type || "tenant",
             is_staff: data.user?.is_staff || false,
@@ -142,7 +142,7 @@ const Auth = () => {
               id: loginData.user?.id || "user-" + Date.now(),
               email: loginData.user?.email || formData.email,
               username: formData.username,
-              full_name: (profile as any)?.full_name || loginData.user?.full_name || formData.fullName,
+              full_name: loginData.user?.full_name || (profile as any)?.full_name || formData.fullName,
               phone: (profile as any)?.phone_number || formData.phone,
               account_type: (profile as any)?.user_type || formData.accountType,
               is_staff: loginData.user?.is_staff || false,
@@ -413,17 +413,19 @@ const Auth = () => {
                   disabled={loading}
                   className="w-full h-14 rounded-xl text-lg font-medium bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 gap-2"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      جاري تسجيل الدخول...
-                    </>
-                  ) : (
-                    <>
-                      <span>تسجيل الدخول</span>
-                      <ArrowRight className="h-5 w-5" />
-                    </>
-                  )}
+                  <span className="flex items-center gap-2">
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span>جاري تسجيل الدخول...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>تسجيل الدخول</span>
+                        <ArrowRight className="h-5 w-5" />
+                      </>
+                    )}
+                  </span>
                 </Button>
               </motion.form>
             ) : (
@@ -656,17 +658,19 @@ const Auth = () => {
                   disabled={loading}
                   className="w-full h-14 rounded-xl text-lg font-medium bg-primary hover:bg-primary/90 shadow-lg shadow-primary/30 gap-2"
                 >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      جاري إنشاء الحساب...
-                    </>
-                  ) : (
-                    <>
-                      <span>إنشاء حساب</span>
-                      <ArrowRight className="h-5 w-5" />
-                    </>
-                  )}
+                  <span className="flex items-center gap-2">
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span>جاري إنشاء الحساب...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>إنشاء حساب</span>
+                        <ArrowRight className="h-5 w-5" />
+                      </>
+                    )}
+                  </span>
                 </Button>
               </motion.form>
             )}
