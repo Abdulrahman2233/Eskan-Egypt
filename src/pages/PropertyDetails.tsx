@@ -651,7 +651,7 @@ const PropertyDetails = () => {
                                   <User className="h-3.5 w-3.5 text-primary" />
                                   <span>صاحب العقار</span>
                                 </div>
-                                <div className="flex items-center gap-2 mt-1">
+                                <div className="flex items-center gap-0.5 mt-1">
                                   {property.owner_is_verified && (
                                     <Tooltip>
                                       <TooltipTrigger>
