@@ -24,17 +24,19 @@ interface AccountTypeData {
 }
 
 const accountTypeColors: Record<string, string> = {
+  landlord: "#0ea5e9",
   owner: "#0ea5e9",
   agent: "#22c55e",
   office: "#f59e0b",
-  tenant: "#8b5cf6",
+  admin: "#ec4899",
 };
 
 const accountTypeLabels: Record<string, string> = {
-  owner: "ملاك",
+  landlord: "ملاك عقارات",
+  owner: "ملاك عقارات",
   agent: "وسطاء",
   office: "مكاتب عقارات",
-  tenant: "مستأجرون",
+  admin: "مسؤولون",
 };
 
 interface CustomTooltipProps {

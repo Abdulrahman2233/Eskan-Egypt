@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Bed, Bath, Maximize2, MapPin, Tag, Eye, Calendar, ChevronLeft, Sparkles, Check } from "lucide-react";
+import { Bed, Bath, Maximize2, MapPin, Tag, Eye, Calendar, ChevronLeft, Sparkles, Check, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BACKEND_URL } from "@/config";
 
@@ -33,7 +33,7 @@ interface PropertyCardProps {
     rooms?: number;
     bathrooms?: number;
     size?: number;
-    area?: { name: string } | string;
+    area?: number | { name: string } | string;
     area_data?: { name: string };
     usage_type?: string;
     type?: string;
@@ -46,6 +46,7 @@ interface PropertyCardProps {
     owner_name?: string;
     owner_username?: string;
     owner_is_verified?: boolean;
+    is_booked?: boolean;
   };
   variant?: "grid" | "list";
   listImagePosition?: "start" | "end";
@@ -57,6 +58,7 @@ export const PropertyCard = ({
   listImagePosition = "end",
 }: PropertyCardProps) => {
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const hasDiscount = property.discount != null && property.discount > 0;
   const isListView = variant === "list";
   const listDirectionClass =
     listImagePosition === "start"
@@ -69,7 +71,9 @@ export const PropertyCard = ({
       return property.area_data.name;
     if (typeof property.area === "object" && property.area !== null)
       return property.area.name;
-    return property.area || "غير محدد";
+    if (typeof property.area === "string" && property.area)
+      return property.area;
+    return "غير محدد";
   }, [property.area, property.area_data]);
 
   // Memoize image URL
@@ -142,12 +146,32 @@ export const PropertyCard = ({
           {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
           
+          {/* Booked Overlay */}
+          {property.is_booked && (
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center"
+            >
+              <div className="flex flex-col items-center justify-center gap-2">
+                <div className="w-14 h-14 rounded-full bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg">
+                  <Lock className="h-6 w-6 text-white" strokeWidth={2.5} />
+                </div>
+                <div className="text-center">
+                  <span className="text-white font-bold text-lg tracking-wide block">محجوز</span>
+                  <span className="text-white/70 text-xs text-sm">هذا العقار غير متاح حالياً</span>
+                </div>
+              </div>
+            </motion.div>
+          )}
+          
           {/* Top Badges Row */}
           <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
             {/* Right Side: Discount & Featured */}
             <div className="flex flex-col gap-2 items-start">
               {/* Discount Badge */}
-              {property.discount != null && property.discount > 0 && (
+              {hasDiscount && (
                 <div>
                   <Badge className="bg-gradient-to-r from-red-500 to-rose-600 text-white border-0 shadow-lg px-2.5 py-1 text-xs font-bold flex items-center gap-1.5 rounded-full w-fit">
                     <Tag className="h-3 w-3" />
@@ -165,8 +189,8 @@ export const PropertyCard = ({
               )}
             </div>
             
-            {/* Left Side: Usage Type */}
-            <div className="flex flex-col gap-2 items-start">
+            {/* Left Side: Usage Type & Booking Status */}
+            <div className="flex flex-col gap-2 items-end">
               {/* Usage Type Badge */}
               {property.usage_type && (
                 <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white border-0 shadow-lg px-2.5 py-1 text-xs font-bold rounded-full w-fit">
@@ -195,7 +219,7 @@ export const PropertyCard = ({
             <div className="flex items-start justify-between gap-2">
               <div>
                 {/* Original Price if discount exists */}
-                {property.original_price && property.discount != null && property.discount > 0 && (
+                {property.original_price && hasDiscount && (
                   <span className="text-sm text-muted-foreground line-through block">
                     {property.original_price.toLocaleString()} جنيه
                   </span>
@@ -203,7 +227,7 @@ export const PropertyCard = ({
                 <div className="flex items-baseline gap-1.5">
                   <span className={cn(
                     "text-2xl sm:text-3xl font-bold",
-                    property.discount && property.discount > 0 ? "text-red-500" : "text-primary"
+                    hasDiscount ? "text-red-500" : "text-primary"
                   )}>
                     {(property.display_price || property.price)?.toLocaleString()}
                   </span>
@@ -214,7 +238,7 @@ export const PropertyCard = ({
               </div>
               
               {/* Savings Badge */}
-              {property.original_price && property.discount != null && property.discount > 0 && (
+              {property.original_price && hasDiscount && (
                 <div className="bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-2.5 py-1 rounded-lg">
                   <span className="text-xs text-green-600 dark:text-green-400 font-semibold">
                     وفّر {(property.original_price - (property.display_price || property.price)).toLocaleString()} جنيه
@@ -222,6 +246,7 @@ export const PropertyCard = ({
                 </div>
               )}
             </div>
+
           </div>
           
           {/* Title & Location */}
@@ -295,7 +320,7 @@ export const PropertyCard = ({
                 </span>
               )
             )}
-            {property.discount != null && property.discount > 0 && (
+            {hasDiscount && (
               <Badge variant="destructive" className="text-xs rounded-full px-2.5">
                 عرض خاص
               </Badge>

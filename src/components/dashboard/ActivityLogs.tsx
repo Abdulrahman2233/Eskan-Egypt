@@ -47,8 +47,6 @@ const userTypeColors: Record<string, string> = {
   "مكتب": "bg-cyan-100 text-cyan-700",
   "admin": "bg-amber-100 text-amber-700",
   "مشرف": "bg-amber-100 text-amber-700",
-  "tenant": "bg-green-100 text-green-700",
-  "مستأجر": "bg-green-100 text-green-700",
 };
 
 const userTypeLabels: Record<string, string> = {
@@ -56,7 +54,6 @@ const userTypeLabels: Record<string, string> = {
   broker: "وسيط",
   office: "مكتب",
   admin: "مشرف",
-  tenant: "مستأجر",
 };
 
 function formatDate(timestamp: string): string {

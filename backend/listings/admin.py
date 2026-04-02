@@ -23,13 +23,8 @@ class PropertyAdmin(admin.ModelAdmin):
         'name',
         'get_owner_info',
         'area',
-        'usage_type',
-        'get_display_price',
-        'discount',
-        'rooms',
-        'beds',
+        'get_booking_status_badge',
         'status_badge',
-        'featured',
         'created_at',
     )
     search_fields = ('name', 'address', 'owner__user__username', 'owner__user__email')
@@ -54,7 +49,8 @@ class PropertyAdmin(admin.ModelAdmin):
         'status_badge',
         'get_owner_preview',
         'get_display_price',
-        'get_price_unit'
+        'get_price_unit',
+        'booked_at',
     )
     
     filter_horizontal = ('amenities',)
@@ -100,6 +96,12 @@ class PropertyAdmin(admin.ModelAdmin):
                 'get_owner_preview', 'owner', 'status', 'status_badge', 'submitted_at',
                 'approved_by', 'approval_notes'
             )
+        }),
+        ('حالة الحجز 🔒', {
+            'fields': (
+                'is_booked', 'booked_at', 'booking_expires_at'
+            ),
+            'description': '<p style="color: #27ae60; font-weight: bold;">☑️ إدارة حالة الحجز - حدد is_booked لتعليم العقار كمحجوز، و booking_expires_at يحدد متى ينتهي الحجز</p>'
         }),
         ('معلومات النظام', {
             'fields': ('created_at', 'updated_at'),
@@ -200,7 +202,6 @@ class PropertyAdmin(admin.ModelAdmin):
         
         owner = obj.owner
         user_type_display = {
-            'tenant': 'مستأجر',
             'landlord': 'مالك عقار',
             'agent': 'وسيط',
             'office': 'مكتب',
@@ -244,6 +245,36 @@ class PropertyAdmin(admin.ModelAdmin):
             status_text
         )
     status_badge.short_description = "حالة العقار"
+
+    def get_booking_status_badge(self, obj):
+        """عرض حالة الحجز في list view"""
+        if obj.is_booked:
+            return format_html(
+                '<span style="background-color: #dc3545; color: white; padding: 5px 10px; border-radius: 3px; font-weight: bold;">🔒 محجوز</span>'
+            )
+        else:
+            return format_html(
+                '<span style="background-color: #28a745; color: white; padding: 5px 10px; border-radius: 3px; font-weight: bold;">✓ متاح</span>'
+            )
+    get_booking_status_badge.short_description = "حالة الحجز"
+
+    def get_booking_status(self, obj):
+        """عرض حالة الحجز في شكل بطاقة احترافية"""
+        if obj.is_booked:
+            booked_date = obj.booked_at.strftime("%Y-%m-%d %H:%M") if obj.booked_at else "غير معروف"
+            booked_by_name = obj.booked_by.user.get_full_name() or obj.booked_by.user.username if obj.booked_by else "غير متاح"
+            
+            html = f'<div style="background-color: #27ae60; color: white; padding: 10px; border-radius: 5px; text-align: center;">'
+            html += f'<strong>✓ محجوز</strong><br/>'
+            html += f'<small>بتاريخ: {booked_date}</small><br/>'
+            html += f'<small>من قبل: {booked_by_name}</small>'
+            html += '</div>'
+            return format_html(html)
+        else:
+            return format_html(
+                '<div style="background-color: #95a5a6; color: white; padding: 10px; border-radius: 5px; text-align: center;"><strong>○ متاح</strong></div>'
+            )
+    get_booking_status.short_description = "حالة الحجز"
 
     def delete_model(self, request, obj):
         """

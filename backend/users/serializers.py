@@ -88,8 +88,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         style={'input_type': 'password'}
     )
     user_type = serializers.ChoiceField(
-        choices=['tenant', 'landlord', 'agent', 'office', 'admin'],
-        default='tenant',
+        choices=['landlord', 'agent', 'office', 'admin'],
+        default='landlord',
         required=False
     )
 
@@ -98,8 +98,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ['username', 'email', 'first_name', 'last_name', 'phone_number', 'password', 'password_confirm', 'user_type']
 
     def validate_username(self, value):
-        """Validate username format and uniqueness."""
-        if User.objects.filter(username=value).exists():
+        """Validate username format and uniqueness (case-insensitive)."""
+        # Normalize to lowercase for consistency
+        value = value.lower()
+        
+        # Check if username exists (case-insensitive)
+        if User.objects.filter(username__iexact=value).exists():
             raise serializers.ValidationError("اسم المستخدم موجود بالفعل")
         if not re.match(r'^[a-zA-Z0-9_.-]+$', value):
             raise serializers.ValidationError(
@@ -124,13 +128,16 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """Create user and profile."""
         validated_data.pop('password_confirm')  # Remove password_confirm
-        user_type = validated_data.pop('user_type', 'tenant')
+        user_type = validated_data.pop('user_type', 'landlord')
         phone_number = validated_data.pop('phone_number', '')
         password = validated_data.pop('password')
 
+        # Normalize username to lowercase for consistency
+        username_normalized = validated_data['username'].lower()
+
         # Create user using create_user (handles password hashing)
         user = User.objects.create_user(
-            username=validated_data['username'],
+            username=username_normalized,
             email=validated_data.get('email', ''),
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
@@ -164,15 +171,19 @@ class LoginSerializer(serializers.Serializer):
         username = data.get('username')
         password = data.get('password')
 
-        if username and password:
-            user = authenticate(username=username, password=password)
-            if not user:
-                raise serializers.ValidationError(
-                    "اسم المستخدم أو كلمة المرور غير صحيحة"
-                )
-        else:
+        if not username or not password:
             raise serializers.ValidationError(
                 "اسم المستخدم وكلمة المرور مطلوبان"
+            )
+
+        # Normalize username to lowercase
+        username = username.lower()
+        
+        # Try to authenticate with normalized username
+        user = authenticate(username=username, password=password)
+        if not user:
+            raise serializers.ValidationError(
+                "اسم المستخدم أو كلمة المرور غير صحيحة"
             )
 
         data['user'] = user

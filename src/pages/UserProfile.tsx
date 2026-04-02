@@ -53,14 +53,6 @@ const USER_TYPES: Record<string, {
     ring: "ring-sky-500/30",
     gradient: "from-sky-500 to-blue-600",
   },
-  tenant: {
-    label: "مستأجر",
-    icon: User,
-    color: "text-emerald-600 dark:text-emerald-400",
-    bg: "bg-emerald-50 dark:bg-emerald-950/40",
-    ring: "ring-emerald-500/30",
-    gradient: "from-emerald-500 to-teal-600",
-  },
   admin: {
     label: "مدير",
     icon: Shield,
@@ -256,27 +248,34 @@ const UserProfilePage = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.25 }}
                   >
-                    <div
-                      dir={isEnglishName ? "ltr" : "rtl"}
-                      className="flex flex-wrap items-center gap-1 justify-center sm:justify-start mb-1"
-                    >
-                      <h1 className={`order-1 text-2xl sm:text-2xl ${isEnglishName ? 'font-bold' : 'font-extrabold'} tracking-tight leading-tight`}>
+                    <div className="flex items-center gap-2 justify-center sm:justify-start mb-1">
+                      
+                      {/* Verified Badge */}
+                      {profile.is_verified && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center justify-center">
+                              <VerifiedBadge className="h-5 w-5 sm:h-5 sm:w-5" />
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>حساب موثّق</TooltipContent>
+                        </Tooltip>
+                      )}
+
+                      {/* Name */}
+                      <h1
+                        dir={isEnglishName ? "ltr" : "rtl"}
+                        className={`text-2xl sm:text-2xl font-bold tracking-tight leading-tight`}
+                      >
                         {profile.full_name}
                       </h1>
-                      {profile.is_verified && (
-                        <span className={isEnglishName ? "order-2" : "order-0"}>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <div className="flex items-center justify-center">
-                                <VerifiedBadge className="h-5 w-5 sm:h-5 sm:w-5" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>حساب موثّق</TooltipContent>
-                          </Tooltip>
-                        </span>
-                      )}
+
                     </div>
-                    <p className="text-sm text-muted-foreground mb-3">@{profile.username}</p>
+
+                    {/* Username */}
+                    <p className="text-sm text-muted-foreground mb-3">
+                      @{profile.username}
+                    </p>
                   </motion.div>
 
                   {/* Tags Row */}

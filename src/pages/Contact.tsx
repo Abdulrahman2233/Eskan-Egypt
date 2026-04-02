@@ -9,8 +9,20 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { sendContactMessage } from "@/api";
+import { usePageSeo } from "@/hooks/use-page-seo";
 
 const Contact = () => {
+  usePageSeo({
+    title: "تواصل مع إقامتك EQAMTAK | دعم المستأجرين والملاك ومكاتب العقارات",
+    description:
+      "تواصل مع فريق إقامتك EQAMTAK للاستفسار عن سكن طلاب، سكن عائلات، الحجز اليومي، أو الانضمام للمنصة كمالك أو مكتب عقاري أو وسيط عقاري.",
+    keywords:
+      "تواصل اسكان ايجيبت, دعم عقاري, انضمام ملاك, مكاتب عقارات الاسكندرية, وسيط عقاري, حجز سكن",
+    ogTitle: "تواصل مع إقامتك EQAMTAK",
+    ogDescription:
+      "فريق دعم جاهز لمساعدتك في البحث عن السكن أو نشر عقارك على المنصة.",
+  });
+
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -57,7 +58,64 @@ interface PropertiesGridProps {
   onFiltersChange?: (count: number) => void;
   loading?: boolean;
   areas?: { id: number; name: string }[];
+  searchTerm: string;
+  onSearchTermChange: (value: string) => void;
 }
+
+const PropertyCardSkeleton = ({ list = false }: { list?: boolean }) => {
+  if (list) {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
+        <div className="flex flex-col-reverse sm:flex-row-reverse">
+          <div className="flex-1 p-4 sm:p-5 animate-pulse">
+            <div className="mb-3 h-7 w-36 rounded-md bg-muted" />
+            <div className="mb-2 h-4 w-28 rounded-md bg-muted/80" />
+            <div className="mb-4 h-4 w-56 rounded-md bg-muted/70" />
+
+            <div className="mb-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="h-10 rounded-xl bg-muted/80" />
+              <div className="h-10 rounded-xl bg-muted/80" />
+              <div className="h-10 rounded-xl bg-muted/80" />
+              <div className="h-10 rounded-xl bg-muted/80" />
+            </div>
+
+            <div className="mb-4 flex gap-2">
+              <div className="h-6 w-16 rounded-full bg-muted" />
+              <div className="h-6 w-20 rounded-full bg-muted" />
+            </div>
+
+            <div className="h-11 w-full rounded-xl bg-muted" />
+          </div>
+
+          <div className="h-48 sm:h-auto sm:w-72 lg:w-80 bg-muted/80 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
+      <div className="h-52 sm:h-56 bg-muted/80 animate-pulse" />
+      <div className="p-4 animate-pulse">
+        <div className="mb-3 h-7 w-36 rounded-md bg-muted" />
+        <div className="mb-4 h-4 w-32 rounded-md bg-muted/80" />
+
+        <div className="mb-4 grid grid-cols-3 gap-2">
+          <div className="h-10 rounded-xl bg-muted/80" />
+          <div className="h-10 rounded-xl bg-muted/80" />
+          <div className="h-10 rounded-xl bg-muted/80" />
+        </div>
+
+        <div className="mb-4 flex gap-2">
+          <div className="h-6 w-16 rounded-full bg-muted" />
+          <div className="h-6 w-20 rounded-full bg-muted" />
+        </div>
+
+        <div className="h-11 w-full rounded-xl bg-muted" />
+      </div>
+    </div>
+  );
+};
 
 const USAGE_TYPE_LABELS: { [key: string]: string } = {
   students: "طلاب",
@@ -88,6 +146,8 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
   onFiltersChange,
   loading = false,
   areas = [],
+  searchTerm,
+  onSearchTermChange,
 }) => {
   const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
   const [isFilterOpen, setIsFilterOpen] = React.useState(false);
@@ -100,99 +160,134 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
   const [currentFilters, setCurrentFilters] = React.useState<Filters | null>(
     null
   );
-  const [areaError, setAreaError] = React.useState<string | null>(null);
+
+  const getAreaName = useCallback((p: Property): string => {
+    if (typeof p.area_data === "object" && p.area_data?.name) {
+      return p.area_data.name;
+    }
+    if (typeof p.area === "object" && p.area?.name) {
+      return p.area.name;
+    }
+    return typeof p.area === "string" ? p.area : "";
+  }, []);
+
+  const normalizedSearchTerm = useMemo(
+    () => searchTerm.trim().toLowerCase(),
+    [searchTerm]
+  );
+
+  const propertySearchIndex = useMemo(() => {
+    const index = new Map<string, string>();
+
+    properties.forEach((p) => {
+      const areaName = getAreaName(p);
+      const usageTypeLabel = p.usage_type
+        ? USAGE_TYPE_LABELS[p.usage_type] || p.usage_type
+        : "";
+
+      const searchableText = [
+        p.name,
+        p.address,
+        areaName,
+        p.type,
+        p.usage_type,
+        p.usage_type_ar,
+        usageTypeLabel,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      index.set(p.id, searchableText);
+    });
+
+    return index;
+  }, [properties, getAreaName]);
 
   // Optimized filtering logic
   const { filteredProperties, filterCount } = useMemo(() => {
-    if (!currentFilters) {
-      return {
-        filteredProperties: initialArea
-          ? properties.filter((p) => {
-              const pArea =
-                typeof p.area_data === "object" && p.area_data?.name
-                  ? p.area_data.name
-                  : typeof p.area === "object" && p.area?.name
-                  ? p.area.name
-                  : p.area;
-              return pArea === initialArea;
-            })
-          : properties,
-        filterCount: 0,
-      };
-    }
-
-    let filtered = [...properties];
+    let filtered = properties;
     let count = 0;
 
-    // Single pass filtering
-    filtered = filtered.filter((p) => {
-      let matches = true;
+    // Keep initial area route filter when no explicit area selected in sidebar
+    if (!currentFilters && initialArea) {
+      filtered = filtered.filter((p) => getAreaName(p) === initialArea);
+    }
 
-      // Area filter
-      if (currentFilters.area) {
-        const pArea =
-          typeof p.area_data === "object" && p.area_data?.name
-            ? p.area_data.name
-            : typeof p.area === "object" && p.area?.name
-            ? p.area.name
-            : p.area;
-        matches = matches && pArea === currentFilters.area;
-      }
+    if (currentFilters) {
+      // Single pass filtering
+      filtered = filtered.filter((p) => {
+        let matches = true;
 
-      // Rooms filter
-      if (matches && currentFilters.rooms) {
-        const roomCount =
-          currentFilters.rooms === "5+" ? 5 : Number(currentFilters.rooms);
-        const propertyRooms = Number(p.rooms ?? 0);
-        matches =
+        // Area filter
+        if (currentFilters.area) {
+          matches = matches && getAreaName(p) === currentFilters.area;
+        }
+
+        // Rooms filter
+        if (matches && currentFilters.rooms) {
+          const roomCount =
+            currentFilters.rooms === "5+" ? 5 : Number(currentFilters.rooms);
+          const propertyRooms = Number(p.rooms ?? 0);
+          matches =
+            matches &&
+            (currentFilters.rooms === "5+"
+              ? propertyRooms >= roomCount
+              : propertyRooms === roomCount);
+        }
+
+        // Usage Type filter
+        if (matches && currentFilters.usageType) {
+          matches = matches && p.usage_type === currentFilters.usageType;
+        }
+
+        // Furnished filter
+        if (
           matches &&
-          (currentFilters.rooms === "5+"
-            ? propertyRooms >= roomCount
-            : propertyRooms === roomCount);
-      }
+          currentFilters.furnished !== "" &&
+          currentFilters.furnished !== null &&
+          currentFilters.furnished !== undefined
+        ) {
+          const isFurnished = currentFilters.furnished === "true";
+          matches = matches && p.furnished === isFurnished;
+        }
 
-      // Usage Type filter
-      if (matches && currentFilters.usageType) {
-        matches = matches && p.usage_type === currentFilters.usageType;
-      }
+        // Price Range filter
+        if (matches && currentFilters.priceRange?.length === 2) {
+          const [min, max] = currentFilters.priceRange;
+          matches =
+            matches &&
+            Number(p.price) >= min &&
+            Number(p.price) <= max;
+        }
 
-      // Furnished filter
+        return matches;
+      });
+
+      // Count active filters
+      if (currentFilters.area) count++;
+      if (currentFilters.rooms) count++;
+      if (currentFilters.usageType) count++;
+      if (currentFilters.furnished !== "" && currentFilters.furnished !== null)
+        count++;
       if (
-        matches &&
-        currentFilters.furnished !== "" &&
-        currentFilters.furnished !== null &&
-        currentFilters.furnished !== undefined
+        currentFilters.priceRange &&
+        (currentFilters.priceRange[0] > 0 || currentFilters.priceRange[1] < 20000)
       ) {
-        const isFurnished = currentFilters.furnished === "true";
-        matches = matches && p.furnished === isFurnished;
+        count++;
       }
+    }
 
-      // Price Range filter
-      if (matches && currentFilters.priceRange?.length === 2) {
-        const [min, max] = currentFilters.priceRange;
-        matches =
-          matches &&
-          Number(p.price) >= min &&
-          Number(p.price) <= max;
-      }
-
-      return matches;
-    });
-
-    // Count active filters
-    if (currentFilters.area) count++;
-    if (currentFilters.rooms) count++;
-    if (currentFilters.usageType) count++;
-    if (currentFilters.furnished !== "" && currentFilters.furnished !== null)
+    if (normalizedSearchTerm) {
+      filtered = filtered.filter((p) => {
+        const searchableText = propertySearchIndex.get(p.id) || "";
+        return searchableText.includes(normalizedSearchTerm);
+      });
       count++;
-    if (
-      currentFilters.priceRange &&
-      (currentFilters.priceRange[0] > 0 || currentFilters.priceRange[1] < 20000)
-    )
-      count++;
+    }
 
     return { filteredProperties: filtered, filterCount: count };
-  }, [currentFilters, properties, initialArea]);
+  }, [currentFilters, properties, initialArea, normalizedSearchTerm, getAreaName, propertySearchIndex]);
 
   // Update active filters when they change
   React.useEffect(() => {
@@ -202,14 +297,27 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
 
   const handleSearch = useCallback((filters: Record<string, unknown> | Filters) => {
     const f = filters as Filters;
-    if (!f.area) {
-      setAreaError("من فضلك اختر المنطقة أولاً");
-      setCurrentFilters(null);
-      return;
-    }
 
-    setAreaError(null);
-    setCurrentFilters(f);
+    const normalizedFilters: Filters = {
+      area: typeof f?.area === "string" ? f.area : "",
+      rooms: typeof f?.rooms === "string" ? f.rooms : "",
+      usageType: typeof f?.usageType === "string" ? f.usageType : "",
+      furnished: typeof f?.furnished === "string" ? f.furnished : "",
+      priceRange:
+        Array.isArray(f?.priceRange) && f.priceRange.length === 2
+          ? f.priceRange
+          : [0, 20000],
+    };
+
+    const hasActiveFilter =
+      normalizedFilters.area ||
+      normalizedFilters.rooms ||
+      normalizedFilters.usageType ||
+      normalizedFilters.furnished ||
+      normalizedFilters.priceRange[0] > 0 ||
+      normalizedFilters.priceRange[1] < 20000;
+
+    setCurrentFilters(hasActiveFilter ? normalizedFilters : null);
     setFilterVersion(v => v + 1);
     setIsFilterOpen(false);
     setDisplayCount(6); // Reset pagination
@@ -252,9 +360,10 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
   );
 
   const displayedProperties = filteredProperties.slice(0, displayCount);
+  const skeletonCount = viewMode === "list" ? 4 : 6;
 
   return (
-    <section className="container mx-auto px-1 py-8 lg:py-12">
+    <section id="properties-results" className="container mx-auto px-1 py-8 lg:py-12">
       {/* Header (mobile) */}
       <div className="flex items-center justify-between gap-3 mb-4 pr-[2px] lg:hidden">
         <div className="flex items-center gap-2">
@@ -282,6 +391,9 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
           >
             <SheetHeader>
               <SheetTitle className="text-right">فلترة البحث</SheetTitle>
+              <SheetDescription className="text-right">
+                استخدم الفلاتر لتضييق النتائج حسب المنطقة والسعر ونوع العقار.
+              </SheetDescription>
             </SheetHeader>
             <div className="mt-6">
               <SearchFilters
@@ -290,11 +402,6 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
                 areas={areas}
               />
             </div>
-            {areaError && (
-              <p className="text-red-600 text-sm mt-4 text-center">
-                {areaError}
-              </p>
-            )}
           </SheetContent>
         </Sheet>
       </div>
@@ -345,13 +452,6 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
         </div>
       </div>
 
-      {/* Area error (desktop) */}
-      {areaError && (
-        <div className="hidden lg:block text-center text-red-600 font-semibold mb-6">
-          {areaError}
-        </div>
-      )}
-
       {/* Quick Filters */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -386,13 +486,21 @@ const PropertiesGrid: React.FC<PropertiesGridProps> = ({
         {/* Properties Grid */}
         <div className="flex-1">
           {loading ? (
-            <div className="text-center text-gray-500 py-20">
-              <div className="inline-flex flex-col items-center gap-3">
-                <div className="relative w-10 h-10">
-                  <div className="absolute inset-0 rounded-full border-4 border-slate-200" />
-                  <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-                </div>
-                <p className="text-sm">جاري تحميل العقارات...</p>
+            <div>
+              <div className="mb-4 h-4 w-48 rounded-md bg-muted/80 animate-pulse" />
+              <div
+                className={
+                  viewMode === "grid"
+                    ? "grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
+                    : "flex flex-col gap-4"
+                }
+              >
+                {Array.from({ length: skeletonCount }).map((_, index) => (
+                  <PropertyCardSkeleton
+                    key={index}
+                    list={viewMode === "list"}
+                  />
+                ))}
               </div>
             </div>
           ) : (

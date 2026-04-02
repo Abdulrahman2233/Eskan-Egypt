@@ -107,6 +107,9 @@ export interface ApiProperty {
   status_display: string;
   views: number;
   visitors: number;
+  is_booked: boolean;
+  booked_at: string | null;
+  booking_expires_at: string | null;
   created_at: string;
   updated_at: string;
   [key: string]: unknown;
@@ -495,6 +498,26 @@ export async function resubmitRejectedProperty(id: string) {
     return data;
   } catch (error) {
     console.error("Error resubmitting property:", error);
+    throw error;
+  }
+}
+
+export async function markPropertyAsBooked(id: string) {
+  try {
+    const { data } = await API.post(`/properties/${id}/mark-as-booked/`);
+    return data;
+  } catch (error) {
+    console.error("Error marking property as booked:", error);
+    throw error;
+  }
+}
+
+export async function markPropertyAsAvailable(id: string) {
+  try {
+    const { data } = await API.post(`/properties/${id}/mark-as-available/`);
+    return data;
+  } catch (error) {
+    console.error("Error marking property as available:", error);
     throw error;
   }
 }

@@ -16,7 +16,7 @@ export const Footer = React.memo(() => {
               منصتك الموثوقة للعثور على أفضل العقارات للإيجار في الإسكندرية
             </p>
             <div className="flex gap-3">
-              <a href="https://www.facebook.com/Eskan.Egypt/" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
@@ -100,8 +100,8 @@ export const Footer = React.memo(() => {
         </div>
 
         <div className="border-t border-border mt-8 pt-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            © 2025 Eskan Egypt. جميع الحقوق محفوظة.
+            <p className="text-sm text-muted-foreground">
+            © 2025 إقامتك EQAMTAK. جميع الحقوق محفوظة.
           </p>
         </div>
       </div>

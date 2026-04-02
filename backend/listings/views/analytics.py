@@ -46,7 +46,8 @@ class ActivityLogViewSet(viewsets.ReadOnlyModelViewSet):
         
         user_filter = self.request.query_params.get('user')
         if user_filter:
-            queryset = queryset.filter(user__user__username=user_filter)
+            # Use case-insensitive search for username consistency
+            queryset = queryset.filter(user__user__username__iexact=user_filter)
         
         date_from = self.request.query_params.get('date_from')
         if date_from:

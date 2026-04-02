@@ -14,7 +14,7 @@ import {
   Home,
   Loader2,
 } from "lucide-react";
-import logo from "../assets/logo1.png";
+import logo from "../assets/logo1.webp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,8 +22,16 @@ import { toast } from "sonner";
 import ForgotPasswordModal from "@/components/ForgotPasswordModal";
 import { loginUser, registerUser, ApiAuthResponse } from "@/api";
 import AuthHeroBackground from "@/components/sections/AuthHeroBackground";
+import { usePageSeo } from "@/hooks/use-page-seo";
 
 const Auth = () => {
+  usePageSeo({
+    title: "تسجيل الدخول | إقامتك EQAMTAK",
+    description: "تسجيل الدخول أو إنشاء حساب على منصة إقامتك EQAMTAK.",
+    robots: "noindex, nofollow",
+    canonicalPath: "/auth",
+  });
+
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,7 +45,7 @@ const Auth = () => {
     passwordConfirm: "",
     fullName: "",
     phone: "",
-    accountType: "owner", // "owner", "agent", "agency"
+    accountType: "owner", // FE values: "owner" → BE "landlord", "agent" → BE "agent", "agency" → BE "office"
   });
 
   const [errors, setErrors] = useState({
@@ -92,7 +100,7 @@ const Auth = () => {
             username: loginUsername,
               full_name: data.user?.full_name || (profile as any)?.full_name || loginUsername,
             phone: (profile as any)?.phone_number || "",
-            account_type: (profile as any)?.user_type || "tenant",
+            account_type: (profile as any)?.user_type || "landlord",
             is_staff: data.user?.is_staff || false,
             is_superuser: data.user?.is_superuser || false,
           };
@@ -144,7 +152,7 @@ const Auth = () => {
               username: formData.username,
               full_name: loginData.user?.full_name || (profile as any)?.full_name || formData.fullName,
               phone: (profile as any)?.phone_number || formData.phone,
-              account_type: (profile as any)?.user_type || formData.accountType,
+              account_type: (profile as any)?.user_type || "landlord",
               is_staff: loginData.user?.is_staff || false,
               is_superuser: loginData.user?.is_superuser || false,
             };
@@ -278,11 +286,11 @@ const Auth = () => {
             >
               <img
                 src={logo}
-                alt="Eskan Egypt Logo"
+                alt="إقامتك EQAMTAK Logo"
                 className="h-16 w-auto object-contain"
               />
             </motion.div>
-            <h1 className="text-3xl font-bold text-foreground">Eskan Egypt</h1>
+            <h1 className="text-3xl font-bold text-foreground">إقامتك EQAMTAK</h1>
             <p className="text-muted-foreground mt-2">
               {isLogin ? "مرحباً بعودتك!" : "انضم إلينا اليوم"}
             </p>
@@ -715,7 +723,7 @@ const Auth = () => {
             transition={{ delay: 0.4 }}
             className="text-xl text-white/80 max-w-md leading-relaxed"
           >
-            منصة Eskan Egypt توفر لك أفضل العقارات في الإسكندرية مع خدمة متميزة وموثوقة
+            منصة إقامتك EQAMTAK توفر لك أفضل العقارات في الإسكندرية مع خدمة متميزة وموثوقة
           </motion.p>
         </div>
       </div>

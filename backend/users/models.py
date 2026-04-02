@@ -14,7 +14,6 @@ class UserProfile(models.Model):
         ('agent', 'Agent'),
         ('office', 'Office'),
         ('admin', 'Admin'),
-        ('tenant', 'Tenant'),
     ]
 
     user = models.OneToOneField(

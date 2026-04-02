@@ -222,7 +222,6 @@ function getUserTypeLabel(type: string): string {
     landlord: "مالك عقار",
     agent: "وسيط عقاري",
     office: "مكتب عقاري",
-    tenant: "مستأجر",
     admin: "مدير",
     user: "مستخدم",
   };

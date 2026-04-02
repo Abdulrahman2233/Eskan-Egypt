@@ -235,9 +235,11 @@ class PropertySerializer(serializers.ModelSerializer):
             # حقول المشاهدات والزيارات
             'views', 'visitors',
             # حقول الحذف المنطقي
-            'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name'
+            'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name',
+            # حقول الحجز
+            'is_booked', 'booked_at', 'booking_expires_at'
         )
-        read_only_fields = ('id', 'created_at', 'updated_at', 'submitted_at', 'approved_by', 'approved_at', 'rejected_at', 'approval_notes', 'status', 'status_display', 'owner', 'owner_id', 'owner_username', 'owner_name', 'owner_type', 'owner_is_verified', 'area_data', 'views', 'visitors', 'visited_ips', 'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name', 'price_unit', 'display_price', 'is_daily_pricing', 'original_contact')
+        read_only_fields = ('id', 'created_at', 'updated_at', 'submitted_at', 'approved_by', 'approved_at', 'rejected_at', 'approval_notes', 'status', 'status_display', 'owner', 'owner_id', 'owner_username', 'owner_name', 'owner_type', 'owner_is_verified', 'area_data', 'views', 'visitors', 'visited_ips', 'is_deleted', 'deleted_at', 'deleted_by', 'deleted_by_name', 'price_unit', 'display_price', 'is_daily_pricing', 'original_contact', 'is_booked', 'booked_at', 'booking_expires_at')
         extra_kwargs = {
             'name': {'required': True},
             'area': {'required': True},

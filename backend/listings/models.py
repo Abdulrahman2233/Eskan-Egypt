@@ -146,7 +146,11 @@ class Property(models.Model):
     approved_at = models.DateTimeField(null=True, blank=True, verbose_name='تاريخ الموافقة')
     rejected_at = models.DateTimeField(null=True, blank=True, verbose_name='تاريخ الرفض')
     approval_notes = models.TextField(blank=True, verbose_name='ملاحظات الموافقة')
-    
+        # ==================== Booking Status ====================
+    is_booked = models.BooleanField(default=False, verbose_name='محجوز')
+    booked_at = models.DateTimeField(null=True, blank=True, verbose_name='تاريخ الحجز')
+    booked_by = models.ForeignKey('users.UserProfile', on_delete=models.SET_NULL, null=True, blank=True, related_name='booked_properties', verbose_name='محجوز بواسطة')
+    booking_expires_at = models.DateTimeField(null=True, blank=True, verbose_name='انتهاء فترة الحجز')
     # ==================== Soft Delete ====================
     is_deleted = models.BooleanField(default=False, verbose_name='محذوف')
     deleted_at = models.DateTimeField(null=True, blank=True, verbose_name='تاريخ الحذف')
@@ -531,7 +535,6 @@ class Transaction(models.Model):
         ('owner', 'مالك'),
         ('agent', 'وسيط'),
         ('office', 'مكتب عقارات'),
-        ('tenant', 'مستأجر'),
     ]
     
     PROPERTY_TYPE_CHOICES = [

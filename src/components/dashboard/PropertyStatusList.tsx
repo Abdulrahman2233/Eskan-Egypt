@@ -436,6 +436,8 @@ export function PropertyStatusList() {
           regionName = prop.area_data;
         }
 
+        const addedAtRaw = (prop.added_at || prop.approved_at || prop.created_at || prop.submitted_at) as string | undefined;
+
         const transformedProperty: Property = {
           id: (prop.id || '') as string,
           name: (prop.name || '') as string,
@@ -444,23 +446,15 @@ export function PropertyStatusList() {
           region: regionName,
           views: (prop.views || 0) as number,
           visitors: (prop.visitors || 0) as number,
-          addedDate: prop.created_at
-            ? new Date(prop.created_at as string).toLocaleDateString('ar-SA', {
+          addedDate: addedAtRaw
+            ? new Date(addedAtRaw).toLocaleDateString('ar-SA', {
                 year: 'numeric',
                 month: '2-digit',
                 day: '2-digit',
                 hour: '2-digit',
                 minute: '2-digit',
               })
-            : (prop.submitted_at
-              ? new Date(prop.submitted_at as string).toLocaleDateString('ar-SA', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              : ''),
+            : '',
           deletedDate: prop.deleted_at
             ? new Date(prop.deleted_at as string).toLocaleDateString('ar-SA', {
                 year: 'numeric',

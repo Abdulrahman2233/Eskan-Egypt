@@ -16,6 +16,7 @@ const OfferModal = React.lazy(() => import("@/components/OfferModal"));
 
 import { fetchAreas, fetchFeaturedProperties, fetchProperties } from "@/api";
 import type { ApiProperty, ApiArea } from "@/api";
+import { usePageSeo } from "@/hooks/use-page-seo";
 
 // Lightweight fallback for lazy sections
 const SectionFallback = () => (
@@ -25,6 +26,20 @@ const SectionFallback = () => (
 );
 
 const Index = () => {
+  usePageSeo({
+    title: "إقامتك EQAMTAK | سكن طلاب وعائلات ومصيفين واستديو وحجز يومي في الإسكندرية",
+    description:
+      "منصة إقامتك EQAMTAK تجمع الباحثين عن سكن طلاب، سكن عائلات، سكن مصيفين، واستديوهات بحجز يومي أو شهري في الإسكندرية، ومتاحة أيضا للملاك ومكاتب العقارات والوسطاء لنشر العقارات بسهولة.",
+    keywords:
+      "سكن طلاب, سكن طالبات, سكن عائلات, سكن مصيفين, استديو للايجار, استوديو للايجار, حجز يومي, شقق مفروشة الاسكندرية, مكاتب عقارات الاسكندرية, وسيط عقاري, نشر عقار",
+    ogTitle: "إقامتك EQAMTAK | منصة سكن وبيع وإيجار في الإسكندرية",
+    ogDescription:
+      "ابحث عن سكن مناسب بسرعة، أو انشر عقارك كمالك أو مكتب عقاري أو وسيط على إقامتك EQAMTAK.",
+    twitterTitle: "إقامتك EQAMTAK | سكن طلاب وعائلات + منصة للملاك والوسطاء",
+    twitterDescription:
+      "عقارات واستديوهات بحجز يومي أو شهري في الإسكندرية مع إمكانية النشر للملاك والمكاتب والوسطاء.",
+  });
+
   const [displayAreas, setDisplayAreas] = useState<ApiArea[]>([]);
   const [loading, setLoading] = useState(true);
   const [featuredProperties, setFeaturedProperties] = useState<ApiProperty[]>([]);
@@ -54,45 +69,22 @@ const Index = () => {
     const loadFeaturedProperties = async () => {
       try {
         setPropertiesLoading(true);
-        
-        let allFeaturedAndDiscounted: any[] = [];
-        
-        // Try to fetch featured first
-        try {
-          const featured = await fetchFeaturedProperties();
-          if (featured && featured.length > 0) {
-            allFeaturedAndDiscounted = [...featured];
-          }
-        } catch (err) {
-          console.log("Featured endpoint not available, using fallback");
-        }
-        
-        // Get all properties and filter for featured + discounted
+
         try {
           const allProperties = await fetchProperties();
           if (allProperties && allProperties.length > 0) {
-            // Filter for featured OR discounted items
-            const discountedProperties = allProperties.filter(
+            // Filter for featured OR discounted items only
+            const filteredProperties = allProperties.filter(
               (p: any) => (p.featured === true || (p.discount && Number(p.discount) > 0))
             );
-            
-            // Combine featured from API with filtered properties, removing duplicates
-            for (const prop of discountedProperties) {
-              if (!allFeaturedAndDiscounted.some((p) => p.id === prop.id)) {
-                allFeaturedAndDiscounted.push(prop);
-              }
-            }
-            
-            // If still no results, use all properties
-            if (allFeaturedAndDiscounted.length === 0) {
-              allFeaturedAndDiscounted = allProperties.slice(0, 4);
-            }
+            setFeaturedProperties(filteredProperties.slice(0, 4));
+          } else {
+            setFeaturedProperties([]);
           }
         } catch (err) {
-          console.log("Error fetching all properties:", err);
+          console.log("Error fetching properties:", err);
+          setFeaturedProperties([]);
         }
-        
-        setFeaturedProperties(allFeaturedAndDiscounted.slice(0, 4));
       } catch (error) {
         console.error("Failed to load featured properties:", error);
         setFeaturedProperties([]);

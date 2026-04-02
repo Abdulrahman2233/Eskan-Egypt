@@ -19,7 +19,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import eskanLogo from "@/assets/Eskan Egypt.png";
+import eskanLogo from "@/assets/logo1.webp";
+import { usePageSeo } from "@/hooks/use-page-seo";
 import {
   Accordion,
   AccordionContent,
@@ -117,6 +118,17 @@ const stagger = {
 };
 
 const About = () => {
+  usePageSeo({
+    title: "عن إقامتك EQAMTAK | منصة سكن للطلاب والعائلات ومصيفين + حلول للملاك والمكاتب",
+    description:
+      "تعرف على إقامتك EQAMTAK: منصة عقارية بالإسكندرية للباحثين عن سكن طلاب، عائلات، ومصيفين، ومخصصة أيضا للملاك ومكاتب العقارات والوسطاء لعرض العقارات وإدارة الطلبات.",
+    keywords:
+      "عن اسكان ايجيبت, منصة عقارية الاسكندرية, سكن طلاب, سكن عائلات, مكاتب عقارات, وسيط عقاري, اعلان عقار",
+    ogTitle: "عن إقامتك EQAMTAK | الثقة والشفافية في العقارات",
+    ogDescription:
+      "منصة تجمع المستأجرين مع الملاك والمكاتب والوسطاء في تجربة احترافية واضحة.",
+  });
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50" dir="rtl">
       <Navbar />
@@ -144,7 +156,7 @@ const About = () => {
                   </h1>
 
                   <p className="max-w-2xl text-sm leading-8 text-slate-600 md:text-base">
-                    في Eskan Egypt نختصر رحلة البحث عن السكن إلى تجربة واضحة وسريعة.
+                    في إقامتك EQAMTAK نختصر رحلة البحث عن السكن إلى تجربة واضحة وسريعة.
                     نعرض بيانات دقيقة، خيارات موثوقة، وتواصل مباشر مع المالك أو الوسيط
                     حتى تصل إلى قرار سكني أفضل بثقة كاملة.
                   </p>
@@ -176,11 +188,11 @@ const About = () => {
                     <div className="mb-4 flex items-center justify-between rounded-2xl border border-white/15 bg-white/5 p-3">
                       <div>
                         <p className="text-[11px] text-slate-300">منصة متخصصة في الإسكندرية</p>
-                        <h2 className="text-base font-bold">Eskan Egypt</h2>
+                        <h2 className="text-base font-bold">إقامتك EQAMTAK</h2>
                       </div>
                       <img
                         src={eskanLogo}
-                        alt="Eskan Egypt"
+                        alt="إقامتك EQAMTAK"
                         className="h-12 w-12 rounded-xl bg-white p-1 object-contain"
                       />
                     </div>
@@ -382,9 +394,15 @@ const About = () => {
               >
                 <h3 className="mb-3 text-xl font-extrabold text-slate-900 md:text-2xl">جاهز تبدأ رحلة السكن بثقة؟</h3>
                 <p className="mx-auto mb-6 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">
-                  فريق Eskan Egypt جاهز يساعدك تختار العقار المناسب لك بسرعة وبأعلى مستوى احترافية.
+                  فريق إقامتك EQAMTAK جاهز يساعدك تختار العقار المناسب لك بسرعة وبأعلى مستوى احترافية.
                 </p>
                 <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button asChild variant="secondary" className="h-11 gap-2 rounded-xl">
+                    <Link to="/for-owners">
+                      انشر عقارك كمُالك أو مكتب أو وسيط
+                      <ArrowLeft className="h-4 w-4" />
+                    </Link>
+                  </Button>
                   <Button asChild className="h-11 gap-2 rounded-xl">
                     <Link to="/properties">
                       تصفح العقارات الآن

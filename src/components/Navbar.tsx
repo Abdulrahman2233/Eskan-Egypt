@@ -1,7 +1,14 @@
-import { Menu, User, LogOut, ChevronDown, Settings, Home, Building2, BarChart3, ArrowLeft, Users } from "lucide-react";
+import { Menu, User, LogOut, ChevronDown, Settings, Home, Building2, BarChart3, ArrowLeft, Users, Briefcase } from "lucide-react";
 import Logo from "./Logo";
 import { Button } from "./ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "./ui/sheet";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
@@ -18,6 +25,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState("");
+  const [userUsername, setUserUsername] = useState("");
 
   useEffect(() => {
     const loadUserData = () => {
@@ -29,8 +37,10 @@ const Navbar = () => {
         try {
           const userData = JSON.parse(user);
           setUserName(userData.full_name || "حسابي");
+          setUserUsername(userData.username || "");
         } catch {
           setUserName("حسابي");
+          setUserUsername("");
         }
       } else {
         setIsLoggedIn(false);
@@ -57,6 +67,7 @@ const Navbar = () => {
   const navLinks = [
     { path: "/", label: "الرئيسية", icon: Home },
     { path: "/properties", label: "العقارات", icon: Building2 },
+    { path: "/for-owners", label: "انشر عقارك", icon: Briefcase },
     { path: "/about", label: "من نحن", icon: Users },
   ];
 
@@ -101,37 +112,42 @@ const Navbar = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" side="bottom" sideOffset={8} className="w-56 mt-2">
-                  <div className="px-3 py-2 border-b border-border/50">
-                    <p className="text-xs text-muted-foreground font-semibold">الحساب الشخصي</p>
-                  </div>
+                  {userUsername && (
+                    <DropdownMenuItem asChild>
+                      <Link to={`/user/${userUsername}`} className="cursor-pointer flex flex-row-reverse items-center gap-2 py-2.5 px-3 hover:bg-accent rounded-sm transition-colors">
+                        <User className="h-4 w-4 flex-shrink-0" />
+                        <span>عرض الملف الشخصي</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard" className="cursor-pointer flex items-center gap-2 py-2.5 px-3 hover:bg-accent rounded-sm transition-colors">
+                    <Link to="/dashboard" className="cursor-pointer flex flex-row-reverse items-center gap-2 py-2.5 px-3 hover:bg-accent rounded-sm transition-colors">
                       <Home className="h-4 w-4 flex-shrink-0" />
                       <span>لوحة التحكم</span>
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard/my-properties" className="cursor-pointer flex items-center gap-2 py-2.5 px-3 hover:bg-accent rounded-sm transition-colors">
+                    <Link to="/dashboard/my-properties" className="cursor-pointer flex flex-row-reverse items-center gap-2 py-2.5 px-3 hover:bg-accent rounded-sm transition-colors">
                       <Building2 className="h-4 w-4 flex-shrink-0" />
                       <span>عقاراتي</span>
                     </Link>
                   </DropdownMenuItem>
                   {localStorage.getItem('user_role') === 'admin' && (
                     <DropdownMenuItem asChild>
-                      <Link to="/admin/dashboard" className="cursor-pointer flex items-center gap-2 py-2.5 px-3 hover:bg-accent rounded-sm transition-colors">
+                      <Link to="/admin/dashboard" className="cursor-pointer flex flex-row-reverse items-center gap-2 py-2.5 px-3 hover:bg-accent rounded-sm transition-colors">
                         <BarChart3 className="h-4 w-4 flex-shrink-0" />
                         <span>التحليلات</span>
                       </Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild>
-                    <Link to="/dashboard/settings" className="cursor-pointer flex items-center gap-2 py-2.5 px-3 hover:bg-accent rounded-sm transition-colors">
+                    <Link to="/dashboard/settings" className="cursor-pointer flex flex-row-reverse items-center gap-2 py-2.5 px-3 hover:bg-accent rounded-sm transition-colors">
                       <Settings className="h-4 w-4 flex-shrink-0" />
                       <span>الإعدادات</span>
                     </Link>
                   </DropdownMenuItem>
                   <div className="border-t border-border/50 my-1"></div>
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:text-red-600 hover:bg-red-50 cursor-pointer flex items-center gap-2 py-2.5 px-3 rounded-sm transition-colors">
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:text-red-600 hover:bg-red-50 cursor-pointer flex flex-row-reverse items-center gap-2 py-2.5 px-3 rounded-sm transition-colors">
                     <LogOut className="h-4 w-4 flex-shrink-0" />
                     <span>تسجيل الخروج</span>
                   </DropdownMenuItem>
@@ -158,6 +174,12 @@ const Navbar = () => {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-80 p-0">
+              <SheetHeader className="sr-only">
+                <SheetTitle>القائمة الرئيسية</SheetTitle>
+                <SheetDescription>
+                  تنقل سريع إلى صفحات الموقع وخيارات الحساب.
+                </SheetDescription>
+              </SheetHeader>
               <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="bg-gradient-to-b from-primary/5 to-transparent p-6 border-b">
@@ -172,7 +194,7 @@ const Navbar = () => {
                       <Link
                         key={link.path}
                         to={link.path}
-                        className={`flex items-center gap-3 text-sm font-medium px-4 py-3 rounded-lg transition-all duration-300 ${
+                        className={`flex flex-row-reverse items-center gap-3 text-sm font-medium px-4 py-3 rounded-lg transition-all duration-300 ${
                           isActive(link.path)
                             ? "bg-primary text-primary-foreground shadow-md"
                             : "text-foreground hover:bg-accent/50"
@@ -189,23 +211,32 @@ const Navbar = () => {
                 <div className="border-t p-6 space-y-3">
                   {isLoggedIn ? (
                     <>
+                      {userUsername && (
+                        <Link
+                          to={`/user/${userUsername}`}
+                          className="flex flex-row-reverse items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors"
+                        >
+                          <User className="h-4 w-4" />
+                          عرض الملف الشخصي
+                        </Link>
+                      )}
                       <Link
                         to="/dashboard"
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors"
+                        className="flex flex-row-reverse items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-accent/80 font-medium text-sm transition-colors"
                       >
                         <Home className="h-4 w-4" />
                         لوحة التحكم
                       </Link>
                       <Link
                         to="/dashboard/my-properties"
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-accent/80 font-medium text-sm transition-colors"
+                        className="flex flex-row-reverse items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-accent/80 font-medium text-sm transition-colors"
                       >
                         <Building2 className="h-4 w-4" />
                         عقاراتي
                       </Link>
                       <Link
                         to="/dashboard/settings"
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-accent/80 font-medium text-sm transition-colors"
+                        className="flex flex-row-reverse items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-accent/80 font-medium text-sm transition-colors"
                       >
                         <Settings className="h-4 w-4" />
                         الإعدادات
@@ -213,7 +244,7 @@ const Navbar = () => {
                       {localStorage.getItem('user_role') === 'admin' && (
                         <Link
                           to="/admin/dashboard"
-                          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-accent/80 font-medium text-sm transition-colors"
+                          className="flex flex-row-reverse items-center gap-2 px-4 py-2 rounded-lg bg-accent hover:bg-accent/80 font-medium text-sm transition-colors"
                         >
                           <BarChart3 className="h-4 w-4" />
                           التحليلات
@@ -222,7 +253,7 @@ const Navbar = () => {
                       <Button
                         onClick={handleLogout}
                         variant="destructive"
-                        className="w-full gap-2 h-11 font-semibold"
+                        className="w-full gap-2 h-11 font-semibold flex flex-row-reverse"
                       >
                         <LogOut className="h-5 w-5" />
                         تسجيل الخروج
@@ -230,7 +261,7 @@ const Navbar = () => {
                     </>
                   ) : (
                     <Link to="/auth">
-                      <Button className="w-full gap-2 h-11 bg-white text-gray-800 hover:bg-gray-100 border border-gray-200 font-semibold shadow-md">
+                      <Button className="w-full gap-2 h-11 bg-white text-gray-800 hover:bg-gray-100 border border-gray-200 font-semibold shadow-md flex flex-row-reverse">
                         <User className="h-5 w-5" />
                         <span>تسجيل الدخول</span>
                         <ArrowLeft className="h-5 w-5" />

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation, useNavigate, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import logo from "../../assets/logo1.png";
+import logo from "../../assets/logo1.webp";
 import {
   LayoutDashboard,
   Building2,
@@ -75,12 +75,12 @@ export function Sidebar() {
         >
           <img
             src={logo}
-            alt="Eskan Egypt Logo"
+            alt="إقامتك EQAMTAK Logo"
             className="h-10 w-8 object-contain"
           />
           <div className="flex flex-col">
-            <span className="font-bold text-lg gradient-text">Eskan Egypt</span>
-            <span className="text-xs text-muted-foreground">اسكان مصر</span>
+            <span className="font-bold text-lg gradient-text">إقامتك EQAMTAK</span>
+            <span className="text-xs text-muted-foreground">إقامتك</span>
           </div>
         </Link>
 

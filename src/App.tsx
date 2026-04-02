@@ -4,13 +4,20 @@ import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import logoImg from "./assets/logo1.webp";
 
 /* ===== Loading Component ===== */
 const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      <p className="mt-4 text-muted-foreground">جاري التحميل...</p>
+  <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background via-background to-primary/5">
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative h-16 w-16">
+        <div className="absolute inset-0 rounded-full border border-primary/20" />
+        <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary border-r-primary/60 animate-spin" />
+        <div className="absolute inset-[9px] rounded-full bg-background shadow-sm border border-border/70 flex items-center justify-center">
+          <img src={logoImg} alt="إقامتك EQAMTAK" className="h-7 w-5 object-contain" />
+        </div>
+      </div>
+      <p className="text-xs font-medium text-muted-foreground/90 tracking-wide">جاري التحميل...</p>
     </div>
   </div>
 );
@@ -21,6 +28,7 @@ const Properties = lazy(() => import("./pages/Properties"));
 const PropertyDetails = lazy(() => import("./pages/PropertyDetails"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const About = lazy(() => import("./pages/About"));
+const ForOwners = lazy(() => import("./pages/ForOwners"));
 const Contact = lazy(() => import("./pages/Contact"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Admin = lazy(() => import("./pages/Admin"));
@@ -78,6 +86,8 @@ const App = () => (
             <Route path="/property/:id" element={<PropertyDetails />} />
             <Route path="/user/:username" element={<UserProfile />} />
             <Route path="/about" element={<About />} />
+            <Route path="/for-owners" element={<ForOwners />} />
+            <Route path="/publish" element={<ForOwners />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Auth />} />

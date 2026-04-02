@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
-import logo from "../assets/logo1.png";
+import logo from "../assets/logo1.webp";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -122,10 +122,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <Link to="/" className="flex items-center gap-2">
             <img
               src={logo}
-              alt="Eskan Egypt Logo"
+              alt="إقامتك EQAMTAK Logo"
               className="h-8 w-auto object-contain"
             />
-            <span className="font-bold">Eskan Egypt</span>
+            <span className="font-bold">إقامتك EQAMTAK</span>
           </Link>
 
           <Button
@@ -255,12 +255,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <Link to="/" className="flex items-center gap-3">
               <img
                 src={logo}
-                alt="Eskan Egypt Logo"
+                alt="إقامتك EQAMTAK Logo"
                 className="h-10 w-auto object-contain"
               />
               <div>
                 <span className="font-bold text-lg text-foreground">
-                  Eskan Egypt
+                  إقامتك EQAMTAK
                 </span>
                 <p className="text-xs text-muted-foreground">لوحة التحكم</p>
               </div>

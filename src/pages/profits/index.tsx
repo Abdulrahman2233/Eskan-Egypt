@@ -119,10 +119,12 @@ export default function Profits() {
   };
 
   const accountTypeMap: Record<string, string> = {
-    owner: "مالك",
+    landlord: "مالك عقار",
+    owner: "مالك عقار",
     agent: "وسيط",
     office: "مكتب عقارات",
-    tenant: "مستأجر",
+
+    admin: "مسؤול",
   };
 
   // Convert API response to component format

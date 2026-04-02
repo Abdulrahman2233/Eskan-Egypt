@@ -137,7 +137,8 @@ class AuthViewSet(viewsets.ViewSet):
                 {'available': False, 'error': 'username is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        exists = User.objects.filter(username=username).exists()
+        # Check username exists (case-insensitive)
+        exists = User.objects.filter(username__iexact=username).exists()
         return Response({'available': not exists}, status=status.HTTP_200_OK)
 
     # ----------- CHECK EMAIL ----------------
@@ -205,47 +206,59 @@ class AuthViewSet(viewsets.ViewSet):
         
         # PUT request - update profile
         elif request.method == 'PUT':
-            # Update user fields
-            if 'first_name' in request.data:
-                user.first_name = request.data.get('first_name', user.first_name)
-            if 'last_name' in request.data:
-                user.last_name = request.data.get('last_name', user.last_name)
-            if 'email' in request.data:
-                user.email = request.data.get('email', user.email)
-            
-            user.save()
-            
-            # Update UserProfile fields
-            profile = user.profile
-            # Always sync full_name from User model when first/last name change
-            if 'first_name' in request.data or 'last_name' in request.data or 'full_name' in request.data:
-                # Prefer explicit full_name if sent, otherwise build from first+last
-                if 'full_name' in request.data and request.data.get('full_name'):
-                    profile.full_name = request.data['full_name']
-                else:
-                    computed_name = user.get_full_name()
-                    if computed_name:
-                        profile.full_name = computed_name
-            if 'email' in request.data:
-                profile.email = request.data.get('email', profile.email)
-            if 'phone_number' in request.data:
-                profile.phone_number = request.data.get('phone_number', profile.phone_number)
-            if 'date_of_birth' in request.data:
-                profile.date_of_birth = request.data.get('date_of_birth', profile.date_of_birth)
-            if 'city' in request.data:
-                profile.city = request.data.get('city', profile.city)
-            
-            profile.save()
-            
-            serializer = UserSerializer(user)
-            return Response(
-                {
-                    'success': True,
-                    'message': 'تم تحديث الملف الشخصي بنجاح',
-                    'user': serializer.data
-                },
-                status=status.HTTP_200_OK
-            )
+            try:
+                # Update user fields
+                if 'first_name' in request.data:
+                    user.first_name = request.data.get('first_name', user.first_name)
+                if 'last_name' in request.data:
+                    user.last_name = request.data.get('last_name', user.last_name)
+                if 'email' in request.data:
+                    user.email = request.data.get('email', user.email)
+                
+                user.save()
+                
+                # Update UserProfile fields
+                profile = user.profile
+                # Always sync full_name from User model when first/last name change
+                if 'first_name' in request.data or 'last_name' in request.data or 'full_name' in request.data:
+                    # Prefer explicit full_name if sent, otherwise build from first+last
+                    if 'full_name' in request.data and request.data.get('full_name'):
+                        profile.full_name = request.data['full_name']
+                    else:
+                        computed_name = user.get_full_name()
+                        if computed_name:
+                            profile.full_name = computed_name
+                if 'email' in request.data:
+                    profile.email = request.data.get('email', profile.email)
+                if 'phone_number' in request.data:
+                    profile.phone_number = request.data.get('phone_number', profile.phone_number)
+                if 'date_of_birth' in request.data:
+                    # Handle empty date_of_birth - convert empty string to None
+                    date_value = request.data.get('date_of_birth', profile.date_of_birth)
+                    profile.date_of_birth = date_value if date_value else None
+                if 'city' in request.data:
+                    profile.city = request.data.get('city', profile.city)
+                
+                profile.save()
+                
+                serializer = UserSerializer(user)
+                return Response(
+                    {
+                        'success': True,
+                        'message': 'تم تحديث الملف الشخصي بنجاح',
+                        'user': serializer.data
+                    },
+                    status=status.HTTP_200_OK
+                )
+            except Exception as e:
+                logger.error(f"Error updating user profile: {str(e)}")
+                return Response(
+                    {
+                        'success': False,
+                        'error': f'خطأ في تحديث الملف الشخصي: {str(e)}'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
     # ----------- PUBLIC PROFILE ----------------
     @action(
@@ -259,7 +272,8 @@ class AuthViewSet(viewsets.ViewSet):
         Get public profile for any user by username - shows safe public info + their approved properties.
         """
         try:
-            profile = UserProfile.objects.select_related('user').get(user__username=username)
+            # Use case-insensitive search for username consistency
+            profile = UserProfile.objects.select_related('user').get(user__username__iexact=username)
         except UserProfile.DoesNotExist:
             return Response(
                 {'success': False, 'error': 'المستخدم غير موجود'},
@@ -353,7 +367,7 @@ class AuthViewSet(viewsets.ViewSet):
                 logger.info(f"Password reset token generated for {user.email}")
                 
                 # Send email with token
-                subject = "استعادة كلمة المرور - Eskan"
+                subject = "استعادة كلمة المرور - إقامتك EQAMTAK"
                 message = f"""
                 مرحبا {user.get_full_name() or user.username},
                 

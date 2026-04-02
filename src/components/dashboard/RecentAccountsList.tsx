@@ -18,7 +18,7 @@ interface Account {
   email: string;
   username: string;
   phone: string;
-  accountType: "owner" | "agent" | "office" | "admin" | "landlord" | "tenant";
+  accountType: "owner" | "agent" | "office" | "admin" | "landlord";
   registrationDate: string;
   avatar: string;
 }
@@ -29,7 +29,6 @@ const accountTypeLabels = {
   agent: { label: "وسيط", class: "bg-purple-100 text-purple-700" },
   office: { label: "مكتب", class: "bg-cyan-100 text-cyan-700" },
   admin: { label: "مشرف", class: "bg-red-100 text-red-700" },
-  tenant: { label: "مستأجر", class: "bg-green-100 text-green-700" },
 };
 
 export function RecentAccountsList() {

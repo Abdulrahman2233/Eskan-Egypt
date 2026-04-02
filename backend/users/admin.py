@@ -72,14 +72,12 @@ class UserProfileAdmin(admin.ModelAdmin):
     def user_type_badge(self, obj):
         """عرض نوع المستخدم في شكل بطاقة ملونة"""
         colors = {
-            'tenant': '#3498db',      # أزرق - المستأجر
             'landlord': '#2ecc71',    # أخضر - مالك العقار
             'agent': '#f39c12',       # برتقالي - الوسيط
             'office': '#9b59b6',      # بنفسجي - المكتب
             'admin': '#e74c3c',       # أحمر - المسؤول
         }
         user_type_display = {
-            'tenant': 'مستأجر',
             'landlord': 'مالك عقار',
             'agent': 'وسيط',
             'office': 'مكتب',

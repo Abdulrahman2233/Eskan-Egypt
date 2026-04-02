@@ -85,7 +85,7 @@ const Settings = () => {
           phone: profile.phone_number || "",
           birth_date: profile.date_of_birth || "",
           city: profile.city || "",
-          account_type: profile.user_type || "tenant",
+          account_type: profile.user_type || "landlord",
         };
         saveUser(freshUser);
         // Notify other components (e.g. Navbar) of updated user data
@@ -139,7 +139,7 @@ const Settings = () => {
         email: formData.email || "",
         full_name: formData.full_name || "",
         phone_number: formData.phone || "",
-        date_of_birth: formData.birth_date || "",
+        date_of_birth: formData.birth_date || null,
         city: formData.city || "",
       };
 
@@ -344,14 +344,16 @@ const Settings = () => {
                             <p className="text-xs sm:text-sm text-muted-foreground mb-1">نوع الحساب</p>
                             <div className="flex items-center justify-center sm:justify-end gap-2">
                               <span className="text-xl">
-                                {user.account_type === "owner" && "🏠"}
+                                {user.account_type === "landlord" && "🏠"}
                                 {user.account_type === "agent" && "👤"}
-                                {user.account_type === "agency" && "🏢"}
+                                {user.account_type === "office" && "🏢"}
+                                {user.account_type === "admin" && "⚙️"}
                               </span>
                               <p className="text-sm sm:text-base font-semibold text-primary">
-                                {user.account_type === "owner" && "مالك عقار"}
+                                {user.account_type === "landlord" && "مالك عقار"}
                                 {user.account_type === "agent" && "وسيط"}
-                                {user.account_type === "agency" && "مكتب عقارات"}
+                                {user.account_type === "office" && "مكتب عقارات"}
+                                {user.account_type === "admin" && "مسؤول"}
                               </p>
                             </div>
                           </div>

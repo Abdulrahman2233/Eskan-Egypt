@@ -56,6 +56,14 @@ export function RevenueOverviewChart() {
   const [accountData, setAccountData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const accountTypeMap: Record<string, string> = {
+    landlord: "مالك عقار",
+    owner: "مالك عقار",
+    agent: "وسيط",
+    office: "مكتب عقارات",
+    admin: "مسؤول",
+  };
+
   useEffect(() => {
     loadData();
   }, []);
@@ -71,7 +79,7 @@ export function RevenueOverviewChart() {
       setAccountData(
         Array.isArray(accountRes)
           ? accountRes.map((item: any) => ({
-              name: item.account_type || item.name || "غير محدد",
+              name: accountTypeMap[item.account_type] || item.name || "غير محدد",
               amount: item.total_amount || item.amount || 0,
               count: item.count || 0,
             }))

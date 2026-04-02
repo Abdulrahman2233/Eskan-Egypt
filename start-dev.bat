@@ -1,6 +1,6 @@
 @echo off
 echo ========================================
-echo Eskan Project Startup Script
+echo EQAMTAK Project Startup Script
 echo ========================================
 echo.
 

@@ -75,7 +75,7 @@ const HeroSection: React.FC<{ onScrollDown?: () => void }> = ({
             className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6"
             variants={fadeInUp}
           >
-            اعثر على سكنك المثالي
+             نقدم لك تجربة سكن متكاملة 
             <br />
             <motion.span
               className="text-primary inline-block relative"

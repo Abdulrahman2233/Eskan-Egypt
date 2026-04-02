@@ -563,6 +563,78 @@ class PropertyViewSet(viewsets.ModelViewSet):
             'data': serializer.data
         }, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='mark-as-booked')
+    def mark_as_booked(self, request, pk=None):
+        """تعليم العقار كمحجوز"""
+        property_obj = self.get_object()
+        user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+
+        # التحقق من صلاحيات - المالك أو الأدمن فقط يمكنهم تعليم العقار كمحجوز
+        if property_obj.owner != user_profile and not request.user.is_staff:
+            return Response(
+                {'detail': 'ليس لديك صلاحية تعليم هذا العقار',
+                'status': 'error'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if property_obj.is_booked:
+            return Response(
+                {'detail': 'هذا العقار محجوز بالفعل',
+                'status': 'error'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # تعليم العقار كمحجوز
+        property_obj.is_booked = True
+        property_obj.booked_at = timezone.now()
+        property_obj.booked_by = user_profile
+        # مسح وقت انتهاء العرض المحدود (لن يظهر عد تنازلي عندما يكون محجوزاً)
+        property_obj.booking_expires_at = None
+        property_obj.save()
+
+        serializer = self.get_serializer(property_obj)
+        return Response({
+            'detail': 'تم تعليم العقار كمحجوز بنجاح',
+            'status': 'success',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated], url_path='mark-as-available')
+    def mark_as_available(self, request, pk=None):
+        """إزالة تعليم الحجز من العقار"""
+        property_obj = self.get_object()
+        user_profile = request.user.profile if hasattr(request.user, 'profile') else None
+
+        # التحقق من صلاحيات - المالك أو الأدمن فقط يمكنهم إزالة تعليم الحجز
+        if property_obj.owner != user_profile and not request.user.is_staff:
+            return Response(
+                {'detail': 'ليس لديك صلاحية تعديل حالة هذا العقار',
+                'status': 'error'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if not property_obj.is_booked:
+            return Response(
+                {'detail': 'هذا العقار متاح بالفعل',
+                'status': 'error'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # إزالة تعليم الحجز وتفعيل العرض المحدود
+        property_obj.is_booked = False
+        property_obj.booked_at = None
+        property_obj.booked_by = None
+        # تعيين مدة العرض المحدود (48 ساعة) - سيظهر العد التنازلي عندما يكون العقار متاحاً
+        property_obj.booking_expires_at = timezone.now() + timedelta(hours=48)
+        property_obj.save()
+
+        serializer = self.get_serializer(property_obj)
+        return Response({
+            'detail': 'تم إزالة تعليم الحجز من العقار بنجاح',
+            'status': 'success',
+            'data': serializer.data
+        }, status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['get'])
     def featured(self, request):
         """الحصول على العقارات المميزة"""

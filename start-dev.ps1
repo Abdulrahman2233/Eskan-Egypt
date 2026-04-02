@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "Eskan Project Startup Script" -ForegroundColor Cyan
+Write-Host "EQAMTAK Project Startup Script" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
